@@ -6,3 +6,7 @@ build/
 *.log
 client/node_modules/
 client/dist/
+
+# Large data files
+*.csv
+IPL.csv
