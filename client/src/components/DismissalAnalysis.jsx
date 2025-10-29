@@ -138,7 +138,7 @@ function DismissalAnalysis({ player }) {
               </div>
             </div>
 
-            {/* Dismissal Types */}
+            {/* Dismissal Types (wicket_type) */}
             {Object.keys(result.dismissalTypes).length > 0 && (
               <div className="bg-white rounded-lg p-6 border border-slate-200">
                 <h4 className="text-lg font-semibold text-slate-800 mb-4">Dismissal Types</h4>
@@ -159,6 +159,37 @@ function DismissalAnalysis({ player }) {
               </div>
             )}
           </div>
+
+          {/* Dismissal Kinds (wicket_kind) */}
+          {result.dismissalKinds && Object.keys(result.dismissalKinds).length > 0 && (
+            <div className="bg-white rounded-lg p-6 border border-slate-200">
+              <h4 className="text-lg font-semibold text-slate-800 mb-4">Dismissal Kinds (Fielding Method)</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={Object.entries(result.dismissalKinds)
+                    .map(([name, value]) => ({ name, value }))
+                    .sort((a, b) => b.value - a.value)}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="value" fill="#8b5cf6" name="Count" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.entries(result.dismissalKinds)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([kind, count], index) => (
+                    <div key={kind} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                      <span className="text-sm font-medium text-slate-700">{kind}</span>
+                      <span className="text-lg font-bold text-purple-600">{count}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
 
           {/* Summary Stats */}
           <div className="bg-white rounded-lg p-6 border border-slate-200">

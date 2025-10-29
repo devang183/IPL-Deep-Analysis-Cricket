@@ -322,7 +322,8 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
               over: '$over',
               runs: '$runs_batter',
               isOut: '$striker_out',
-              wicketType: '$wicket_type'
+              wicketType: '$wicket_type',
+              wicketKind: '$wicket_kind'
             }
           }
         }
@@ -359,7 +360,8 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
             $push: {
               over: '$dismissal.over',
               ballNum: '$totalBalls',
-              kind: '$dismissal.wicketType'
+              wicketType: '$dismissal.wicketType',
+              wicketKind: '$dismissal.wicketKind'
             }
           },
           totalDismissals: { $sum: 1 }
@@ -387,14 +389,21 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
     };
 
     const dismissalTypes = {};
+    const dismissalKinds = {};
 
     dismissals.forEach(d => {
       if (d.over <= 6) overRanges['Powerplay (1-6)']++;
       else if (d.over <= 15) overRanges['Middle (7-15)']++;
       else overRanges['Death (16-20)']++;
 
-      if (d.kind) {
-        dismissalTypes[d.kind] = (dismissalTypes[d.kind] || 0) + 1;
+      // Count wicket_type
+      if (d.wicketType) {
+        dismissalTypes[d.wicketType] = (dismissalTypes[d.wicketType] || 0) + 1;
+      }
+
+      // Count wicket_kind
+      if (d.wicketKind) {
+        dismissalKinds[d.wicketKind] = (dismissalKinds[d.wicketKind] || 0) + 1;
       }
     });
 
@@ -404,6 +413,7 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
       totalDismissals: results[0].totalDismissals,
       overRanges,
       dismissalTypes,
+      dismissalKinds,
       dismissals: dismissals.slice(0, 20) // Return sample
     });
   } catch (error) {
