@@ -582,6 +582,117 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
   }
 });
 
+// Get MOTM (Man of the Match) awards by venue
+app.get('/api/motm/:player', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const player = req.params.player;
+
+    // Get all unique matches where player won MOTM
+    const motmMatches = await collection.aggregate([
+      {
+        $match: {
+          player_of_match: player
+        }
+      },
+      {
+        $group: {
+          _id: {
+            matchId: '$match_id',
+            venue: '$venue',
+            season: '$season'
+          },
+          venue: { $first: '$venue' },
+          season: { $first: '$season' },
+          matchDate: { $first: '$start_date' }
+        }
+      },
+      {
+        $group: {
+          _id: '$venue',
+          count: { $sum: 1 },
+          seasons: { $addToSet: '$season' },
+          matches: {
+            $push: {
+              matchId: '$_id.matchId',
+              season: '$season',
+              date: '$matchDate'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          venue: '$_id',
+          count: 1,
+          seasons: 1,
+          matches: 1
+        }
+      },
+      { $sort: { count: -1 } }
+    ]).toArray();
+
+    // Get total MOTM count
+    const totalMotm = motmMatches.reduce((sum, venue) => sum + venue.count, 0);
+
+    // Get unique venues count
+    const totalVenues = motmMatches.length;
+
+    // Prepare venue distribution for charts
+    const venueDistribution = motmMatches.map(item => ({
+      venue: item.venue,
+      count: item.count,
+      percentage: totalMotm > 0 ? ((item.count / totalMotm) * 100).toFixed(1) : 0
+    }));
+
+    // Get season-wise MOTM count
+    const seasonStats = await collection.aggregate([
+      {
+        $match: {
+          player_of_match: player
+        }
+      },
+      {
+        $group: {
+          _id: {
+            matchId: '$match_id',
+            season: '$season'
+          },
+          season: { $first: '$season' }
+        }
+      },
+      {
+        $group: {
+          _id: '$season',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          season: '$_id',
+          count: 1
+        }
+      },
+      { $sort: { season: 1 } }
+    ]).toArray();
+
+    res.json({
+      player,
+      totalMotm,
+      totalVenues,
+      venueDetails: motmMatches,
+      venueDistribution,
+      seasonStats
+    });
+
+  } catch (error) {
+    console.error('Error fetching MOTM data:', error);
+    res.status(500).json({ error: 'Failed to fetch MOTM statistics' });
+  }
+});
+
 // For local development
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;

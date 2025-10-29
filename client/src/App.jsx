@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
 import PlayerStats from './components/PlayerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
+import MOTMAnalysis from './components/MOTMAnalysis';
 import axios from 'axios';
 
 function App() {
@@ -65,6 +66,7 @@ function App() {
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
     { id: 'stats', name: 'Overall Stats', icon: BarChart3 },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
+    { id: 'motm', name: 'MOTM', icon: Trophy },
   ];
 
   return (
@@ -128,6 +130,7 @@ function App() {
               {activeTab === 'dismissal' && <DismissalAnalysis player={selectedPlayer} />}
               {activeTab === 'stats' && <PlayerStats player={selectedPlayer} />}
               {activeTab === 'matchup' && <BatsmanVsBowler player={selectedPlayer} />}
+              {activeTab === 'motm' && <MOTMAnalysis player={selectedPlayer} />}
             </div>
           </>
         )}
