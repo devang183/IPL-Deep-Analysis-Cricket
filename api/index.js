@@ -56,50 +56,91 @@ app.get('/api/players', async (req, res) => {
 app.get('/api/stats/:name', async (req, res) => {
   try {
     const { collection } = await connectToDatabase();
-    const playerName = req.params.name;
+    const player = req.params.name;
 
-    const innings = await collection
-      .find({ batter: playerName })
-      .sort({ match_id: 1, ball: 1 })
-      .toArray();
+    const stats = await collection.aggregate([
+      { $match: { batter: player, valid_ball: 1 } },
+      {
+        $group: {
+          _id: null,
+          totalRuns: { $sum: '$runs_batter' },
+          totalBalls: { $sum: 1 },
+          boundaries: {
+            $sum: {
+              $cond: [{ $in: ['$runs_batter', [4, 6]] }, 1, 0]
+            }
+          },
+          fours: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
+            }
+          },
+          sixes: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0]
+            }
+          },
+          dots: {
+            $sum: {
+              $cond: [{ $and: [{ $eq: ['$runs_batter', 0] }, { $eq: ['$runs_extras', 0] }] }, 1, 0]
+            }
+          },
+          dismissals: {
+            $sum: {
+              $cond: [{ $eq: ['$striker_out', true] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalRuns: 1,
+          totalBalls: 1,
+          strikeRate: {
+            $round: [{ $multiply: [{ $divide: ['$totalRuns', '$totalBalls'] }, 100] }, 2]
+          },
+          average: {
+            $round: [{ $divide: ['$totalRuns', { $max: ['$dismissals', 1] }] }, 2]
+          },
+          boundaries: 1,
+          fours: 1,
+          sixes: 1,
+          dots: 1,
+          dismissals: 1,
+          dotPercentage: {
+            $round: [{ $multiply: [{ $divide: ['$dots', '$totalBalls'] }, 100] }, 2]
+          }
+        }
+      }
+    ]).toArray();
 
-    if (innings.length === 0) {
-      return res.json({ message: 'No data found for this player' });
+    if (stats.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
     }
 
-    const totalRuns = innings.reduce((sum, ball) => sum + (ball.batsman_run || 0), 0);
-    const totalBalls = innings.length;
-    const strikeRate = ((totalRuns / totalBalls) * 100).toFixed(2);
-    const dotBalls = innings.filter(ball => ball.batsman_run === 0).length;
-    const dotBallPercentage = ((dotBalls / totalBalls) * 100).toFixed(2);
-
-    const fours = innings.filter(ball => ball.batsman_run === 4).length;
-    const sixes = innings.filter(ball => ball.batsman_run === 6).length;
-    const dismissals = innings.filter(ball => ball.isWicketDelivery === 1 || ball.isWicketDelivery === true).length;
-
-    const average = dismissals > 0 ? (totalRuns / dismissals).toFixed(2) : totalRuns.toFixed(2);
-    const runsPerOver = (totalRuns / (totalBalls / 6)).toFixed(2);
-
+    // Format for frontend compatibility
+    const result = stats[0];
     const ballDistribution = [
-      { name: 'Dot Balls', value: dotBalls, percentage: dotBallPercentage },
-      { name: 'Singles/Doubles', value: innings.filter(b => [1,2,3].includes(b.batsman_run)).length },
-      { name: 'Fours', value: fours },
-      { name: 'Sixes', value: sixes },
+      { name: 'Dot Balls', value: result.dots },
+      { name: 'Singles/Doubles', value: result.totalBalls - result.dots - result.boundaries },
+      { name: 'Fours', value: result.fours },
+      { name: 'Sixes', value: result.sixes },
     ];
 
     res.json({
-      player: playerName,
+      player,
       stats: {
-        totalRuns,
-        totalBalls,
-        strikeRate: parseFloat(strikeRate),
-        average: parseFloat(average),
-        dotBalls,
-        dotBallPercentage: parseFloat(dotBallPercentage),
-        fours,
-        sixes,
-        dismissals,
-        runsPerOver: parseFloat(runsPerOver),
+        totalRuns: result.totalRuns,
+        totalBalls: result.totalBalls,
+        strikeRate: result.strikeRate,
+        average: result.average,
+        dotBalls: result.dots,
+        dotBallPercentage: result.dotPercentage,
+        fours: result.fours,
+        sixes: result.sixes,
+        dismissals: result.dismissals,
+        runsPerOver: parseFloat((result.totalRuns / (result.totalBalls / 6)).toFixed(2)),
         ballDistribution
       }
     });
@@ -109,61 +150,11 @@ app.get('/api/stats/:name', async (req, res) => {
   }
 });
 
-// Alternative route for player stats
+// Alternative route for player stats (redirect to main route)
 app.get('/api/player/:name/stats', async (req, res) => {
-  try {
-    const { collection } = await connectToDatabase();
-    const playerName = req.params.name;
-
-    const innings = await collection
-      .find({ batter: playerName })
-      .sort({ match_id: 1, ball: 1 })
-      .toArray();
-
-    if (innings.length === 0) {
-      return res.json({ message: 'No data found for this player' });
-    }
-
-    const totalRuns = innings.reduce((sum, ball) => sum + (ball.batsman_run || 0), 0);
-    const totalBalls = innings.length;
-    const strikeRate = ((totalRuns / totalBalls) * 100).toFixed(2);
-    const dotBalls = innings.filter(ball => ball.batsman_run === 0).length;
-    const dotBallPercentage = ((dotBalls / totalBalls) * 100).toFixed(2);
-
-    const fours = innings.filter(ball => ball.batsman_run === 4).length;
-    const sixes = innings.filter(ball => ball.batsman_run === 6).length;
-    const dismissals = innings.filter(ball => ball.isWicketDelivery === 1 || ball.isWicketDelivery === true).length;
-
-    const average = dismissals > 0 ? (totalRuns / dismissals).toFixed(2) : totalRuns.toFixed(2);
-    const runsPerOver = (totalRuns / (totalBalls / 6)).toFixed(2);
-
-    const ballDistribution = [
-      { name: 'Dot Balls', value: dotBalls, percentage: dotBallPercentage },
-      { name: 'Singles/Doubles', value: innings.filter(b => [1,2,3].includes(b.batsman_run)).length },
-      { name: 'Fours', value: fours },
-      { name: 'Sixes', value: sixes },
-    ];
-
-    res.json({
-      player: playerName,
-      stats: {
-        totalRuns,
-        totalBalls,
-        strikeRate: parseFloat(strikeRate),
-        average: parseFloat(average),
-        dotBalls,
-        dotBallPercentage: parseFloat(dotBallPercentage),
-        fours,
-        sixes,
-        dismissals,
-        runsPerOver: parseFloat(runsPerOver),
-        ballDistribution
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching player stats:', error);
-    res.status(500).json({ error: 'Failed to fetch player stats' });
-  }
+  // Redirect to the main stats endpoint
+  req.params.name = req.params.name;
+  return app._router.handle(req, res);
 });
 
 // Analyze phase performance
@@ -172,90 +163,122 @@ app.post('/api/analyze/phase-performance', async (req, res) => {
     const { collection } = await connectToDatabase();
     const { player, ballsPlayedBefore, oversPlayedBefore, nextOvers, ballsInNextPhase } = req.body;
 
+    // Calculate over range for next phase
+    const startOver = oversPlayedBefore;
+    const endOver = oversPlayedBefore + nextOvers;
+
+    // Find innings where player played at least ballsPlayedBefore balls by oversPlayedBefore
     const pipeline = [
-      { $match: { batter: player } },
-      { $sort: { match_id: 1, ball: 1 } },
+      { $match: { batter: player, valid_ball: 1 } },
       {
         $group: {
-          _id: "$match_id",
-          balls: { $push: "$$ROOT" }
+          _id: { matchId: '$match_id', inning: '$innings' },
+          balls: {
+            $push: {
+              ballNum: '$ball',
+              over: '$over',
+              runs: '$runs_batter',
+              isOut: '$striker_out'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          matchId: '$_id.matchId',
+          inning: '$_id.inning',
+          balls: 1,
+          ballsBeforePhase: {
+            $size: {
+              $filter: {
+                input: '$balls',
+                as: 'ball',
+                cond: { $lt: ['$$ball.over', startOver] }
+              }
+            }
+          },
+          ballsInPhase: {
+            $filter: {
+              input: '$balls',
+              as: 'ball',
+              cond: {
+                $and: [
+                  { $gte: ['$$ball.over', startOver] },
+                  { $lt: ['$$ball.over', endOver] }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          ballsBeforePhase: { $gte: ballsPlayedBefore }
+        }
+      },
+      {
+        $project: {
+          matchId: 1,
+          inning: 1,
+          ballsInPhaseCount: { $size: '$ballsInPhase' },
+          runsInPhase: { $sum: '$ballsInPhase.runs' },
+          wicketInPhase: {
+            $sum: {
+              $cond: [
+                { $in: [true, '$ballsInPhase.isOut'] },
+                1,
+                0
+              ]
+            }
+          },
+          ballsInPhase: 1
+        }
+      },
+      {
+        $match: {
+          ballsInPhaseCount: { $gte: Math.min(ballsInNextPhase, 1) }
         }
       }
     ];
 
-    const innings = await collection.aggregate(pipeline).toArray();
+    const results = await collection.aggregate(pipeline).toArray();
 
-    let matchingInnings = [];
-
-    for (const inning of innings) {
-      const balls = inning.balls;
-      let ballsPlayed = 0;
-      let phaseStartIndex = -1;
-
-      for (let i = 0; i < balls.length; i++) {
-        ballsPlayed++;
-        const currentOver = balls[i].overs || 0;
-
-        if (ballsPlayed >= ballsPlayedBefore && currentOver >= oversPlayedBefore) {
-          phaseStartIndex = i;
-          break;
-        }
-      }
-
-      if (phaseStartIndex === -1) continue;
-
-      const endOver = oversPlayedBefore + nextOvers;
-      const phaseBalls = [];
-
-      for (let i = phaseStartIndex; i < balls.length; i++) {
-        const currentOver = balls[i].overs || 0;
-        if (currentOver < endOver) {
-          phaseBalls.push(balls[i]);
-        } else {
-          break;
-        }
-      }
-
-      if (phaseBalls.length >= ballsInNextPhase) {
-        matchingInnings.push(phaseBalls);
-      }
-    }
+    // Calculate statistics
+    const matchingInnings = results.filter(r => r.ballsInPhaseCount >= ballsInNextPhase);
 
     if (matchingInnings.length === 0) {
-      return res.json({ message: 'No innings match the criteria' });
+      return res.json({
+        message: 'No matching innings found',
+        totalInnings: 0,
+        analysis: null
+      });
     }
 
-    let totalRuns = 0;
-    let totalBalls = 0;
-    let dismissals = 0;
-    let runsDistribution = [];
+    const totalRuns = matchingInnings.reduce((sum, r) => sum + r.runsInPhase, 0);
+    const totalBalls = matchingInnings.reduce((sum, r) => sum + Math.min(r.ballsInPhaseCount, ballsInNextPhase), 0);
+    const dismissals = matchingInnings.filter(r => r.wicketInPhase > 0).length;
 
-    for (const phaseBalls of matchingInnings) {
-      const runs = phaseBalls.reduce((sum, ball) => sum + (ball.batsman_run || 0), 0);
-      totalRuns += runs;
-      totalBalls += phaseBalls.length;
-      runsDistribution.push(runs);
-
-      if (phaseBalls.some(ball => ball.isWicketDelivery === 1 || ball.isWicketDelivery === true)) {
-        dismissals++;
-      }
-    }
-
-    const averageRuns = (totalRuns / matchingInnings.length).toFixed(2);
-    const strikeRate = ((totalRuns / totalBalls) * 100).toFixed(2);
-    const dismissalRate = ((dismissals / matchingInnings.length) * 100).toFixed(2);
+    const analysis = {
+      averageRuns: parseFloat((totalRuns / matchingInnings.length).toFixed(2)),
+      strikeRate: parseFloat(((totalRuns / totalBalls) * 100).toFixed(2)),
+      dismissalRate: parseFloat(((dismissals / matchingInnings.length) * 100).toFixed(2)),
+      totalInnings: matchingInnings.length,
+      totalRuns,
+      totalBalls,
+      dismissals,
+      runsDistribution: matchingInnings.map(r => r.runsInPhase).sort((a, b) => a - b)
+    };
 
     res.json({
-      matchingInnings: matchingInnings.length,
-      analysis: {
-        averageRuns: parseFloat(averageRuns),
-        strikeRate: parseFloat(strikeRate),
-        dismissalRate: parseFloat(dismissalRate),
-        totalRuns,
-        totalBalls,
-        dismissals,
-        runsDistribution
-      }
+      player,
+      query: {
+        ballsPlayedBefore,
+        oversPlayedBefore,
+        nextOvers,
+        ballsInNextPhase
+      },
+      analysis,
+      matchingInnings: matchingInnings.length
     });
   } catch (error) {
     console.error('Error analyzing phase performance:', error);
@@ -270,41 +293,76 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
     const { player, ballsPlayed } = req.body;
 
     const pipeline = [
-      { $match: { batter: player } },
-      { $sort: { match_id: 1, ball: 1 } },
+      { $match: { batter: player, valid_ball: 1 } },
       {
         $group: {
-          _id: "$match_id",
-          balls: { $push: "$$ROOT" }
+          _id: { matchId: '$match_id', inning: '$innings' },
+          balls: {
+            $push: {
+              ballNum: '$ball',
+              over: '$over',
+              runs: '$runs_batter',
+              isOut: '$striker_out',
+              wicketType: '$wicket_type'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          matchId: '$_id.matchId',
+          inning: '$_id.inning',
+          totalBalls: { $size: '$balls' },
+          dismissal: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$balls',
+                  as: 'ball',
+                  cond: { $eq: ['$$ball.isOut', true] }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $match: {
+          totalBalls: { $gte: ballsPlayed },
+          'dismissal.isOut': true
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          dismissals: {
+            $push: {
+              over: '$dismissal.over',
+              ballNum: '$totalBalls',
+              kind: '$dismissal.wicketType'
+            }
+          },
+          totalDismissals: { $sum: 1 }
         }
       }
     ];
 
-    const innings = await collection.aggregate(pipeline).toArray();
+    const results = await collection.aggregate(pipeline).toArray();
 
-    const dismissals = [];
-
-    for (const inning of innings) {
-      const balls = inning.balls;
-
-      for (let i = 0; i < balls.length; i++) {
-        if (i >= ballsPlayed && (balls[i].isWicketDelivery === 1 || balls[i].isWicketDelivery === true)) {
-          dismissals.push({
-            ballNumber: i + 1,
-            over: balls[i].overs || 0,
-            dismissalType: balls[i].kind || 'unknown'
-          });
-          break;
-        }
-      }
+    if (results.length === 0 || results[0].totalDismissals === 0) {
+      return res.json({
+        message: 'No dismissals found after playing specified balls',
+        totalDismissals: 0,
+        analysis: null
+      });
     }
 
-    if (dismissals.length === 0) {
-      return res.json({ totalDismissals: 0, message: 'No dismissals found after specified balls played' });
-    }
+    const dismissals = results[0].dismissals;
 
+    // Group by over ranges
     const overRanges = {
-      'Powerplay (0-6)': 0,
+      'Powerplay (1-6)': 0,
       'Middle (7-15)': 0,
       'Death (16-20)': 0
     };
@@ -312,19 +370,22 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
     const dismissalTypes = {};
 
     dismissals.forEach(d => {
-      const over = d.over;
-      if (over < 6) overRanges['Powerplay (0-6)']++;
-      else if (over < 15) overRanges['Middle (7-15)']++;
+      if (d.over <= 6) overRanges['Powerplay (1-6)']++;
+      else if (d.over <= 15) overRanges['Middle (7-15)']++;
       else overRanges['Death (16-20)']++;
 
-      dismissalTypes[d.dismissalType] = (dismissalTypes[d.dismissalType] || 0) + 1;
+      if (d.kind) {
+        dismissalTypes[d.kind] = (dismissalTypes[d.kind] || 0) + 1;
+      }
     });
 
     res.json({
-      totalDismissals: dismissals.length,
+      player,
+      ballsPlayed,
+      totalDismissals: results[0].totalDismissals,
       overRanges,
       dismissalTypes,
-      dismissals
+      dismissals: dismissals.slice(0, 20) // Return sample
     });
   } catch (error) {
     console.error('Error analyzing dismissal patterns:', error);
