@@ -52,7 +52,64 @@ app.get('/api/players', async (req, res) => {
   }
 });
 
-// Get player overall stats
+// Get player overall stats (supporting both routes for compatibility)
+app.get('/api/stats/:name', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const playerName = req.params.name;
+
+    const innings = await collection
+      .find({ batter: playerName })
+      .sort({ match_id: 1, ball: 1 })
+      .toArray();
+
+    if (innings.length === 0) {
+      return res.json({ message: 'No data found for this player' });
+    }
+
+    const totalRuns = innings.reduce((sum, ball) => sum + (ball.batsman_run || 0), 0);
+    const totalBalls = innings.length;
+    const strikeRate = ((totalRuns / totalBalls) * 100).toFixed(2);
+    const dotBalls = innings.filter(ball => ball.batsman_run === 0).length;
+    const dotBallPercentage = ((dotBalls / totalBalls) * 100).toFixed(2);
+
+    const fours = innings.filter(ball => ball.batsman_run === 4).length;
+    const sixes = innings.filter(ball => ball.batsman_run === 6).length;
+    const dismissals = innings.filter(ball => ball.isWicketDelivery === 1 || ball.isWicketDelivery === true).length;
+
+    const average = dismissals > 0 ? (totalRuns / dismissals).toFixed(2) : totalRuns.toFixed(2);
+    const runsPerOver = (totalRuns / (totalBalls / 6)).toFixed(2);
+
+    const ballDistribution = [
+      { name: 'Dot Balls', value: dotBalls, percentage: dotBallPercentage },
+      { name: 'Singles/Doubles', value: innings.filter(b => [1,2,3].includes(b.batsman_run)).length },
+      { name: 'Fours', value: fours },
+      { name: 'Sixes', value: sixes },
+    ];
+
+    res.json({
+      player: playerName,
+      stats: {
+        totalRuns,
+        totalBalls,
+        strikeRate: parseFloat(strikeRate),
+        average: parseFloat(average),
+        dotBalls,
+        dotBallPercentage: parseFloat(dotBallPercentage),
+        fours,
+        sixes,
+        dismissals,
+        runsPerOver: parseFloat(runsPerOver),
+        ballDistribution
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching player stats:', error);
+    res.status(500).json({ error: 'Failed to fetch player stats' });
+  }
+});
+
+// Alternative route for player stats
 app.get('/api/player/:name/stats', async (req, res) => {
   try {
     const { collection } = await connectToDatabase();
@@ -275,5 +332,13 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
   }
 });
 
-// Export for Vercel
+// For local development
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`API Server running on port ${PORT}`);
+  });
+}
+
+// Export for Vercel serverless
 module.exports = app;
