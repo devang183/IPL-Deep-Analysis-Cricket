@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Target, Loader2, AlertCircle, TrendingUp, Users, Activity, Zap } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -7,13 +7,48 @@ function BatsmanVsBowler({ player }) {
   const [bowlers, setBowlers] = useState([]);
   const [selectedBowler, setSelectedBowler] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingBowlers, setLoadingBowlers] = useState(true);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     fetchBowlers();
+  }, []);
+
+  // Reset highlighted index when search term changes
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [searchTerm]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0) {
+      const highlightedElement = document.getElementById(
+        `bowler-option-${highlightedIndex}`
+      );
+      if (highlightedElement) {
+        highlightedElement.scrollIntoView({
+          block: 'nearest',
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [highlightedIndex]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchBowlers = async () => {
@@ -50,10 +85,80 @@ function BatsmanVsBowler({ player }) {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (!isDropdownOpen || filteredBowlers.length === 0) {
+      if (e.key === 'Escape' && searchTerm) {
+        setSearchTerm('');
+        setIsDropdownOpen(false);
+      }
+      return;
+    }
+
+    const visibleBowlers = filteredBowlers.slice(0, 50);
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex((prev) => {
+          // Cycle to first item if at the end
+          if (prev >= visibleBowlers.length - 1) {
+            return 0;
+          }
+          return prev + 1;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex((prev) => {
+          // Cycle to last item if at the beginning
+          if (prev <= 0) {
+            return visibleBowlers.length - 1;
+          }
+          return prev - 1;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < visibleBowlers.length) {
+          handleBowlerSelect(visibleBowlers[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setSearchTerm('');
+        setIsDropdownOpen(false);
+        setHighlightedIndex(-1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        setHighlightedIndex(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        setHighlightedIndex(visibleBowlers.length - 1);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleBowlerSelect = (bowler) => {
     setSelectedBowler(bowler);
     setSearchTerm('');
+    setIsDropdownOpen(false);
+    setHighlightedIndex(-1);
     fetchMatchupStats(bowler);
+  };
+
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
+    setIsDropdownOpen(true);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedBowler('');
+    setStats(null);
+    inputRef.current?.focus();
   };
 
   const filteredBowlers = bowlers.filter(bowler =>
@@ -70,25 +175,42 @@ function BatsmanVsBowler({ player }) {
       </div>
 
       {/* Bowler Selector */}
-      <div className="card mb-6">
+      <div className="card mb-6" ref={dropdownRef}>
         <label htmlFor="bowler-search" className="label">
           <Target className="w-4 h-4 inline mr-2" />
           Select Bowler to Analyze Against {player}
         </label>
         <div className="relative">
           <input
+            ref={inputRef}
             id="bowler-search"
             type="text"
             placeholder="Search for a bowler..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => searchTerm && setIsDropdownOpen(true)}
             className="input-field"
             aria-label="Search for a bowler"
+            aria-autocomplete="list"
+            aria-controls="bowler-listbox"
+            aria-expanded={isDropdownOpen && searchTerm}
+            aria-activedescendant={
+              highlightedIndex >= 0
+                ? `bowler-option-${highlightedIndex}`
+                : undefined
+            }
+            role="combobox"
           />
         </div>
 
-        {searchTerm && (
-          <div className="mt-2 max-h-64 overflow-y-auto border border-slate-200 rounded-lg bg-white shadow-lg">
+        {searchTerm && isDropdownOpen && (
+          <div
+            id="bowler-listbox"
+            role="listbox"
+            className="mt-2 max-h-64 overflow-y-auto border border-slate-200 rounded-lg bg-white shadow-lg"
+            aria-label="Bowler options"
+          >
             {loadingBowlers ? (
               <div className="p-4 text-center text-slate-500">Loading bowlers...</div>
             ) : filteredBowlers.length === 0 ? (
@@ -102,13 +224,17 @@ function BatsmanVsBowler({ player }) {
                 )}
               </div>
             ) : (
-              filteredBowlers.slice(0, 50).map((bowler) => (
+              filteredBowlers.slice(0, 50).map((bowler, index) => (
                 <button
                   key={bowler}
+                  id={`bowler-option-${index}`}
+                  role="option"
+                  aria-selected={selectedBowler === bowler}
                   onClick={() => handleBowlerSelect(bowler)}
+                  onMouseEnter={() => setHighlightedIndex(index)}
                   className={`w-full text-left px-4 py-2 hover:bg-primary-50 transition-colors ${
                     selectedBowler === bowler ? 'bg-primary-100 font-semibold' : ''
-                  }`}
+                  } ${highlightedIndex === index ? 'bg-primary-50' : ''}`}
                 >
                   {bowler}
                 </button>
@@ -131,11 +257,9 @@ function BatsmanVsBowler({ player }) {
               {selectedBowler}
             </span>
             <button
-              onClick={() => {
-                setSelectedBowler('');
-                setStats(null);
-              }}
+              onClick={handleClearSelection}
               className="text-sm text-slate-500 hover:text-slate-700 underline"
+              aria-label={`Clear selection: ${selectedBowler}`}
             >
               Clear
             </button>
