@@ -19,10 +19,16 @@ function BatsmanVsBowler({ player }) {
   const fetchBowlers = async () => {
     try {
       const response = await axios.get('/api/bowlers');
-      setBowlers(response.data.bowlers);
+      console.log('Bowlers response:', response.data);
+      if (response.data && response.data.bowlers) {
+        setBowlers(response.data.bowlers);
+      } else {
+        console.error('No bowlers data in response:', response.data);
+      }
       setLoadingBowlers(false);
     } catch (err) {
       console.error('Error fetching bowlers:', err);
+      setError('Failed to load bowlers. Please try again.');
       setLoadingBowlers(false);
     }
   };
@@ -86,7 +92,15 @@ function BatsmanVsBowler({ player }) {
             {loadingBowlers ? (
               <div className="p-4 text-center text-slate-500">Loading bowlers...</div>
             ) : filteredBowlers.length === 0 ? (
-              <div className="p-4 text-center text-slate-500">No bowlers found</div>
+              <div className="p-4 text-center">
+                <p className="text-slate-500">No bowlers found matching "{searchTerm}"</p>
+                {bowlers.length === 0 && (
+                  <p className="text-xs text-red-500 mt-2">No bowlers loaded. Check console for errors.</p>
+                )}
+                {bowlers.length > 0 && (
+                  <p className="text-xs text-slate-400 mt-2">Total bowlers available: {bowlers.length}</p>
+                )}
+              </div>
             ) : (
               filteredBowlers.slice(0, 50).map((bowler) => (
                 <button
@@ -101,6 +115,13 @@ function BatsmanVsBowler({ player }) {
               ))
             )}
           </div>
+        )}
+
+        {/* Show bowler count when not searching */}
+        {!searchTerm && !loadingBowlers && bowlers.length > 0 && (
+          <p className="text-xs text-slate-500 mt-2">
+            {bowlers.length} bowlers available
+          </p>
         )}
 
         {selectedBowler && !searchTerm && (
