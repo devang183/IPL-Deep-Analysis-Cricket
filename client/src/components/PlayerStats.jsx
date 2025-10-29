@@ -53,11 +53,12 @@ function PlayerStats({ player }) {
     return null;
   }
 
-  const boundaryData = [
-    { name: 'Fours', value: stats.fours },
-    { name: 'Sixes', value: stats.sixes },
-    { name: 'Singles/Doubles', value: stats.totalBalls - stats.fours - stats.sixes - stats.dots },
-    { name: 'Dots', value: stats.dots },
+  // Use ballDistribution from API if available, otherwise calculate
+  const boundaryData = stats.ballDistribution || [
+    { name: 'Dots', value: stats.dots || 0 },
+    { name: 'Singles/Doubles', value: (stats.totalBalls || 0) - (stats.dots || 0) - (stats.boundaries || 0) },
+    { name: 'Fours', value: stats.fours || 0 },
+    { name: 'Sixes', value: stats.sixes || 0 },
   ];
 
   return (
@@ -122,7 +123,9 @@ function PlayerStats({ player }) {
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
               <span className="font-medium text-slate-700">Boundary %</span>
               <span className="text-2xl font-bold text-slate-600">
-                {((stats.boundaries / stats.totalBalls) * 100).toFixed(1)}%
+                {stats.boundaries && stats.totalBalls
+                  ? (((stats.boundaries / stats.totalBalls) * 100).toFixed(1))
+                  : 0}%
               </span>
             </div>
           </div>
@@ -157,20 +160,20 @@ function PlayerStats({ player }) {
         <h4 className="text-lg font-semibold text-slate-800 mb-4">Additional Metrics</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-slate-50 rounded-lg">
-            <div className="text-2xl font-bold text-slate-800">{stats.dots}</div>
+            <div className="text-2xl font-bold text-slate-800">{stats.dots || 0}</div>
             <div className="text-sm text-slate-600 mt-1">Dot Balls</div>
           </div>
           <div className="text-center p-4 bg-slate-50 rounded-lg">
-            <div className="text-2xl font-bold text-slate-800">{stats.dotPercentage}%</div>
+            <div className="text-2xl font-bold text-slate-800">{stats.dotPercentage || 0}%</div>
             <div className="text-sm text-slate-600 mt-1">Dot %</div>
           </div>
           <div className="text-center p-4 bg-slate-50 rounded-lg">
-            <div className="text-2xl font-bold text-slate-800">{stats.dismissals}</div>
+            <div className="text-2xl font-bold text-slate-800">{stats.dismissals || 0}</div>
             <div className="text-sm text-slate-600 mt-1">Dismissals</div>
           </div>
           <div className="text-center p-4 bg-slate-50 rounded-lg">
             <div className="text-2xl font-bold text-slate-800">
-              {((stats.totalRuns / stats.totalBalls) * 6).toFixed(2)}
+              {stats.runsPerOver || 0}
             </div>
             <div className="text-sm text-slate-600 mt-1">Runs per Over</div>
           </div>

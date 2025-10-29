@@ -135,10 +135,11 @@ app.get('/api/stats/:name', async (req, res) => {
         totalBalls: result.totalBalls,
         strikeRate: result.strikeRate,
         average: result.average,
-        dotBalls: result.dots,
-        dotBallPercentage: result.dotPercentage,
+        dots: result.dots,  // Changed from dotBalls to dots
+        dotPercentage: result.dotPercentage,  // Changed from dotBallPercentage
         fours: result.fours,
         sixes: result.sixes,
+        boundaries: result.boundaries,  // Added boundaries field
         dismissals: result.dismissals,
         runsPerOver: parseFloat((result.totalRuns / (result.totalBalls / 6)).toFixed(2)),
         ballDistribution
