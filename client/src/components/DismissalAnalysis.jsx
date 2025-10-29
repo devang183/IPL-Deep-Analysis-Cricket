@@ -36,26 +36,33 @@ function DismissalAnalysis({ player }) {
         <h2 className="text-2xl font-bold text-slate-800">Dismissal Pattern Analysis</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="mb-8">
+      <form onSubmit={handleSubmit} className="mb-8" aria-label="Dismissal analysis form">
         <div className="max-w-md">
-          <label className="label">Balls Played Threshold</label>
+          <label htmlFor="ballsPlayed" className="label">Balls Played Threshold</label>
           <input
+            id="ballsPlayed"
             type="number"
             value={ballsPlayed}
             onChange={(e) => setBallsPlayed(e.target.value)}
             className="input-field"
             min="1"
             required
+            aria-describedby="ballsPlayed-help"
           />
-          <p className="text-xs text-slate-500 mt-1">
+          <p id="ballsPlayed-help" className="text-xs text-slate-500 mt-1">
             Analyze dismissals that occurred after playing at least this many balls
           </p>
         </div>
 
-        <button type="submit" className="btn-primary mt-4" disabled={loading}>
+        <button
+          type="submit"
+          className="btn-primary mt-4"
+          disabled={loading}
+          aria-busy={loading}
+        >
           {loading ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+              <Loader2 className="w-5 h-5 animate-spin inline mr-2" aria-hidden="true" />
               Analyzing...
             </>
           ) : (
@@ -65,8 +72,12 @@ function DismissalAnalysis({ player }) {
       </form>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <h4 className="font-semibold text-red-800">Error</h4>
             <p className="text-red-700">{error}</p>
@@ -75,7 +86,7 @@ function DismissalAnalysis({ player }) {
       )}
 
       {result && result.totalDismissals > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-6" role="region" aria-live="polite" aria-label="Dismissal analysis results">
           <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-6 border border-orange-200">
             <h3 className="text-lg font-semibold text-slate-800 mb-2">
               Where does {player} get out most after playing {ballsPlayed}+ balls?
@@ -190,8 +201,12 @@ function DismissalAnalysis({ player }) {
       )}
 
       {result && result.totalDismissals === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center"
+        >
+          <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" aria-hidden="true" />
           <h4 className="font-semibold text-yellow-800 mb-2">No Dismissals Found</h4>
           <p className="text-yellow-700">
             No dismissals found after playing {ballsPlayed}+ balls. Try a lower threshold.

@@ -16,6 +16,38 @@ function App() {
     fetchPlayers();
   }, []);
 
+  const handleTabKeyDown = (e, tabId) => {
+    const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
+    let newIndex = currentIndex;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+        break;
+      case 'Home':
+        e.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        newIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    setActiveTab(tabs[newIndex].id);
+    // Focus the newly selected tab
+    setTimeout(() => {
+      document.getElementById(`tab-${tabs[newIndex].id}`)?.focus();
+    }, 0);
+  };
+
   const fetchPlayers = async () => {
     try {
       const response = await axios.get('/api/players');
@@ -62,13 +94,19 @@ function App() {
         {/* Tabs */}
         {selectedPlayer && (
           <>
-            <div className="flex gap-4 mb-8 overflow-x-auto">
+            <div className="flex gap-4 mb-8 overflow-x-auto" role="tablist" aria-label="Analysis options">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
+                    id={`tab-${tab.id}`}
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    aria-controls={`tabpanel-${tab.id}`}
+                    tabIndex={activeTab === tab.id ? 0 : -1}
                     onClick={() => setActiveTab(tab.id)}
+                    onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'bg-primary-600 text-white shadow-lg'
@@ -83,7 +121,7 @@ function App() {
             </div>
 
             {/* Content */}
-            <div className="card">
+            <div className="card" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
               {activeTab === 'phase' && <PhaseAnalysis player={selectedPlayer} />}
               {activeTab === 'dismissal' && <DismissalAnalysis player={selectedPlayer} />}
               {activeTab === 'stats' && <PlayerStats player={selectedPlayer} />}

@@ -48,11 +48,12 @@ function PhaseAnalysis({ player }) {
         <h2 className="text-2xl font-bold text-slate-800">Phase Performance Analysis</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 mb-8">
+      <form onSubmit={handleSubmit} className="space-y-6 mb-8" aria-label="Phase performance analysis form">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="label">Balls Played Before Phase</label>
+            <label htmlFor="ballsPlayedBefore" className="label">Balls Played Before Phase</label>
             <input
+              id="ballsPlayedBefore"
               type="number"
               name="ballsPlayedBefore"
               value={formData.ballsPlayedBefore}
@@ -60,15 +61,17 @@ function PhaseAnalysis({ player }) {
               className="input-field"
               min="0"
               required
+              aria-describedby="ballsPlayedBefore-help"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p id="ballsPlayedBefore-help" className="text-xs text-slate-500 mt-1">
               Minimum balls the player has faced before the analysis phase
             </p>
           </div>
 
           <div>
-            <label className="label">Overs Played Before Phase</label>
+            <label htmlFor="oversPlayedBefore" className="label">Overs Played Before Phase</label>
             <input
+              id="oversPlayedBefore"
               type="number"
               name="oversPlayedBefore"
               value={formData.oversPlayedBefore}
@@ -77,15 +80,17 @@ function PhaseAnalysis({ player }) {
               min="0"
               max="20"
               required
+              aria-describedby="oversPlayedBefore-help"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p id="oversPlayedBefore-help" className="text-xs text-slate-500 mt-1">
               The over number when the analysis phase begins
             </p>
           </div>
 
           <div>
-            <label className="label">Next Overs to Analyze</label>
+            <label htmlFor="nextOvers" className="label">Next Overs to Analyze</label>
             <input
+              id="nextOvers"
               type="number"
               name="nextOvers"
               value={formData.nextOvers}
@@ -94,15 +99,17 @@ function PhaseAnalysis({ player }) {
               min="1"
               max="20"
               required
+              aria-describedby="nextOvers-help"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p id="nextOvers-help" className="text-xs text-slate-500 mt-1">
               Number of overs in the analysis phase
             </p>
           </div>
 
           <div>
-            <label className="label">Balls in Next Phase</label>
+            <label htmlFor="ballsInNextPhase" className="label">Balls in Next Phase</label>
             <input
+              id="ballsInNextPhase"
               type="number"
               name="ballsInNextPhase"
               value={formData.ballsInNextPhase}
@@ -110,17 +117,23 @@ function PhaseAnalysis({ player }) {
               className="input-field"
               min="1"
               required
+              aria-describedby="ballsInNextPhase-help"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p id="ballsInNextPhase-help" className="text-xs text-slate-500 mt-1">
               Minimum balls to face in the analysis phase
             </p>
           </div>
         </div>
 
-        <button type="submit" className="btn-primary w-full md:w-auto" disabled={loading}>
+        <button
+          type="submit"
+          className="btn-primary w-full md:w-auto"
+          disabled={loading}
+          aria-busy={loading}
+        >
           {loading ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin inline mr-2" />
+              <Loader2 className="w-5 h-5 animate-spin inline mr-2" aria-hidden="true" />
               Analyzing...
             </>
           ) : (
@@ -130,8 +143,12 @@ function PhaseAnalysis({ player }) {
       </form>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <h4 className="font-semibold text-red-800">Error</h4>
             <p className="text-red-700">{error}</p>
@@ -140,10 +157,10 @@ function PhaseAnalysis({ player }) {
       )}
 
       {result && result.analysis && (
-        <div className="space-y-6">
+        <div className="space-y-6" role="region" aria-live="polite" aria-label="Analysis results">
           <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-6 border border-primary-200">
             <h3 className="text-lg font-semibold text-slate-800 mb-4">
-              Query: If {player} has played {formData.ballsPlayedBefore} balls by over {formData.oversPlayedBefore}, 
+              Query: If {player} has played {formData.ballsPlayedBefore} balls by over {formData.oversPlayedBefore},
               what happens in the next {formData.nextOvers} overs (minimum {formData.ballsInNextPhase} balls)?
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -218,8 +235,12 @@ function PhaseAnalysis({ player }) {
       )}
 
       {result && !result.analysis && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center"
+        >
+          <AlertCircle className="w-12 h-12 text-yellow-600 mx-auto mb-3" aria-hidden="true" />
           <h4 className="font-semibold text-yellow-800 mb-2">No Data Found</h4>
           <p className="text-yellow-700">
             No innings match the specified criteria. Try adjusting the parameters.
