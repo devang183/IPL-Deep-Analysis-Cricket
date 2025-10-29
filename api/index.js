@@ -52,6 +52,19 @@ app.get('/api/players', async (req, res) => {
   }
 });
 
+// Get all unique bowlers
+app.get('/api/bowlers', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const bowlers = await collection.distinct('bowler');
+    const bowlersList = bowlers.filter(b => b && b.trim() !== '').sort();
+    res.json({ bowlers: bowlersList, count: bowlersList.length });
+  } catch (error) {
+    console.error('Error fetching bowlers:', error);
+    res.status(500).json({ error: 'Failed to fetch bowlers' });
+  }
+});
+
 // Get player overall stats (supporting both routes for compatibility)
 app.get('/api/stats/:name', async (req, res) => {
   try {
@@ -396,6 +409,166 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
   } catch (error) {
     console.error('Error analyzing dismissal patterns:', error);
     res.status(500).json({ error: 'Failed to analyze dismissal patterns' });
+  }
+});
+
+// Analyze batsman vs bowler matchup
+app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const { batsman, bowler } = req.body;
+
+    if (!batsman || !bowler) {
+      return res.status(400).json({ error: 'Both batsman and bowler are required' });
+    }
+
+    // Aggregate stats for batsman vs bowler
+    const stats = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowler: bowler,
+          valid_ball: 1
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRuns: { $sum: '$runs_batter' },
+          totalBalls: { $sum: 1 },
+          fours: {
+            $sum: { $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0] }
+          },
+          sixes: {
+            $sum: { $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0] }
+          },
+          dots: {
+            $sum: { $cond: [{ $and: [{ $eq: ['$runs_batter', 0] }, { $eq: ['$runs_extras', 0] }] }, 1, 0] }
+          },
+          dismissals: {
+            $sum: { $cond: [{ $eq: ['$striker_out', true] }, 1, 0] }
+          }
+        }
+      }
+    ]).toArray();
+
+    if (stats.length === 0 || stats[0].totalBalls === 0) {
+      return res.json({
+        batsman,
+        bowler,
+        totalBalls: 0,
+        totalRuns: 0,
+        strikeRate: 0,
+        average: 0,
+        dismissals: 0,
+        message: 'No data available for this matchup'
+      });
+    }
+
+    const result = stats[0];
+    const strikeRate = ((result.totalRuns / result.totalBalls) * 100).toFixed(2);
+    const average = result.dismissals > 0
+      ? (result.totalRuns / result.dismissals).toFixed(2)
+      : result.totalRuns.toFixed(2);
+
+    // Get phase-wise breakdown
+    const phaseStats = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowler: bowler,
+          valid_ball: 1
+        }
+      },
+      {
+        $project: {
+          runs: '$runs_batter',
+          phase: {
+            $switch: {
+              branches: [
+                { case: { $lte: ['$over', 6] }, then: 'Powerplay (1-6)' },
+                { case: { $lte: ['$over', 15] }, then: 'Middle (7-15)' },
+                { case: { $gte: ['$over', 16] }, then: 'Death (16-20)' }
+              ],
+              default: 'Unknown'
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$phase',
+          runs: { $sum: '$runs' },
+          balls: { $sum: 1 }
+        }
+      }
+    ]).toArray();
+
+    const phaseStatsObj = {};
+    phaseStats.forEach(p => {
+      phaseStatsObj[p._id] = {
+        runs: p.runs,
+        balls: p.balls,
+        strikeRate: ((p.runs / p.balls) * 100).toFixed(2)
+      };
+    });
+
+    // Get dismissal details
+    const dismissalDetails = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowler: bowler,
+          striker_out: true,
+          valid_ball: 1
+        }
+      },
+      {
+        $project: {
+          wicketType: '$wicket_type',
+          over: '$over',
+          runsScored: '$runs_batter',
+          phase: {
+            $switch: {
+              branches: [
+                { case: { $lte: ['$over', 6] }, then: 'Powerplay' },
+                { case: { $lte: ['$over', 15] }, then: 'Middle' },
+                { case: { $gte: ['$over', 16] }, then: 'Death' }
+              ],
+              default: 'Unknown'
+            }
+          }
+        }
+      },
+      { $limit: 10 }
+    ]).toArray();
+
+    // Runs distribution
+    const runsDistribution = [
+      { name: 'Dots', value: result.dots },
+      { name: 'Singles/Doubles', value: result.totalBalls - result.dots - result.fours - result.sixes },
+      { name: 'Fours', value: result.fours },
+      { name: 'Sixes', value: result.sixes }
+    ];
+
+    res.json({
+      batsman,
+      bowler,
+      totalRuns: result.totalRuns,
+      totalBalls: result.totalBalls,
+      strikeRate: parseFloat(strikeRate),
+      average: parseFloat(average),
+      dismissals: result.dismissals,
+      fours: result.fours,
+      sixes: result.sixes,
+      dots: result.dots,
+      phaseStats: phaseStatsObj,
+      dismissalDetails,
+      runsDistribution
+    });
+  } catch (error) {
+    console.error('Error analyzing batsman vs bowler:', error);
+    res.status(500).json({ error: 'Failed to analyze batsman vs bowler matchup' });
   }
 });
 
