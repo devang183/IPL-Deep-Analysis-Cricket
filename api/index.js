@@ -128,6 +128,11 @@ app.get('/api/stats/:name', async (req, res) => {
       { name: 'Sixes', value: result.sixes },
     ];
 
+    // Calculate runs per over safely
+    const runsPerOver = result.totalBalls > 0
+      ? parseFloat((result.totalRuns / (result.totalBalls / 6)).toFixed(2))
+      : 0;
+
     res.json({
       player,
       stats: {
@@ -141,7 +146,7 @@ app.get('/api/stats/:name', async (req, res) => {
         sixes: result.sixes,
         boundaries: result.boundaries,  // Added boundaries field
         dismissals: result.dismissals,
-        runsPerOver: parseFloat((result.totalRuns / (result.totalBalls / 6)).toFixed(2)),
+        runsPerOver: runsPerOver,
         ballDistribution
       }
     });

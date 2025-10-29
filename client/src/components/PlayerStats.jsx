@@ -173,7 +173,11 @@ function PlayerStats({ player }) {
           </div>
           <div className="text-center p-4 bg-slate-50 rounded-lg">
             <div className="text-2xl font-bold text-slate-800">
-              {stats.runsPerOver || 0}
+              {stats.runsPerOver !== undefined && stats.runsPerOver !== null
+                ? stats.runsPerOver
+                : stats.totalRuns && stats.totalBalls
+                ? ((stats.totalRuns / stats.totalBalls) * 6).toFixed(2)
+                : 0}
             </div>
             <div className="text-sm text-slate-600 mt-1">Runs per Over</div>
           </div>
