@@ -155,9 +155,14 @@ function BatsmanVsBowler({ player }) {
     setIsDropdownOpen(true);
   };
 
+  const handleInputFocus = () => {
+    setIsDropdownOpen(true);
+  };
+
   const handleClearSelection = () => {
     setSelectedBowler('');
     setStats(null);
+    setSearchTerm('');
     inputRef.current?.focus();
   };
 
@@ -189,12 +194,12 @@ function BatsmanVsBowler({ player }) {
             value={searchTerm}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => searchTerm && setIsDropdownOpen(true)}
+            onFocus={handleInputFocus}
             className="input-field"
             aria-label="Search for a bowler"
             aria-autocomplete="list"
             aria-controls="bowler-listbox"
-            aria-expanded={isDropdownOpen && searchTerm}
+            aria-expanded={isDropdownOpen}
             aria-activedescendant={
               highlightedIndex >= 0
                 ? `bowler-option-${highlightedIndex}`
@@ -204,7 +209,7 @@ function BatsmanVsBowler({ player }) {
           />
         </div>
 
-        {searchTerm && isDropdownOpen && (
+        {isDropdownOpen && (
           <div
             id="bowler-listbox"
             role="listbox"
@@ -215,7 +220,7 @@ function BatsmanVsBowler({ player }) {
               <div className="p-4 text-center text-slate-500">Loading bowlers...</div>
             ) : filteredBowlers.length === 0 ? (
               <div className="p-4 text-center">
-                <p className="text-slate-500">No bowlers found matching "{searchTerm}"</p>
+                <p className="text-slate-500">No bowlers found{searchTerm ? ` matching "${searchTerm}"` : ''}</p>
                 {bowlers.length === 0 && (
                   <p className="text-xs text-red-500 mt-2">No bowlers loaded. Check console for errors.</p>
                 )}
@@ -243,14 +248,7 @@ function BatsmanVsBowler({ player }) {
           </div>
         )}
 
-        {/* Show bowler count when not searching */}
-        {!searchTerm && !loadingBowlers && bowlers.length > 0 && (
-          <p className="text-xs text-slate-500 mt-2">
-            {bowlers.length} bowlers available
-          </p>
-        )}
-
-        {selectedBowler && !searchTerm && (
+        {selectedBowler && !searchTerm && !isDropdownOpen && (
           <div className="mt-3 flex items-center gap-2">
             <span className="text-sm text-slate-600">Selected Bowler:</span>
             <span className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-semibold">

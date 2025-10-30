@@ -112,8 +112,13 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
     setIsDropdownOpen(true);
   };
 
+  const handleInputFocus = () => {
+    setIsDropdownOpen(true);
+  };
+
   const handleClearSelection = () => {
     onSelectPlayer('');
+    setSearchTerm('');
     inputRef.current?.focus();
   };
 
@@ -133,12 +138,12 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
           value={searchTerm}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => searchTerm && setIsDropdownOpen(true)}
+          onFocus={handleInputFocus}
           className="input-field pl-10"
           aria-label="Search for a player"
           aria-autocomplete="list"
           aria-controls="player-listbox"
-          aria-expanded={isDropdownOpen && searchTerm}
+          aria-expanded={isDropdownOpen}
           aria-activedescendant={
             highlightedIndex >= 0
               ? `player-option-${highlightedIndex}`
@@ -148,7 +153,7 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
         />
       </div>
 
-      {searchTerm && isDropdownOpen && (
+      {isDropdownOpen && (
         <div
           id="player-listbox"
           role="listbox"
@@ -179,7 +184,7 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
         </div>
       )}
 
-      {selectedPlayer && !searchTerm && (
+      {selectedPlayer && !searchTerm && !isDropdownOpen && (
         <div className="mt-3 flex items-center gap-2">
           <span className="text-sm text-slate-600">Selected:</span>
           <span className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-semibold">
