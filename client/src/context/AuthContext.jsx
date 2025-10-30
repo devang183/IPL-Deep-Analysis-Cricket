@@ -27,34 +27,40 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  // Verify token on mount
+  // Verify token on mount (only runs once on initial load)
   useEffect(() => {
     const verifyToken = async () => {
-      if (!token) {
+      const storedToken = localStorage.getItem('token');
+
+      if (!storedToken) {
         setLoading(false);
         return;
       }
 
       try {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         const response = await axios.get('/api/auth/verify');
+        setToken(storedToken);
         setUser(response.data.user);
       } catch (error) {
         console.error('Token verification failed:', error);
         setToken(null);
         setUser(null);
+        localStorage.removeItem('token');
       } finally {
         setLoading(false);
       }
     };
 
     verifyToken();
-  }, [token]);
+  }, []); // Only run once on mount
 
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
       setToken(response.data.token);
       setUser(response.data.user);
+      setLoading(false);
       return { success: true, message: response.data.message };
     } catch (error) {
       return {
@@ -67,10 +73,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       const response = await axios.post('/api/auth/register', { name, email, password });
+      console.log('Register response:', response.data);
       setToken(response.data.token);
       setUser(response.data.user);
+      setLoading(false);
+      console.log('After register - token:', response.data.token, 'user:', response.data.user);
       return { success: true, message: response.data.message };
     } catch (error) {
+      console.error('Register error:', error);
       return {
         success: false,
         message: error.response?.data?.error || 'Registration failed. Please try again.'

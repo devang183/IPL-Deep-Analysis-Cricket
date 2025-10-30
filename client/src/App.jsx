@@ -19,13 +19,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
 
-  // Show auth page if not authenticated
-  if (!isAuthenticated && !authLoading) {
-    return <AuthPage />;
-  }
+  console.log('App render - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'user:', user);
 
   // Show loading while checking authentication
   if (authLoading) {
+    console.log('Showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white">
         <div className="text-center">
@@ -34,6 +32,12 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  // Show auth page if not authenticated
+  if (!isAuthenticated) {
+    console.log('Showing auth page');
+    return <AuthPage />;
   }
 
   useEffect(() => {
