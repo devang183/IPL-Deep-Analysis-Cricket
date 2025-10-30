@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -7,14 +7,34 @@ import PlayerStats from './components/PlayerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import MOTMAnalysis from './components/MOTMAnalysis';
 import ShareButton from './components/ShareButton';
+import AuthPage from './components/AuthPage';
+import { useAuth } from './context/AuthContext';
 import axios from 'axios';
 
 function App() {
+  const { isAuthenticated, user, logout, loading: authLoading } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [activeTab, setActiveTab] = useState('phase');
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
+
+  // Show auth page if not authenticated
+  if (!isAuthenticated && !authLoading) {
+    return <AuthPage />;
+  }
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white">
+        <div className="text-center">
+          <Activity className="w-16 h-16 text-primary-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     fetchPlayers();
@@ -74,15 +94,34 @@ function App() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Activity className="w-12 h-12 text-primary-600" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-              IPL Cricket Analytics
-            </h1>
+        {/* Header with User Info and Logout */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Activity className="w-12 h-12 text-primary-600" />
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                IPL Cricket Analytics
+              </h1>
+            </div>
+
+            {/* User Info and Logout */}
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm text-slate-600">Welcome back,</p>
+                <p className="font-semibold text-slate-800">{user?.name}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                aria-label="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
           </div>
-          <p className="text-slate-600 text-lg">
+
+          <p className="text-slate-600 text-lg text-center">
             Analyze ball-by-ball IPL data from 2008 to 2025
           </p>
         </div>

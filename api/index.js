@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -8,13 +10,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// JWT Secret (in production, use environment variable)
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
 // MongoDB connection
 let cachedDb = null;
 let cachedCollection = null;
+let cachedUsersCollection = null;
 
 async function connectToDatabase() {
-  if (cachedDb && cachedCollection) {
-    return { db: cachedDb, collection: cachedCollection };
+  if (cachedDb && cachedCollection && cachedUsersCollection) {
+    return { db: cachedDb, collection: cachedCollection, usersCollection: cachedUsersCollection };
   }
 
   const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
@@ -27,17 +33,159 @@ async function connectToDatabase() {
 
   const db = client.db(process.env.DB_NAME || 'hello');
   const collection = db.collection(process.env.COLLECTION_NAME || 'IPL-ALL');
+  const usersCollection = db.collection('users');
 
   cachedDb = db;
   cachedCollection = collection;
+  cachedUsersCollection = usersCollection;
 
-  return { db, collection };
+  return { db, collection, usersCollection };
 }
+
+// Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access denied. No token provided.' });
+  }
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (error) {
+    res.status(403).json({ error: 'Invalid token' });
+  }
+};
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Cricket Analytics API is running' });
 });
+
+// ============ AUTHENTICATION ROUTES ============
+
+// Register new user
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+    const { email, password, name } = req.body;
+
+    // Validation
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Please provide email, password, and name' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Check if user already exists
+    const existingUser = await usersCollection.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user
+    const newUser = {
+      email: email.toLowerCase(),
+      name,
+      password: hashedPassword,
+      createdAt: new Date(),
+      lastLogin: new Date()
+    };
+
+    const result = await usersCollection.insertOne(newUser);
+
+    // Create token
+    const token = jwt.sign(
+      { userId: result.insertedId, email: email.toLowerCase() },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: result.insertedId,
+        email: email.toLowerCase(),
+        name
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Failed to register user' });
+  }
+});
+
+// Login user
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Please provide email and password' });
+    }
+
+    // Find user
+    const user = await usersCollection.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid email or password' });
+    }
+
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: 'Invalid email or password' });
+    }
+
+    // Update last login
+    await usersCollection.updateOne(
+      { _id: user._id },
+      { $set: { lastLogin: new Date() } }
+    );
+
+    // Create token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Verify token (check if user is authenticated)
+app.get('/api/auth/verify', authenticateToken, (req, res) => {
+  res.json({
+    message: 'Token is valid',
+    user: req.user
+  });
+});
+
+// ============ END AUTHENTICATION ROUTES ============
+
 
 // Get all unique players
 app.get('/api/players', async (req, res) => {
