@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
 import PlayerStats from './components/PlayerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import MOTMAnalysis from './components/MOTMAnalysis';
+import AdminDashboard from './components/AdminDashboard';
 import ShareButton from './components/ShareButton';
 import AuthPage from './components/AuthPage';
 import { useAuth } from './context/AuthContext';
@@ -96,6 +97,7 @@ function App() {
     { id: 'stats', name: 'Overall Stats', icon: BarChart3 },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'motm', name: 'MOTM', icon: Trophy },
+    { id: 'admin', name: 'Admin', icon: Shield },
   ];
 
   return (
@@ -188,6 +190,7 @@ function App() {
               {activeTab === 'stats' && <PlayerStats player={selectedPlayer} />}
               {activeTab === 'matchup' && <BatsmanVsBowler player={selectedPlayer} />}
               {activeTab === 'motm' && <MOTMAnalysis player={selectedPlayer} />}
+              {activeTab === 'admin' && <AdminDashboard />}
             </div>
           </>
         )}

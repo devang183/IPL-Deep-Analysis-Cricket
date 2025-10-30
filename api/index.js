@@ -184,6 +184,35 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
   });
 });
 
+// Get all users (Admin route - for now, any authenticated user can access)
+app.get('/api/auth/users', authenticateToken, async (req, res) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+
+    // Fetch all users but exclude password field
+    const users = await usersCollection
+      .find({})
+      .project({ password: 0 }) // Exclude password from results
+      .sort({ createdAt: -1 }) // Most recent first
+      .toArray();
+
+    res.json({
+      message: 'Users fetched successfully',
+      count: users.length,
+      users: users.map(user => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
 // ============ END AUTHENTICATION ROUTES ============
 
 
