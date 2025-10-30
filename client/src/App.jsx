@@ -21,6 +21,24 @@ function App() {
 
   console.log('App render - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'user:', user);
 
+  const fetchPlayers = async () => {
+    try {
+      const response = await axios.get('/api/players');
+      setPlayers(response.data.players);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      setLoading(false);
+    }
+  };
+
+  // Fetch players only when authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      fetchPlayers();
+    }
+  }, [isAuthenticated, authLoading]);
+
   // Show loading while checking authentication
   if (authLoading) {
     console.log('Showing loading screen');
@@ -39,10 +57,6 @@ function App() {
     console.log('Showing auth page');
     return <AuthPage />;
   }
-
-  useEffect(() => {
-    fetchPlayers();
-  }, []);
 
   const handleTabKeyDown = (e, tabId) => {
     const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
@@ -74,17 +88,6 @@ function App() {
     setTimeout(() => {
       document.getElementById(`tab-${tabs[newIndex].id}`)?.focus();
     }, 0);
-  };
-
-  const fetchPlayers = async () => {
-    try {
-      const response = await axios.get('/api/players');
-      setPlayers(response.data.players);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching players:', error);
-      setLoading(false);
-    }
   };
 
   const tabs = [
