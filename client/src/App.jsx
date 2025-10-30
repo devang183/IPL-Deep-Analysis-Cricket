@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Activity, TrendingUp, Target, BarChart3, Users, Trophy } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
@@ -6,6 +6,7 @@ import DismissalAnalysis from './components/DismissalAnalysis';
 import PlayerStats from './components/PlayerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import MOTMAnalysis from './components/MOTMAnalysis';
+import ShareButton from './components/ShareButton';
 import axios from 'axios';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('phase');
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     fetchPlayers();
@@ -95,37 +97,46 @@ function App() {
           />
         </div>
 
-        {/* Tabs */}
+        {/* Tabs and Share Button */}
         {selectedPlayer && (
           <>
-            <div className="flex gap-4 mb-8 overflow-x-auto" role="tablist" aria-label="Analysis options">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    id={`tab-${tab.id}`}
-                    role="tab"
-                    aria-selected={activeTab === tab.id}
-                    aria-controls={`tabpanel-${tab.id}`}
-                    tabIndex={activeTab === tab.id ? 0 : -1}
-                    onClick={() => setActiveTab(tab.id)}
-                    onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? 'bg-primary-600 text-white shadow-lg'
-                        : 'bg-white text-slate-700 hover:bg-slate-50 shadow'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {tab.name}
-                  </button>
-                );
-              })}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div className="flex gap-4 overflow-x-auto" role="tablist" aria-label="Analysis options">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`tab-${tab.id}`}
+                      role="tab"
+                      aria-selected={activeTab === tab.id}
+                      aria-controls={`tabpanel-${tab.id}`}
+                      tabIndex={activeTab === tab.id ? 0 : -1}
+                      onClick={() => setActiveTab(tab.id)}
+                      onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? 'bg-primary-600 text-white shadow-lg'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 shadow'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      {tab.name}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Share Button */}
+              <ShareButton
+                player={selectedPlayer}
+                tabName={tabs.find(t => t.id === activeTab)?.name || 'Analysis'}
+                contentRef={contentRef}
+              />
             </div>
 
             {/* Content */}
-            <div className="card" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+            <div ref={contentRef} className="card" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
               {activeTab === 'phase' && <PhaseAnalysis player={selectedPlayer} />}
               {activeTab === 'dismissal' && <DismissalAnalysis player={selectedPlayer} />}
               {activeTab === 'stats' && <PlayerStats player={selectedPlayer} />}
