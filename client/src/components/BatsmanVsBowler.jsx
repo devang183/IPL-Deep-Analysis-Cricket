@@ -3,7 +3,7 @@ import { Target, Loader2, AlertCircle, TrendingUp, Users, Activity, Zap } from '
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-function BatsmanVsBowler({ player }) {
+function BatsmanVsBowler({ player, initialBowler }) {
   const [bowlers, setBowlers] = useState([]);
   const [selectedBowler, setSelectedBowler] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,6 +19,13 @@ function BatsmanVsBowler({ player }) {
   useEffect(() => {
     fetchBowlers();
   }, []);
+
+  // Set initial bowler if provided
+  useEffect(() => {
+    if (initialBowler && bowlers.includes(initialBowler)) {
+      setSelectedBowler(initialBowler);
+    }
+  }, [initialBowler, bowlers]);
 
   // Reset highlighted index when search term changes
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -7,6 +7,7 @@ import PlayerStats from './components/PlayerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import MOTMAnalysis from './components/MOTMAnalysis';
 import AdminDashboard from './components/AdminDashboard';
+import SmartSearch from './components/SmartSearch';
 import ShareButton from './components/ShareButton';
 import AuthPage from './components/AuthPage';
 import { useAuth } from './context/AuthContext';
@@ -15,7 +16,7 @@ import axios from 'axios';
 function App() {
   const { isAuthenticated, user, logout, loading: authLoading } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState('');
-  const [activeTab, setActiveTab] = useState('phase');
+  const [activeTab, setActiveTab] = useState('smart');
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
@@ -93,6 +94,7 @@ function App() {
 
   // Define all tabs
   const allTabs = [
+    { id: 'smart', name: 'Smart Search', icon: Sparkles },
     { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
     { id: 'stats', name: 'Overall Stats', icon: BarChart3 },
@@ -147,79 +149,110 @@ function App() {
           </p>
         </div>
 
-        {/* Player Selector */}
-        <div className="card mb-8 animate-fade-in-up hover:shadow-xl transition-shadow duration-300">
-          <PlayerSelector
-            players={players}
-            selectedPlayer={selectedPlayer}
-            onSelectPlayer={setSelectedPlayer}
-            loading={loading}
-          />
+        {/* Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-slide-in-right">
+          <div className="flex gap-4 overflow-x-auto" role="tablist" aria-label="Analysis options">
+            {tabs.map((tab, index) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  id={`tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={`tabpanel-${tab.id}`}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 ${
+                    activeTab === tab.id
+                      ? 'bg-primary-600 text-white shadow-lg animate-pulse-glow'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 shadow'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
+                  {tab.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Share Button - only show when player is selected and not on smart/admin tab */}
+          {selectedPlayer && activeTab !== 'smart' && activeTab !== 'admin' && (
+            <ShareButton
+              player={selectedPlayer}
+              tabName={tabs.find(t => t.id === activeTab)?.name || 'Analysis'}
+              contentRef={contentRef}
+            />
+          )}
         </div>
 
-        {/* Tabs and Share Button */}
-        {selectedPlayer && (
-          <>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-slide-in-right">
-              <div className="flex gap-4 overflow-x-auto" role="tablist" aria-label="Analysis options">
-                {tabs.map((tab, index) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      id={`tab-${tab.id}`}
-                      role="tab"
-                      aria-selected={activeTab === tab.id}
-                      aria-controls={`tabpanel-${tab.id}`}
-                      tabIndex={activeTab === tab.id ? 0 : -1}
-                      onClick={() => setActiveTab(tab.id)}
-                      onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 ${
-                        activeTab === tab.id
-                          ? 'bg-primary-600 text-white shadow-lg animate-pulse-glow'
-                          : 'bg-white text-slate-700 hover:bg-slate-50 shadow'
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
-                      {tab.name}
-                    </button>
-                  );
-                })}
-              </div>
+        {/* Content */}
+        <div ref={contentRef} className="animate-scale-in" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+          {activeTab === 'smart' && (
+            <SmartSearch
+              players={players}
+              onPlayerSelect={setSelectedPlayer}
+              onTabChange={setActiveTab}
+            />
+          )}
 
-              {/* Share Button */}
-              <ShareButton
-                player={selectedPlayer}
-                tabName={tabs.find(t => t.id === activeTab)?.name || 'Analysis'}
-                contentRef={contentRef}
-              />
+          {activeTab !== 'smart' && activeTab !== 'admin' && !selectedPlayer && (
+            <div className="card text-center py-16">
+              <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-700 mb-2">
+                Select a player to view {tabs.find(t => t.id === activeTab)?.name}
+              </h3>
+              <p className="text-slate-500 mb-4">
+                Use the Smart Search tab to ask questions in natural language
+              </p>
+              <button
+                onClick={() => setActiveTab('smart')}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Sparkles className="w-5 h-5" />
+                Go to Smart Search
+              </button>
             </div>
+          )}
 
-            {/* Content */}
-            <div ref={contentRef} className="card animate-scale-in" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-              {activeTab === 'phase' && <PhaseAnalysis player={selectedPlayer} />}
-              {activeTab === 'dismissal' && <DismissalAnalysis player={selectedPlayer} />}
-              {activeTab === 'stats' && <PlayerStats player={selectedPlayer} />}
-              {activeTab === 'matchup' && <BatsmanVsBowler player={selectedPlayer} />}
-              {activeTab === 'motm' && <MOTMAnalysis player={selectedPlayer} />}
-              {activeTab === 'admin' && <AdminDashboard />}
+          {activeTab === 'phase' && selectedPlayer && (
+            <div className="card">
+              <PhaseAnalysis player={selectedPlayer} />
             </div>
-          </>
-        )}
+          )}
 
-        {/* Empty State */}
-        {!selectedPlayer && !loading && (
-          <div className="card text-center py-16">
-            <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-700 mb-2">
-              Select a player to begin
-            </h3>
-            <p className="text-slate-500">
-              Choose a player from the dropdown above to analyze their performance
-            </p>
-          </div>
-        )}
+          {activeTab === 'dismissal' && selectedPlayer && (
+            <div className="card">
+              <DismissalAnalysis player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'stats' && selectedPlayer && (
+            <div className="card">
+              <PlayerStats player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'matchup' && selectedPlayer && (
+            <div className="card">
+              <BatsmanVsBowler player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'motm' && selectedPlayer && (
+            <div className="card">
+              <MOTMAnalysis player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'admin' && (
+            <div className="card">
+              <AdminDashboard />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
