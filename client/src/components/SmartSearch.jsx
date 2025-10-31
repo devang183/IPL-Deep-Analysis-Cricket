@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { Search, Sparkles, Loader2, TrendingUp, Target, BarChart3, Users, Trophy, Lightbulb } from 'lucide-react';
+import { Search, Sparkles, Loader2, TrendingUp, Target, BarChart3, Users, Trophy, Lightbulb, AlertCircle } from 'lucide-react';
 import PhaseAnalysis from './PhaseAnalysis';
 import DismissalAnalysis from './DismissalAnalysis';
 import PlayerStats from './PlayerStats';
 import BatsmanVsBowler from './BatsmanVsBowler';
 import MOTMAnalysis from './MOTMAnalysis';
+import { findBestPlayerMatch, findPlayerSuggestions, checkCommonNameMapping } from '../utils/nameMatching';
 
 function SmartSearch({ players, onPlayerSelect, onTabChange }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [parsedQuery, setParsedQuery] = useState(null);
   const [error, setError] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
 
   // Example queries to show users
   const exampleQueries = [
@@ -31,32 +33,11 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
     motm: ['motm', 'man of the match', 'awards', 'mom', 'player of the match'],
   };
 
-  // Parse natural language query
+  // Parse natural language query with fuzzy matching
   const parseQuery = (queryText) => {
     const lowerQuery = queryText.toLowerCase().trim();
 
-    // Extract player name - check against player list
-    let detectedPlayer = null;
-    for (const player of players) {
-      if (lowerQuery.includes(player.toLowerCase())) {
-        detectedPlayer = player;
-        break;
-      }
-    }
-
-    if (!detectedPlayer) {
-      // Try to find partial matches
-      for (const player of players) {
-        const playerNames = player.toLowerCase().split(' ');
-        const hasMatch = playerNames.some(name => lowerQuery.includes(name) && name.length > 3);
-        if (hasMatch) {
-          detectedPlayer = player;
-          break;
-        }
-      }
-    }
-
-    // Detect analysis type
+    // Detect analysis type first
     let analysisType = 'stats'; // default
     let confidence = 0;
 
@@ -68,18 +49,60 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
       }
     }
 
-    // Extract second player for matchup
+    // Extract player name using smart fuzzy matching
+    let detectedPlayer = null;
+    let matchScore = 0;
+
+    // First, try common name mappings
+    detectedPlayer = checkCommonNameMapping(lowerQuery, players);
+
+    if (!detectedPlayer) {
+      // Split query into potential player name parts
+      // For queries like "virat kohli stats", we want to extract "virat kohli"
+      const words = lowerQuery.split(/\s+/);
+
+      // Try combinations of consecutive words as player names
+      for (let i = 0; i < words.length; i++) {
+        for (let j = i + 1; j <= Math.min(i + 4, words.length); j++) {
+          const potentialName = words.slice(i, j).join(' ');
+
+          // Skip if it's a keyword
+          const isKeyword = Object.values(keywords).flat().some(k => potentialName.includes(k));
+          if (isKeyword) continue;
+
+          // Find best match using fuzzy matching
+          const match = findBestPlayerMatch(potentialName, players, 60);
+
+          if (match && match.score > matchScore) {
+            matchScore = match.score;
+            detectedPlayer = match.player;
+          }
+        }
+      }
+    }
+
+    // Extract second player for matchup using same fuzzy matching
     let secondPlayer = null;
+    let secondPlayerScore = 0;
+
     if (analysisType === 'matchup') {
-      const vsPattern = /(?:vs|versus|against|facing)\s+([a-z\s]+?)(?:\s|$)/i;
+      const vsPattern = /(?:vs|versus|against|facing)\s+(.+?)(?:\s*$|\s+(?:stats|in|at|during))/i;
       const match = lowerQuery.match(vsPattern);
+
       if (match) {
         const potentialName = match[1].trim();
-        // Find matching bowler
-        for (const player of players) {
-          if (player.toLowerCase().includes(potentialName) || potentialName.includes(player.toLowerCase().split(' ')[0])) {
-            secondPlayer = player;
-            break;
+
+        // Try common mappings first
+        const commonMatch = checkCommonNameMapping(potentialName, players);
+        if (commonMatch) {
+          secondPlayer = commonMatch;
+          secondPlayerScore = 100;
+        } else {
+          // Use fuzzy matching
+          const fuzzyMatch = findBestPlayerMatch(potentialName, players, 60);
+          if (fuzzyMatch) {
+            secondPlayer = fuzzyMatch.player;
+            secondPlayerScore = fuzzyMatch.score;
           }
         }
       }
@@ -89,7 +112,8 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
       player: detectedPlayer,
       analysisType,
       secondPlayer,
-      confidence,
+      matchScore,
+      secondPlayerScore,
       originalQuery: queryText,
     };
   };
@@ -100,15 +124,34 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
 
     setLoading(true);
     setError('');
+    setSuggestions([]);
 
     // Simulate processing delay for better UX
     setTimeout(() => {
       const parsed = parseQuery(query);
 
       if (!parsed.player) {
-        setError("I couldn't find a player name in your query. Please try again with a valid player name.");
+        // Try to find suggestions
+        const playerSuggestions = findPlayerSuggestions(query, players, 5, 40);
+
+        if (playerSuggestions.length > 0) {
+          setError("I couldn't find an exact match. Did you mean one of these players?");
+          setSuggestions(playerSuggestions);
+        } else {
+          setError("I couldn't find a player name in your query. Please try again with a valid player name.");
+        }
         setLoading(false);
         return;
+      }
+
+      // Show confidence score if below 80
+      if (parsed.matchScore < 80) {
+        const alternativeSuggestions = findPlayerSuggestions(query, players, 3, 40)
+          .filter(s => s.player !== parsed.player);
+
+        if (alternativeSuggestions.length > 0) {
+          setSuggestions(alternativeSuggestions);
+        }
       }
 
       setParsedQuery(parsed);
@@ -118,16 +161,28 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
     }, 800);
   };
 
+  const handleSuggestionClick = (playerName) => {
+    // Replace the player name in the query
+    const parsed = parseQuery(query);
+    setParsedQuery({ ...parsed, player: playerName, matchScore: 100 });
+    onPlayerSelect(playerName);
+    onTabChange(parsed.analysisType);
+    setSuggestions([]);
+    setError('');
+  };
+
   const handleExampleClick = (exampleText) => {
     setQuery(exampleText);
     setParsedQuery(null);
     setError('');
+    setSuggestions([]);
   };
 
   const handleClear = () => {
     setQuery('');
     setParsedQuery(null);
     setError('');
+    setSuggestions([]);
   };
 
   const getAnalysisIcon = (type) => {
@@ -213,7 +268,37 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
         {/* Error Message */}
         {error && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg animate-fade-in-down">
-            <p className="text-red-700 text-sm">{error}</p>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Player Suggestions */}
+        {suggestions.length > 0 && (
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg animate-scale-in">
+            <h4 className="font-semibold text-yellow-900 mb-3 text-sm">
+              {parsedQuery ? 'Other players you might be looking for:' : 'Did you mean:'}
+            </h4>
+            <div className="space-y-2">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion.player)}
+                  className="w-full text-left px-4 py-2 bg-white border border-yellow-300 rounded-lg hover:bg-yellow-100 hover:border-yellow-400 transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-800 group-hover:text-yellow-900 font-medium">
+                      {suggestion.player}
+                    </span>
+                    <span className="text-xs text-slate-500 group-hover:text-yellow-700">
+                      {suggestion.score}% match
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -223,7 +308,14 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
             <div className="flex items-start gap-3">
               <Lightbulb className="w-5 h-5 text-primary-600 mt-1 flex-shrink-0" />
               <div className="flex-1">
-                <h4 className="font-semibold text-primary-900 mb-2">I understood your query as:</h4>
+                <h4 className="font-semibold text-primary-900 mb-2">
+                  I understood your query as:
+                  {parsedQuery.matchScore < 100 && parsedQuery.matchScore >= 60 && (
+                    <span className="ml-2 text-xs font-normal text-primary-600">
+                      ({parsedQuery.matchScore}% confidence)
+                    </span>
+                  )}
+                </h4>
                 <div className="space-y-1 text-sm">
                   <p className="text-primary-800">
                     <span className="font-medium">Player:</span> {parsedQuery.player}
@@ -234,6 +326,11 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
                   {parsedQuery.secondPlayer && (
                     <p className="text-primary-800">
                       <span className="font-medium">Against:</span> {parsedQuery.secondPlayer}
+                      {parsedQuery.secondPlayerScore < 100 && parsedQuery.secondPlayerScore >= 60 && (
+                        <span className="ml-1 text-xs text-primary-600">
+                          ({parsedQuery.secondPlayerScore}% match)
+                        </span>
+                      )}
                     </p>
                   )}
                 </div>
