@@ -112,18 +112,18 @@ function MOTMAnalysis({ player }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 animate-fade-in-down">
         <div className="flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-yellow-600" />
+          <Trophy className="w-6 h-6 text-yellow-600 animate-bounce-subtle" />
           <h2 className="text-2xl font-bold text-slate-800">Man of the Match Awards</h2>
         </div>
       </div>
 
       {/* Filter Banner */}
       {selectedVenue && (
-        <div className="bg-gradient-to-r from-primary-50 to-blue-50 border-2 border-primary-300 rounded-lg p-4 flex items-center justify-between shadow-md animate-in fade-in duration-300">
+        <div className="bg-gradient-to-r from-primary-50 to-blue-50 border-2 border-primary-300 rounded-lg p-4 flex items-center justify-between shadow-md animate-slide-in-right">
           <div className="flex items-center gap-3">
-            <Filter className="w-5 h-5 text-primary-600" />
+            <Filter className="w-5 h-5 text-primary-600 animate-pulse" />
             <div>
               <p className="text-sm text-primary-600 font-semibold">Filtered by Venue</p>
               <p className="text-lg font-bold text-primary-800">{selectedVenue}</p>
@@ -131,7 +131,7 @@ function MOTMAnalysis({ player }) {
           </div>
           <button
             onClick={clearFilter}
-            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-300 rounded-lg transition-all shadow-sm hover:shadow"
+            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-300 rounded-lg transition-all shadow-sm hover:shadow hover:scale-105 active:scale-95"
             aria-label="Clear venue filter"
           >
             <X className="w-4 h-4" />
@@ -142,25 +142,25 @@ function MOTMAnalysis({ player }) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-6 border border-yellow-200">
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-6 border border-yellow-200 hover-lift animate-fade-in-up cursor-pointer" style={{animationDelay: '0.1s'}}>
           <div className="flex items-center gap-3 mb-2">
-            <Trophy className="w-8 h-8 text-yellow-600" />
+            <Trophy className="w-8 h-8 text-yellow-600 animate-float" />
             <div className="text-sm text-yellow-700">Total MOTM Awards</div>
           </div>
           <div className="text-4xl font-bold text-yellow-900">{filteredData.totalMotm}</div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200 hover-lift animate-fade-in-up cursor-pointer" style={{animationDelay: '0.2s'}}>
           <div className="flex items-center gap-3 mb-2">
-            <MapPin className="w-8 h-8 text-blue-600" />
+            <MapPin className="w-8 h-8 text-blue-600 animate-float" style={{animationDelay: '0.5s'}} />
             <div className="text-sm text-blue-700">Unique Venues</div>
           </div>
           <div className="text-4xl font-bold text-blue-900">{filteredData.totalVenues}</div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200 hover-lift animate-fade-in-up cursor-pointer" style={{animationDelay: '0.3s'}}>
           <div className="flex items-center gap-3 mb-2">
-            <Award className="w-8 h-8 text-purple-600" />
+            <Award className="w-8 h-8 text-purple-600 animate-float" style={{animationDelay: '1s'}} />
             <div className="text-sm text-purple-700">Awards per Venue</div>
           </div>
           <div className="text-4xl font-bold text-purple-900">
@@ -171,8 +171,8 @@ function MOTMAnalysis({ player }) {
 
       {/* Click Instruction */}
       {!selectedVenue && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-          <Filter className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2 animate-fade-in">
+          <Filter className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0 animate-pulse" />
           <p className="text-sm text-blue-700">
             <span className="font-semibold">Tip:</span> Click on any venue in the charts or table below to filter all data for that specific venue
           </p>

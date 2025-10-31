@@ -161,9 +161,13 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
           aria-label="Player options"
         >
           {loading ? (
-            <div className="p-4 text-center text-slate-500">Loading players...</div>
+            <div className="p-4 space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-10 bg-slate-200 rounded animate-pulse" style={{animationDelay: `${i * 0.1}s`}}></div>
+              ))}
+            </div>
           ) : filteredPlayers.length === 0 ? (
-            <div className="p-4 text-center text-slate-500">No players found</div>
+            <div className="p-4 text-center text-slate-500 animate-fade-in">No players found</div>
           ) : (
             filteredPlayers.slice(0, 50).map((player, index) => (
               <button
@@ -173,7 +177,7 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
                 aria-selected={selectedPlayer === player}
                 onClick={() => handleSelectPlayer(player)}
                 onMouseEnter={() => setHighlightedIndex(index)}
-                className={`w-full text-left px-4 py-2 hover:bg-primary-50 transition-colors ${
+                className={`w-full text-left px-4 py-2 transition-all hover:scale-[1.02] hover:bg-primary-50 ${
                   selectedPlayer === player ? 'bg-primary-100 font-semibold' : ''
                 } ${highlightedIndex === index ? 'bg-primary-50' : ''}`}
               >
@@ -185,14 +189,14 @@ function PlayerSelector({ players, selectedPlayer, onSelectPlayer, loading }) {
       )}
 
       {selectedPlayer && !searchTerm && !isDropdownOpen && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2 animate-slide-in-right">
           <span className="text-sm text-slate-600">Selected:</span>
-          <span className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-semibold">
+          <span className="bg-primary-100 text-primary-800 px-3 py-1 rounded-full font-semibold animate-scale-in">
             {selectedPlayer}
           </span>
           <button
             onClick={handleClearSelection}
-            className="text-sm text-slate-500 hover:text-slate-700 underline"
+            className="text-sm text-slate-500 hover:text-slate-700 underline transition-all hover:scale-110"
             aria-label={`Clear selection: ${selectedPlayer}`}
           >
             Clear

@@ -50,22 +50,22 @@ function Register({ onSwitchToLogin }) {
   const strength = passwordStrength();
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-blue-50">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animated-gradient">
       {/* Cricket-themed background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
-        <div className="absolute top-10 left-10 text-primary-300">
+        <div className="absolute top-10 left-10 text-primary-300 animate-float">
           <Activity className="w-32 h-32 rotate-12" />
         </div>
-        <div className="absolute bottom-10 right-10 text-primary-300">
+        <div className="absolute bottom-10 right-10 text-primary-300 animate-float" style={{animationDelay: '1s'}}>
           <Activity className="w-40 h-40 -rotate-12" />
         </div>
       </div>
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         {/* Header */}
-        <div className="text-center">
+        <div className="text-center animate-fade-in-down">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Activity className="w-12 h-12 text-primary-600" />
+            <Activity className="w-12 h-12 text-primary-600 animate-bounce-subtle" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
               IPL Analytics
             </h1>
@@ -79,12 +79,12 @@ function Register({ onSwitchToLogin }) {
         </div>
 
         {/* Register Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-slate-200 animate-scale-in hover:shadow-3xl transition-shadow duration-300">
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 animate-fade-in-down">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5 animate-wiggle" />
                 <div>
                   <h4 className="font-semibold text-red-800 text-sm">Registration Failed</h4>
                   <p className="text-red-700 text-sm">{error}</p>

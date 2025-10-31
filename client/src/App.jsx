@@ -108,10 +108,10 @@ function App() {
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header with User Info and Logout */}
-        <div className="mb-12">
+        <div className="mb-12 animate-fade-in-down">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Activity className="w-12 h-12 text-primary-600" />
+              <Activity className="w-12 h-12 text-primary-600 animate-bounce-subtle" />
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
                 IPL Cricket Analytics
               </h1>
@@ -133,7 +133,7 @@ function App() {
               </div>
               <button
                 onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all hover:scale-105 active:scale-95"
                 aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -148,7 +148,7 @@ function App() {
         </div>
 
         {/* Player Selector */}
-        <div className="card mb-8">
+        <div className="card mb-8 animate-fade-in-up hover:shadow-xl transition-shadow duration-300">
           <PlayerSelector
             players={players}
             selectedPlayer={selectedPlayer}
@@ -160,9 +160,9 @@ function App() {
         {/* Tabs and Share Button */}
         {selectedPlayer && (
           <>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-slide-in-right">
               <div className="flex gap-4 overflow-x-auto" role="tablist" aria-label="Analysis options">
-                {tabs.map((tab) => {
+                {tabs.map((tab, index) => {
                   const Icon = tab.icon;
                   return (
                     <button
@@ -174,13 +174,14 @@ function App() {
                       tabIndex={activeTab === tab.id ? 0 : -1}
                       onClick={() => setActiveTab(tab.id)}
                       onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 ${
                         activeTab === tab.id
-                          ? 'bg-primary-600 text-white shadow-lg'
+                          ? 'bg-primary-600 text-white shadow-lg animate-pulse-glow'
                           : 'bg-white text-slate-700 hover:bg-slate-50 shadow'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
                       {tab.name}
                     </button>
                   );
@@ -196,7 +197,7 @@ function App() {
             </div>
 
             {/* Content */}
-            <div ref={contentRef} className="card" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+            <div ref={contentRef} className="card animate-scale-in" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
               {activeTab === 'phase' && <PhaseAnalysis player={selectedPlayer} />}
               {activeTab === 'dismissal' && <DismissalAnalysis player={selectedPlayer} />}
               {activeTab === 'stats' && <PlayerStats player={selectedPlayer} />}
