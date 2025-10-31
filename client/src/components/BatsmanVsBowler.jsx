@@ -27,6 +27,13 @@ function BatsmanVsBowler({ player, initialBowler }) {
     }
   }, [initialBowler, bowlers]);
 
+  // Fetch stats when bowler is selected (either manually or via initialBowler)
+  useEffect(() => {
+    if (selectedBowler && player) {
+      fetchMatchupStats(selectedBowler);
+    }
+  }, [selectedBowler, player]);
+
   // Reset highlighted index when search term changes
   useEffect(() => {
     setHighlightedIndex(-1);
@@ -154,7 +161,7 @@ function BatsmanVsBowler({ player, initialBowler }) {
     setSearchTerm('');
     setIsDropdownOpen(false);
     setHighlightedIndex(-1);
-    fetchMatchupStats(bowler);
+    // fetchMatchupStats will be called automatically by useEffect
   };
 
   const handleInputChange = (e) => {
