@@ -91,14 +91,18 @@ function App() {
     }, 0);
   };
 
-  const tabs = [
+  // Define all tabs
+  const allTabs = [
     { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
     { id: 'stats', name: 'Overall Stats', icon: BarChart3 },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'motm', name: 'MOTM', icon: Trophy },
-    { id: 'admin', name: 'Admin', icon: Shield },
+    { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
   ];
+
+  // Filter tabs based on user role
+  const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -116,7 +120,15 @@ function App() {
             {/* User Info and Logout */}
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
-                <p className="text-sm text-slate-600">Welcome back,</p>
+                <div className="flex items-center gap-2 justify-end">
+                  <p className="text-sm text-slate-600">Welcome back,</p>
+                  {user?.isAdmin && (
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      ADMIN
+                    </span>
+                  )}
+                </div>
                 <p className="font-semibold text-slate-800">{user?.name}</p>
               </div>
               <button

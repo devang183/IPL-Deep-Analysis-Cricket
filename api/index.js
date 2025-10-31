@@ -60,6 +60,33 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
+// Admin Middleware - check if user has admin role
+const requireAdmin = async (req, res, next) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+
+    // Get user from database to check admin status
+    const user = await usersCollection.findOne({
+      email: req.user.email
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+    }
+
+    // Add admin status to request
+    req.isAdmin = true;
+    next();
+  } catch (error) {
+    console.error('Admin check error:', error);
+    res.status(500).json({ error: 'Failed to verify admin status' });
+  }
+};
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Cricket Analytics API is running' });
@@ -92,11 +119,13 @@ app.post('/api/auth/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
+    // Create user (default role is regular user)
     const newUser = {
       email: email.toLowerCase(),
       name,
       password: hashedPassword,
+      isAdmin: false,
+      role: 'user',
       createdAt: new Date(),
       lastLogin: new Date()
     };
@@ -167,7 +196,9 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        isAdmin: user.isAdmin || false,
+        role: user.role || 'user'
       }
     });
   } catch (error) {
@@ -176,16 +207,34 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Verify token (check if user is authenticated)
-app.get('/api/auth/verify', authenticateToken, (req, res) => {
-  res.json({
-    message: 'Token is valid',
-    user: req.user
-  });
+// Verify token (check if user is authenticated and get admin status)
+app.get('/api/auth/verify', authenticateToken, async (req, res) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+
+    // Get user from database to check admin status
+    const user = await usersCollection.findOne({ email: req.user.email });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Token is valid',
+      user: {
+        ...req.user,
+        isAdmin: user.isAdmin || false,
+        role: user.role || 'user'
+      }
+    });
+  } catch (error) {
+    console.error('Verify error:', error);
+    res.status(500).json({ error: 'Failed to verify token' });
+  }
 });
 
-// Get all users (Admin route - for now, any authenticated user can access)
-app.get('/api/auth/users', authenticateToken, async (req, res) => {
+// Get all users (Admin only route)
+app.get('/api/auth/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { usersCollection } = await connectToDatabase();
 
