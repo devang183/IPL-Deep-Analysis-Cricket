@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Target, Loader2, AlertCircle, TrendingUp, Users, Activity, Zap } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { findBestPlayerMatch } from '../utils/nameMatching';
 
 function BatsmanVsBowler({ player, initialBowler }) {
   const [bowlers, setBowlers] = useState([]);
@@ -20,16 +21,35 @@ function BatsmanVsBowler({ player, initialBowler }) {
     fetchBowlers();
   }, []);
 
-  // Set initial bowler if provided
+  // Set initial bowler if provided (with fuzzy matching)
   useEffect(() => {
-    if (initialBowler && bowlers.includes(initialBowler)) {
-      setSelectedBowler(initialBowler);
+    if (initialBowler && bowlers.length > 0) {
+      console.log('Trying to match initialBowler:', initialBowler);
+      console.log('Available bowlers:', bowlers.slice(0, 10)); // Log first 10 for debugging
+
+      // Try exact match first
+      const exactMatch = bowlers.find(b => b === initialBowler);
+      if (exactMatch) {
+        console.log('Exact match found:', exactMatch);
+        setSelectedBowler(exactMatch);
+        return;
+      }
+
+      // Try fuzzy matching
+      const fuzzyMatch = findBestPlayerMatch(initialBowler, bowlers, 60);
+      if (fuzzyMatch) {
+        console.log('Fuzzy match found:', fuzzyMatch.player, 'with score:', fuzzyMatch.score);
+        setSelectedBowler(fuzzyMatch.player);
+      } else {
+        console.log('No match found for:', initialBowler);
+      }
     }
   }, [initialBowler, bowlers]);
 
   // Fetch stats when bowler is selected (either manually or via initialBowler)
   useEffect(() => {
     if (selectedBowler && player) {
+      console.log('Auto-fetching matchup stats for:', player, 'vs', selectedBowler);
       fetchMatchupStats(selectedBowler);
     }
   }, [selectedBowler, player]);
