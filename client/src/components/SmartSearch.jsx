@@ -135,7 +135,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
         const playerSuggestions = findPlayerSuggestions(query, players, 5, 40);
 
         if (playerSuggestions.length > 0) {
-          setError("I couldn't find an exact match. Did you mean one of these players?");
+          setError("I couldn't find an exact match. Please select the player you meant:");
           setSuggestions(playerSuggestions);
         } else {
           setError("I couldn't find a player name in your query. Please try again with a valid player name.");
@@ -144,16 +144,20 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
         return;
       }
 
-      // Show confidence score if below 80
-      if (parsed.matchScore < 80) {
-        const alternativeSuggestions = findPlayerSuggestions(query, players, 3, 40)
-          .filter(s => s.player !== parsed.player);
+      // ALWAYS show top matching players for confirmation (unless 100% match)
+      if (parsed.matchScore < 100) {
+        const allSuggestions = findPlayerSuggestions(query, players, 5, 40);
 
-        if (alternativeSuggestions.length > 0) {
-          setSuggestions(alternativeSuggestions);
+        if (allSuggestions.length > 1) {
+          // Show all matches including the selected one
+          setError("Please confirm which player you meant:");
+          setSuggestions(allSuggestions);
+          setLoading(false);
+          return;
         }
       }
 
+      // Only auto-execute if 100% match or only one suggestion
       setParsedQuery(parsed);
       onPlayerSelect(parsed.player);
       onTabChange(parsed.analysisType);
@@ -265,40 +269,67 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
           </div>
         </form>
 
-        {/* Error Message */}
+        {/* Error/Info Message */}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg animate-fade-in-down">
+          <div className={`mt-4 p-4 border rounded-lg animate-fade-in-down ${
+            suggestions.length > 0
+              ? 'bg-blue-50 border-blue-200'
+              : 'bg-red-50 border-red-200'
+          }`}>
             <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-700 text-sm">{error}</p>
+              {suggestions.length > 0 ? (
+                <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              )}
+              <p className={`text-sm font-medium ${
+                suggestions.length > 0 ? 'text-blue-700' : 'text-red-700'
+              }`}>
+                {error}
+              </p>
             </div>
           </div>
         )}
 
         {/* Player Suggestions */}
         {suggestions.length > 0 && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg animate-scale-in">
-            <h4 className="font-semibold text-yellow-900 mb-3 text-sm">
-              {parsedQuery ? 'Other players you might be looking for:' : 'Did you mean:'}
-            </h4>
+          <div className="mt-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-lg animate-scale-in">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+              <h4 className="font-bold text-blue-900 text-base">
+                Select the player you're looking for:
+              </h4>
+            </div>
             <div className="space-y-2">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion.player)}
-                  className="w-full text-left px-4 py-2 bg-white border border-yellow-300 rounded-lg hover:bg-yellow-100 hover:border-yellow-400 transition-all group"
+                  className="w-full text-left px-5 py-3 bg-white border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-400 hover:shadow-md transition-all group transform hover:scale-[1.02]"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-800 group-hover:text-yellow-900 font-medium">
-                      {suggestion.player}
-                    </span>
-                    <span className="text-xs text-slate-500 group-hover:text-yellow-700">
-                      {suggestion.score}% match
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <span className="text-slate-800 group-hover:text-blue-900 font-semibold text-base">
+                        {suggestion.player}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500 group-hover:text-blue-700 font-medium">
+                        {suggestion.score}% match
+                      </span>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full group-hover:animate-ping"></div>
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
+            <p className="mt-3 text-xs text-blue-700 text-center">
+              Click on a player to view their analysis
+            </p>
           </div>
         )}
 
