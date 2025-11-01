@@ -467,11 +467,13 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         )}
 
                         {/* Fielders Involved - For run outs and catches */}
-                        {dismissal.fielders && dismissal.fielders.length > 0 && (
+                        {dismissal.fielders && (
                           <div className="flex items-start gap-2 text-xs bg-blue-50 px-3 py-2 rounded border border-blue-200">
                             <span className="font-medium text-blue-800">Fielders:</span>
                             <span className="text-blue-700">
-                              {dismissal.fielders.join(', ')}
+                              {Array.isArray(dismissal.fielders)
+                                ? dismissal.fielders.join(', ')
+                                : dismissal.fielders}
                             </span>
                           </div>
                         )}
