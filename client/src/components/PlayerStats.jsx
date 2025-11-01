@@ -158,7 +158,7 @@ function PlayerStats({ player }) {
       {/* Additional Stats */}
       <div className="bg-white rounded-lg p-6 border border-slate-200">
         <h4 className="text-lg font-semibold text-slate-800 mb-4">Additional Metrics</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="text-center p-4 bg-slate-50 rounded-lg">
             <div className="text-2xl font-bold text-slate-800">{stats.dots || 0}</div>
             <div className="text-sm text-slate-600 mt-1">Dot Balls</div>
@@ -180,6 +180,14 @@ function PlayerStats({ player }) {
                 : 0}
             </div>
             <div className="text-sm text-slate-600 mt-1">Runs per Over</div>
+          </div>
+          <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg border border-yellow-200">
+            <div className="text-2xl font-bold text-amber-700">{stats.fifties || 0}</div>
+            <div className="text-sm text-amber-600 mt-1 font-semibold">Fifties (50s)</div>
+          </div>
+          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <div className="text-2xl font-bold text-emerald-700">{stats.hundreds || 0}</div>
+            <div className="text-sm text-emerald-600 mt-1 font-semibold">Hundreds (100s)</div>
           </div>
         </div>
       </div>

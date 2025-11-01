@@ -297,6 +297,38 @@ app.get('/api/stats/:name', async (req, res) => {
     const { collection } = await connectToDatabase();
     const player = req.params.name;
 
+    // First get innings-wise scores to calculate 50s and 100s
+    const inningsScores = await collection.aggregate([
+      { $match: { batter: player, valid_ball: 1 } },
+      {
+        $group: {
+          _id: { matchId: '$match_id', innings: '$innings' },
+          runs: { $sum: '$runs_batter' }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          fifties: {
+            $sum: {
+              $cond: [
+                { $and: [{ $gte: ['$runs', 50] }, { $lt: ['$runs', 100] }] },
+                1,
+                0
+              ]
+            }
+          },
+          hundreds: {
+            $sum: {
+              $cond: [{ $gte: ['$runs', 100] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]).toArray();
+
+    const inningsStats = inningsScores.length > 0 ? inningsScores[0] : { fifties: 0, hundreds: 0 };
+
     const stats = await collection.aggregate([
       { $match: { batter: player, valid_ball: 1 } },
       {
@@ -385,6 +417,8 @@ app.get('/api/stats/:name', async (req, res) => {
         sixes: result.sixes,
         boundaries: result.boundaries,  // Added boundaries field
         dismissals: result.dismissals,
+        fifties: inningsStats.fifties,  // Number of 50s (50-99)
+        hundreds: inningsStats.hundreds,  // Number of 100s
         runsPerOver: runsPerOver,
         ballDistribution
       }
