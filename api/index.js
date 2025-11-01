@@ -774,7 +774,7 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
         $project: {
           wicketType: '$wicket_type',
           wicketKind: '$wicket_kind',
-          fielders: '$fielders_involved',
+          fielders: '$fielders',
           over: '$over',
           runsScored: '$runs_batter',
           // Match details
