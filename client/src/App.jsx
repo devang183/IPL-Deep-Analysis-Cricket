@@ -169,8 +169,8 @@ function App() {
                   style={{ animationDelay: `${index * 0.1}s` }}
                   className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 ${
                     activeTab === tab.id
-                      ? 'bg-primary-600 text-white shadow-lg animate-pulse-glow'
-                      : 'bg-white text-slate-700 hover:bg-slate-50 shadow'
+                      ? 'text-white border-2 border-primary-500 shadow-lg shadow-primary-500/50 animate-pulse-glow'
+                      : 'text-white/70 border border-white/20 hover:text-white hover:border-white/40'
                   }`}
                 >
                   <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
