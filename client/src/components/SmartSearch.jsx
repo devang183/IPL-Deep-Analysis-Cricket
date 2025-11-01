@@ -131,11 +131,11 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
       const parsed = parseQuery(query);
 
       if (!parsed.player) {
-        // Try to find suggestions
-        const playerSuggestions = findPlayerSuggestions(query, players, 5, 40);
+        // Try to find suggestions - show ALL matching players
+        const playerSuggestions = findPlayerSuggestions(query, players, 100, 40);
 
         if (playerSuggestions.length > 0) {
-          setError("I couldn't find an exact match. Please select the player you meant:");
+          setError(`Found ${playerSuggestions.length} matching player${playerSuggestions.length > 1 ? 's' : ''}. Please select:`);
           setSuggestions(playerSuggestions);
         } else {
           setError("I couldn't find a player name in your query. Please try again with a valid player name.");
@@ -144,13 +144,13 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
         return;
       }
 
-      // ALWAYS show top matching players for confirmation (unless 100% match)
+      // ALWAYS show ALL matching players for confirmation (unless 100% match)
       if (parsed.matchScore < 100) {
-        const allSuggestions = findPlayerSuggestions(query, players, 5, 40);
+        const allSuggestions = findPlayerSuggestions(query, players, 100, 40);
 
         if (allSuggestions.length > 1) {
           // Show all matches including the selected one
-          setError("Please confirm which player you meant:");
+          setError(`Found ${allSuggestions.length} matching player${allSuggestions.length > 1 ? 's' : ''}. Please select:`);
           setSuggestions(allSuggestions);
           setLoading(false);
           return;
@@ -291,33 +291,40 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
           </div>
         )}
 
-        {/* Player Suggestions */}
+        {/* Player Suggestions - Scrollable Dropdown */}
         {suggestions.length > 0 && (
           <div className="mt-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-lg animate-scale-in">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
-              <h4 className="font-bold text-blue-900 text-base">
-                Select the player you're looking for:
-              </h4>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+                <h4 className="font-bold text-blue-900 text-base">
+                  Select the player you're looking for:
+                </h4>
+              </div>
+              <div className="px-3 py-1 bg-blue-200 text-blue-800 text-xs font-bold rounded-full">
+                {suggestions.length} players
+              </div>
             </div>
-            <div className="space-y-2">
+
+            {/* Scrollable container */}
+            <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion.player)}
-                  className="w-full text-left px-5 py-3 bg-white border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-400 hover:shadow-md transition-all group transform hover:scale-[1.02]"
-                  style={{ animationDelay: `${index * 0.05}s` }}
+                  className="w-full text-left px-5 py-3 bg-white border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-400 hover:shadow-md transition-all group animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(index * 0.03, 0.5)}s` }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
                         {index + 1}
                       </div>
                       <span className="text-slate-800 group-hover:text-blue-900 font-semibold text-base">
                         {suggestion.player}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs text-slate-500 group-hover:text-blue-700 font-medium">
                         {suggestion.score}% match
                       </span>
@@ -327,7 +334,9 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
                 </button>
               ))}
             </div>
-            <p className="mt-3 text-xs text-blue-700 text-center">
+
+            <p className="mt-3 text-xs text-blue-700 text-center font-medium">
+              {suggestions.length > 10 && '⬆️ Scroll to see all players • '}
               Click on a player to view their analysis
             </p>
           </div>
