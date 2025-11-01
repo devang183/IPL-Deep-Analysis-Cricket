@@ -523,43 +523,41 @@ function MOTMAnalysis({ player }) {
             </span>
           )}
         </h4>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {filteredData.venueDetails.length > 0 && (
-            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-              <Award className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900">Most Successful Venue</p>
-                <p className="text-sm text-blue-700">
-                  {filteredData.venueDetails[0].venue} with {filteredData.venueDetails[0].count} MOTM award{filteredData.venueDetails[0].count !== 1 ? 's' : ''}
-                </p>
-              </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <Award className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+              <div className="text-sm text-blue-600 mb-2">Most Successful Venue</div>
+              <div className="text-lg font-semibold text-white mb-1">{filteredData.venueDetails[0].venue}</div>
+              <div className="text-2xl font-bold text-white">{filteredData.venueDetails[0].count}</div>
+              <div className="text-xs text-blue-600 mt-1">MOTM awards</div>
             </div>
           )}
           {filteredData.seasonStats && filteredData.seasonStats.length > 0 && (
-            <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-              <Calendar className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-purple-900">Best Season</p>
-                <p className="text-sm text-purple-700">
-                  Season {[...filteredData.seasonStats].sort((a, b) => b.count - a.count)[0].season} with{' '}
-                  {[...filteredData.seasonStats].sort((a, b) => b.count - a.count)[0].count} MOTM award{[...filteredData.seasonStats].sort((a, b) => b.count - a.count)[0].count !== 1 ? 's' : ''}
-                  {selectedVenue && ` at ${selectedVenue}`}
-                </p>
-              </div>
+            <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+              <div className="text-sm text-purple-600 mb-2">Best Season</div>
+              <div className="text-lg font-semibold text-white mb-1">Season {[...filteredData.seasonStats].sort((a, b) => b.count - a.count)[0].season}</div>
+              <div className="text-2xl font-bold text-white">{[...filteredData.seasonStats].sort((a, b) => b.count - a.count)[0].count}</div>
+              <div className="text-xs text-purple-600 mt-1">MOTM awards{selectedVenue && ` at ${selectedVenue}`}</div>
             </div>
           )}
-          <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-            <Trophy className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-green-900">Venue Diversity</p>
-              <p className="text-sm text-green-700">
-                {selectedVenue ? (
-                  <>Won {filteredData.totalMotm} MOTM award{filteredData.totalMotm !== 1 ? 's' : ''} at {selectedVenue}</>
-                ) : (
-                  <>Won MOTM awards at {filteredData.totalVenues} different venue{filteredData.totalVenues !== 1 ? 's' : ''}, showing consistent performance across locations</>
-                )}
-              </p>
-            </div>
+          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+            <Trophy className="w-6 h-6 text-green-600 mx-auto mb-2" />
+            <div className="text-sm text-green-600 mb-2">Venue Diversity</div>
+            {selectedVenue ? (
+              <>
+                <div className="text-lg font-semibold text-white mb-1">{selectedVenue}</div>
+                <div className="text-2xl font-bold text-white">{filteredData.totalMotm}</div>
+                <div className="text-xs text-green-600 mt-1">MOTM awards</div>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-semibold text-white mb-1">{filteredData.totalVenues} Venues</div>
+                <div className="text-2xl font-bold text-white">{filteredData.totalMotm}</div>
+                <div className="text-xs text-green-600 mt-1">Total awards</div>
+              </>
+            )}
           </div>
         </div>
       </div>
