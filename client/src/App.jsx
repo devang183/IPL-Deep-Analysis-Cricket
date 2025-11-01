@@ -10,6 +10,7 @@ import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
 import ShareButton from './components/ShareButton';
 import AuthPage from './components/AuthPage';
+import SpaceBackground from './components/SpaceBackground';
 import { useAuth } from './context/AuthContext';
 import axios from 'axios';
 
@@ -107,8 +108,9 @@ function App() {
   const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen py-8 px-4 relative">
+      <SpaceBackground />
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header with User Info and Logout */}
         <div className="mb-12 animate-fade-in-down">
           <div className="flex items-center justify-between mb-6">

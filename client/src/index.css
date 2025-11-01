@@ -4,7 +4,8 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen;
+    @apply min-h-screen;
+    background: transparent;
   }
 
   /* Enhanced focus visibility for keyboard navigation */
@@ -20,7 +21,11 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-xl shadow-lg p-6 border border-slate-200 transition-all duration-300 hover:shadow-2xl;
+    @apply rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-2xl;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
   }
 
   .btn-primary {
