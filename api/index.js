@@ -682,7 +682,18 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
             $sum: { $cond: [{ $and: [{ $eq: ['$runs_batter', 0] }, { $eq: ['$runs_extras', 0] }] }, 1, 0] }
           },
           dismissals: {
-            $sum: { $cond: [{ $eq: ['$striker_out', true] }, 1, 0] }
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$striker_out', true] },
+                    { $ne: ['$wicket_type', 'run out'] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
           }
         }
       }
@@ -762,6 +773,8 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
       {
         $project: {
           wicketType: '$wicket_type',
+          wicketKind: '$wicket_kind',
+          fielders: '$fielders_involved',
           over: '$over',
           runsScored: '$runs_batter',
           // Match details

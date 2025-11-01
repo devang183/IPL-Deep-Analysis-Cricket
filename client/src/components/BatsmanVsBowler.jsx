@@ -435,15 +435,24 @@ function BatsmanVsBowler({ player, initialBowler }) {
                   Dismissal Information ({stats.dismissalDetails.length} dismissals)
                 </h4>
                 <div className="space-y-3">
-                  {stats.dismissalDetails.map((dismissal, index) => (
-                    <div key={index} className="p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 hover:border-red-300 hover:shadow-md transition-all">
+                  {stats.dismissalDetails.map((dismissal, index) => {
+                    const isRunOut = dismissal.wicketType === 'run out';
+                    return (
+                    <div key={index} className={`p-4 rounded-lg border-2 hover:shadow-md transition-all ${
+                      isRunOut
+                        ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 hover:border-blue-300'
+                        : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200 hover:border-red-300'
+                    }`}>
                       <div className="flex flex-col gap-2">
                         {/* Dismissal Type */}
                         <div className="flex justify-between items-start">
-                          <div className="font-bold text-red-800 text-base">
+                          <div className={`font-bold text-base ${isRunOut ? 'text-blue-800' : 'text-red-800'}`}>
                             {dismissal.wicketType || 'Dismissed'}
+                            {isRunOut && <span className="ml-2 text-xs bg-blue-200 text-blue-900 px-2 py-0.5 rounded">Not credited to bowler</span>}
                           </div>
-                          <div className="px-2 py-1 bg-red-200 text-red-800 text-xs font-semibold rounded">
+                          <div className={`px-2 py-1 text-xs font-semibold rounded ${
+                            isRunOut ? 'bg-blue-200 text-blue-800' : 'bg-red-200 text-red-800'
+                          }`}>
                             {dismissal.phase}
                           </div>
                         </div>
@@ -454,6 +463,16 @@ function BatsmanVsBowler({ player, initialBowler }) {
                             <span className="text-primary-600">{dismissal.battingTeam}</span>
                             <span className="text-slate-400">vs</span>
                             <span className="text-purple-600">{dismissal.bowlingTeam}</span>
+                          </div>
+                        )}
+
+                        {/* Fielders Involved - For run outs and catches */}
+                        {dismissal.fielders && dismissal.fielders.length > 0 && (
+                          <div className="flex items-start gap-2 text-xs bg-blue-50 px-3 py-2 rounded border border-blue-200">
+                            <span className="font-medium text-blue-800">Fielders:</span>
+                            <span className="text-blue-700">
+                              {dismissal.fielders.join(', ')}
+                            </span>
                           </div>
                         )}
 
@@ -484,7 +503,8 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
