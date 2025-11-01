@@ -461,16 +461,16 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         {dismissal.wicketKind && (
                           <div className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-2 rounded border border-slate-200">
                             <span className="font-medium text-amber-400">Wicket Kind:</span>
-                            <span className="text-white">{dismissal.wicketKind}</span>
+                            <span className="text-black">{dismissal.wicketKind}</span>
                           </div>
                         )}
 
                         {/* Match Fixture */}
                         {dismissal.battingTeam && dismissal.bowlingTeam && (
                           <div className="flex items-center gap-2 text-sm font-semibold bg-white/5 px-3 py-2 rounded border border-white/10">
-                            <span className="text-blue-400">{dismissal.battingTeam}</span>
-                            <span className="text-white/60">vs</span>
-                            <span className="text-purple-400">{dismissal.bowlingTeam}</span>
+                            <span className="text-black">{dismissal.battingTeam}</span>
+                            <span className="text-black/60">vs</span>
+                            <span className="text-black">{dismissal.bowlingTeam}</span>
                           </div>
                         )}
 
@@ -478,7 +478,7 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         {dismissal.fielders && (
                           <div className="flex items-start gap-2 text-xs bg-blue-50 px-3 py-2 rounded border border-blue-200">
                             <span className="font-medium text-blue-400">Fielders:</span>
-                            <span className="text-white">
+                            <span className="text-black">
                               {Array.isArray(dismissal.fielders)
                                 ? dismissal.fielders.join(', ')
                                 : dismissal.fielders}
@@ -490,28 +490,28 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-cyan-400">Over:</span>
-                            <span className="text-white">{dismissal.over}</span>
+                            <span className="text-black">{dismissal.over}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-green-400">Runs:</span>
-                            <span className="text-white">{dismissal.runsScored}</span>
+                            <span className="text-black">{dismissal.runsScored}</span>
                           </div>
                           {dismissal.venue && (
                             <div className="col-span-2 flex items-center gap-1">
                               <span className="font-medium text-purple-400">Venue:</span>
-                              <span className="text-white">{dismissal.venue}</span>
+                              <span className="text-black">{dismissal.venue}</span>
                             </div>
                           )}
                           {dismissal.season && (
                             <div className="flex items-center gap-1">
                               <span className="font-medium text-orange-400">Season:</span>
-                              <span className="text-white">{dismissal.season}</span>
+                              <span className="text-black">{dismissal.season}</span>
                             </div>
                           )}
                           {dismissal.date && (
                             <div className="flex items-center gap-1">
                               <span className="font-medium text-pink-400">Date:</span>
-                              <span className="text-white">{formatDate(dismissal.date)}</span>
+                              <span className="text-black">{formatDate(dismissal.date)}</span>
                             </div>
                           )}
                         </div>
