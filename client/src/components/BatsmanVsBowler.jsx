@@ -346,26 +346,26 @@ function BatsmanVsBowler({ player, initialBowler }) {
       {stats && stats.totalBalls > 0 && !loading && (
         <div className="space-y-6" role="region" aria-live="polite" aria-label="Matchup statistics">
           {/* Summary Header */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">
+          <div className="rounded-lg p-6 border border-white/20" style={{background: 'transparent', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)'}}>
+            <h3 className="text-xl font-semibold text-white mb-4">
               {player} vs {selectedBowler}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-blue-600">{stats.totalRuns}</div>
-                <div className="text-sm text-slate-600 mt-1">Runs Scored</div>
+              <div className="text-center rounded-lg p-4 border border-blue-200/30" style={{background: 'rgba(59, 130, 246, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
+                <div className="text-3xl font-bold text-white">{stats.totalRuns}</div>
+                <div className="text-sm text-blue-400 mt-1">Runs Scored</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-green-600">{stats.totalBalls}</div>
-                <div className="text-sm text-slate-600 mt-1">Balls Faced</div>
+              <div className="text-center rounded-lg p-4 border border-green-200/30" style={{background: 'rgba(34, 197, 94, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
+                <div className="text-3xl font-bold text-white">{stats.totalBalls}</div>
+                <div className="text-sm text-green-400 mt-1">Balls Faced</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-purple-600">{stats.strikeRate}</div>
-                <div className="text-sm text-slate-600 mt-1">Strike Rate</div>
+              <div className="text-center rounded-lg p-4 border border-purple-200/30" style={{background: 'rgba(168, 85, 247, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
+                <div className="text-3xl font-bold text-white">{stats.strikeRate}</div>
+                <div className="text-sm text-purple-400 mt-1">Strike Rate</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-red-600">{stats.dismissals}</div>
-                <div className="text-sm text-slate-600 mt-1">Dismissals</div>
+              <div className="text-center rounded-lg p-4 border border-red-200/30" style={{background: 'rgba(239, 68, 68, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
+                <div className="text-3xl font-bold text-white">{stats.dismissals}</div>
+                <div className="text-sm text-red-400 mt-1">Dismissals</div>
               </div>
             </div>
           </div>
