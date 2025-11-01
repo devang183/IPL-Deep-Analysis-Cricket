@@ -421,22 +421,55 @@ function BatsmanVsBowler({ player, initialBowler }) {
               <div className="card">
                 <h4 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                   <Target className="w-5 h-5 text-red-600" />
-                  Dismissal Information
+                  Dismissal Information ({stats.dismissalDetails.length} dismissals)
                 </h4>
                 <div className="space-y-3">
                   {stats.dismissalDetails.map((dismissal, index) => (
-                    <div key={index} className="p-3 bg-red-50 rounded-lg border border-red-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-semibold text-red-800">
+                    <div key={index} className="p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 hover:border-red-300 hover:shadow-md transition-all">
+                      <div className="flex flex-col gap-2">
+                        {/* Dismissal Type */}
+                        <div className="flex justify-between items-start">
+                          <div className="font-bold text-red-800 text-base">
                             {dismissal.wicketType || 'Dismissed'}
                           </div>
-                          <div className="text-sm text-slate-600 mt-1">
-                            Over: {dismissal.over} • Runs: {dismissal.runsScored}
+                          <div className="px-2 py-1 bg-red-200 text-red-800 text-xs font-semibold rounded">
+                            {dismissal.phase}
                           </div>
                         </div>
-                        <div className="text-xs text-slate-500">
-                          Phase: {dismissal.phase}
+
+                        {/* Match Fixture */}
+                        {dismissal.battingTeam && dismissal.bowlingTeam && (
+                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 bg-white px-3 py-2 rounded border border-slate-200">
+                            <span className="text-primary-600">{dismissal.battingTeam}</span>
+                            <span className="text-slate-400">vs</span>
+                            <span className="text-purple-600">{dismissal.bowlingTeam}</span>
+                          </div>
+                        )}
+
+                        {/* Match Details */}
+                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Over:</span> {dismissal.over}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">Runs:</span> {dismissal.runsScored}
+                          </div>
+                          {dismissal.venue && (
+                            <div className="col-span-2 flex items-center gap-1">
+                              <span className="font-medium">Venue:</span>
+                              <span className="text-slate-700">{dismissal.venue}</span>
+                            </div>
+                          )}
+                          {dismissal.season && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Season:</span> {dismissal.season}
+                            </div>
+                          )}
+                          {dismissal.date && (
+                            <div className="flex items-center gap-1">
+                              <span className="font-medium">Date:</span> {dismissal.date}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

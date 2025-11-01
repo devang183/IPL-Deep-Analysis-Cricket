@@ -749,7 +749,7 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
       };
     });
 
-    // Get dismissal details
+    // Get dismissal details with match information
     const dismissalDetails = await collection.aggregate([
       {
         $match: {
@@ -764,6 +764,13 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
           wicketType: '$wicket_type',
           over: '$over',
           runsScored: '$runs_batter',
+          // Match details
+          season: '$season',
+          matchId: '$match_id',
+          battingTeam: '$batting_team',
+          bowlingTeam: '$bowling_team',
+          venue: '$venue',
+          date: '$date',
           phase: {
             $switch: {
               branches: [
@@ -776,7 +783,8 @@ app.post('/api/analyze/batsman-vs-bowler', async (req, res) => {
           }
         }
       },
-      { $limit: 10 }
+      { $sort: { season: -1, date: -1 } }, // Most recent first
+      { $limit: 20 } // Increase limit to show more dismissals
     ]).toArray();
 
     // Runs distribution
@@ -830,7 +838,9 @@ app.get('/api/motm/:player', async (req, res) => {
           },
           venue: { $first: '$venue' },
           season: { $first: '$season' },
-          matchDate: { $first: '$start_date' }
+          matchDate: { $first: '$start_date' },
+          // Get unique teams from the match
+          teams: { $addToSet: { $cond: [{ $ne: ['$batting_team', null] }, '$batting_team', '$bowling_team'] } }
         }
       },
       {
@@ -842,7 +852,9 @@ app.get('/api/motm/:player', async (req, res) => {
             $push: {
               matchId: '$_id.matchId',
               season: '$season',
-              date: '$matchDate'
+              date: '$matchDate',
+              teams: '$teams',
+              venue: '$venue'
             }
           }
         }

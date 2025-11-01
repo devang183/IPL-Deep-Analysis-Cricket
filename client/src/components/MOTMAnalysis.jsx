@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, MapPin, Loader2, AlertCircle, Calendar, Award, X, Filter } from 'lucide-react';
+import { Trophy, MapPin, Loader2, AlertCircle, Calendar, Award, X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
 
@@ -8,6 +8,7 @@ function MOTMAnalysis({ player }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedVenue, setSelectedVenue] = useState(null);
+  const [expandedVenues, setExpandedVenues] = useState({});
 
   useEffect(() => {
     fetchMOTMData();
@@ -46,6 +47,26 @@ function MOTMAnalysis({ player }) {
   // Clear filter
   const clearFilter = () => {
     setSelectedVenue(null);
+  };
+
+  // Toggle venue expansion for showing match fixtures
+  const toggleVenueExpansion = (venueName, e) => {
+    e.stopPropagation(); // Prevent filter click
+    setExpandedVenues(prev => ({
+      ...prev,
+      [venueName]: !prev[venueName]
+    }));
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Date N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return dateString;
+    }
   };
 
   // Filter data based on selected venue
@@ -364,11 +385,11 @@ function MOTMAnalysis({ player }) {
           {data.venueDetails.map((venue, index) => {
             const isSelected = selectedVenue === venue.venue;
             const isFiltered = selectedVenue && !isSelected;
+            const isExpanded = expandedVenues[venue.venue];
             return (
               <div
                 key={index}
-                onClick={() => handleVenueClick(venue.venue)}
-                className={`rounded-lg p-4 border transition-all cursor-pointer ${
+                className={`rounded-lg p-4 border transition-all ${
                   isFiltered
                     ? 'bg-slate-50 border-slate-200 opacity-30'
                     : isSelected
@@ -376,39 +397,114 @@ function MOTMAnalysis({ player }) {
                     : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 hover:shadow-md hover:border-primary-300'
                 }`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <h5 className={`font-semibold text-sm mb-1 ${
-                      isSelected ? 'text-primary-900' : 'text-slate-800'
-                    }`}>
-                      {venue.venue}
-                    </h5>
-                    <div className="flex items-center gap-2">
-                      <Trophy className={`w-4 h-4 ${isSelected ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                      <span className={`text-2xl font-bold ${
-                        isSelected ? 'text-primary-700' : 'text-primary-600'
+                {/* Venue Header - Clickable for filter */}
+                <div
+                  onClick={() => handleVenueClick(venue.venue)}
+                  className="cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h5 className={`font-semibold text-sm mb-1 ${
+                        isSelected ? 'text-primary-900' : 'text-slate-800'
                       }`}>
-                        {venue.count}
-                      </span>
-                      <span className="text-xs text-slate-500">award{venue.count !== 1 ? 's' : ''}</span>
+                        {venue.venue}
+                      </h5>
+                      <div className="flex items-center gap-2">
+                        <Trophy className={`w-4 h-4 ${isSelected ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                        <span className={`text-2xl font-bold ${
+                          isSelected ? 'text-primary-700' : 'text-primary-600'
+                        }`}>
+                          {venue.count}
+                        </span>
+                        <span className="text-xs text-slate-500">award{venue.count !== 1 ? 's' : ''}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="text-xs text-slate-600 mt-2">
-                  <Calendar className="w-3 h-3 inline mr-1" />
-                  Seasons: {venue.seasons.sort().join(', ')}
-                </div>
-                <div className="mt-2 pt-2 border-t border-slate-200">
-                  <div className="text-xs text-slate-500">
-                    {venue.matches.length} match{venue.matches.length !== 1 ? 'es' : ''}
+                  <div className="text-xs text-slate-600 mt-2">
+                    <Calendar className="w-3 h-3 inline mr-1" />
+                    Seasons: {venue.seasons.sort().join(', ')}
                   </div>
-                </div>
-                {isSelected && (
-                  <div className="mt-2 pt-2 border-t border-primary-300">
-                    <div className="text-xs text-primary-600 font-medium flex items-center gap-1">
-                      <Filter className="w-3 h-3" />
-                      Currently filtered
+                  <div className="mt-2 pt-2 border-t border-slate-200">
+                    <div className="text-xs text-slate-500">
+                      {venue.matches.length} match{venue.matches.length !== 1 ? 'es' : ''}
                     </div>
+                  </div>
+                  {isSelected && (
+                    <div className="mt-2 pt-2 border-t border-primary-300">
+                      <div className="text-xs text-primary-600 font-medium flex items-center gap-1">
+                        <Filter className="w-3 h-3" />
+                        Currently filtered
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Expand/Collapse Button */}
+                <button
+                  onClick={(e) => toggleVenueExpansion(venue.venue, e)}
+                  className={`w-full mt-3 py-2 px-3 rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                    isExpanded
+                      ? 'bg-primary-600 hover:bg-primary-700 text-white border-primary-700'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                  }`}
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="w-4 h-4" />
+                      <span className="text-xs font-medium">Hide Matches</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4" />
+                      <span className="text-xs font-medium">View Matches</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Match Fixtures - Collapsible */}
+                {isExpanded && venue.matches && venue.matches.length > 0 && (
+                  <div className="mt-3 space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                    <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1">
+                      <Trophy className="w-3 h-3 text-yellow-600" />
+                      MOTM Matches at {venue.venue}
+                    </div>
+                    {venue.matches
+                      .sort((a, b) => {
+                        // Sort by season desc, then by date desc
+                        if (b.season !== a.season) return b.season - a.season;
+                        if (a.date && b.date) return new Date(b.date) - new Date(a.date);
+                        return 0;
+                      })
+                      .map((match, matchIdx) => (
+                        <div
+                          key={matchIdx}
+                          className="p-3 bg-white rounded-lg border border-slate-200 hover:border-primary-300 transition-all shadow-sm hover:shadow"
+                        >
+                          {/* Teams */}
+                          {match.teams && match.teams.length >= 2 && (
+                            <div className="flex items-center gap-2 text-xs font-semibold mb-2">
+                              <span className="text-primary-600">{match.teams[0]}</span>
+                              <span className="text-slate-400">vs</span>
+                              <span className="text-purple-600">{match.teams[1]}</span>
+                            </div>
+                          )}
+
+                          {/* Match Details */}
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              <span className="font-medium">Season:</span>
+                              <span>{match.season}</span>
+                            </div>
+                            {match.date && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">Date:</span>
+                                <span>{formatDate(match.date)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
