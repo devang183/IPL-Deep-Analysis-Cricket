@@ -22,10 +22,8 @@
 @layer components {
   .card {
     @apply rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-2xl;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .btn-primary {
@@ -86,103 +84,57 @@
 
   /* Glass morphism effect */
   .glass {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  /* Override all white backgrounds to be semi-transparent */
+  /* Override all white backgrounds to solid dark */
   .bg-white {
-    background: rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: #1e293b !important;
   }
 
-  /* Override light backgrounds for better blending */
+  /* Override light backgrounds */
   .bg-slate-50,
   .bg-slate-100,
   .bg-gray-50,
   .bg-gray-100 {
-    background: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: #0f172a !important;
   }
 
   .bg-blue-50 {
-    background: rgba(219, 234, 254, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(30, 58, 138, 0.4) !important;
   }
 
   .bg-green-50 {
-    background: rgba(220, 252, 231, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(20, 83, 45, 0.4) !important;
   }
 
   .bg-purple-50 {
-    background: rgba(243, 232, 255, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(88, 28, 135, 0.4) !important;
   }
 
   .bg-red-50 {
-    background: rgba(254, 226, 226, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(153, 27, 27, 0.4) !important;
   }
 
   .bg-yellow-50 {
-    background: rgba(254, 252, 232, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(133, 77, 14, 0.4) !important;
   }
 
   .bg-orange-50 {
-    background: rgba(255, 247, 237, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(154, 52, 18, 0.4) !important;
   }
 
   .bg-amber-50 {
-    background: rgba(255, 251, 235, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(146, 64, 14, 0.4) !important;
   }
 
   .bg-cyan-50 {
-    background: rgba(236, 254, 255, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(21, 94, 117, 0.4) !important;
   }
 
   .bg-emerald-50 {
-    background: rgba(236, 253, 245, 0.2) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
-  /* Gradient backgrounds with transparency */
-  .bg-gradient-to-br,
-  .bg-gradient-to-r,
-  .bg-gradient-to-l,
-  .bg-gradient-to-t,
-  .bg-gradient-to-b {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-
-  /* Make gradient cards semi-transparent */
-  [class*="bg-gradient-to-br from-blue"],
-  [class*="bg-gradient-to-br from-green"],
-  [class*="bg-gradient-to-br from-purple"],
-  [class*="bg-gradient-to-br from-orange"],
-  [class*="bg-gradient-to-br from-yellow"],
-  [class*="bg-gradient-to-br from-red"] {
-    opacity: 0.95;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(6, 78, 59, 0.4) !important;
   }
 
   /* Make text white/light for better contrast with space background */
