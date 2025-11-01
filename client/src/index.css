@@ -22,8 +22,10 @@
 @layer components {
   .card {
     @apply rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-2xl;
-    background: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
   .btn-primary {
@@ -84,13 +86,17 @@
 
   /* Glass morphism effect */
   .glass {
-    background: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
-  /* Override all white backgrounds to solid dark */
+  /* Override all white backgrounds to transparent */
   .bg-white {
-    background: #1e293b !important;
+    background: transparent !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   /* Override light backgrounds */
@@ -98,43 +104,74 @@
   .bg-slate-100,
   .bg-gray-50,
   .bg-gray-100 {
-    background: #0f172a !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-blue-50 {
-    background: rgba(30, 58, 138, 0.4) !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-green-50 {
-    background: rgba(20, 83, 45, 0.4) !important;
+    background: rgba(34, 197, 94, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-purple-50 {
-    background: rgba(88, 28, 135, 0.4) !important;
+    background: rgba(168, 85, 247, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-red-50 {
-    background: rgba(153, 27, 27, 0.4) !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-yellow-50 {
-    background: rgba(133, 77, 14, 0.4) !important;
+    background: rgba(234, 179, 8, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-orange-50 {
-    background: rgba(154, 52, 18, 0.4) !important;
+    background: rgba(249, 115, 22, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-amber-50 {
-    background: rgba(146, 64, 14, 0.4) !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-cyan-50 {
-    background: rgba(21, 94, 117, 0.4) !important;
+    background: rgba(6, 182, 212, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 
   .bg-emerald-50 {
-    background: rgba(6, 78, 59, 0.4) !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* Gradient backgrounds - make them see-through */
+  .bg-gradient-to-br,
+  .bg-gradient-to-r,
+  .bg-gradient-to-l,
+  .bg-gradient-to-t,
+  .bg-gradient-to-b {
+    opacity: 0.15;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   /* Make text white/light for better contrast with space background */
