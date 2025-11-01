@@ -457,6 +457,14 @@ function BatsmanVsBowler({ player, initialBowler }) {
                           </div>
                         </div>
 
+                        {/* Wicket Kind - Additional dismissal details */}
+                        {dismissal.wicketKind && (
+                          <div className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-2 rounded border border-slate-200">
+                            <span className="font-medium text-slate-700">Wicket Kind:</span>
+                            <span className="text-slate-600">{dismissal.wicketKind}</span>
+                          </div>
+                        )}
+
                         {/* Match Fixture */}
                         {dismissal.battingTeam && dismissal.bowlingTeam && (
                           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 bg-white px-3 py-2 rounded border border-slate-200">
