@@ -85,6 +85,17 @@ function BatsmanVsBowler({ player, initialBowler }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Date N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return dateString;
+    }
+  };
+
   const fetchBowlers = async () => {
     try {
       const response = await axios.get('/api/bowlers');
@@ -467,7 +478,7 @@ function BatsmanVsBowler({ player, initialBowler }) {
                           )}
                           {dismissal.date && (
                             <div className="flex items-center gap-1">
-                              <span className="font-medium">Date:</span> {dismissal.date}
+                              <span className="font-medium">Date:</span> {formatDate(dismissal.date)}
                             </div>
                           )}
                         </div>
