@@ -185,6 +185,105 @@
     -webkit-backdrop-filter: blur(10px);
   }
 
+  /* Make text white/light for better contrast with space background */
+  .text-slate-600,
+  .text-slate-700,
+  .text-slate-800,
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800 {
+    color: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  .text-slate-500 {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .text-slate-400 {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  /* Headers and important text */
+  h1, h2, h3, h4, h5, h6 {
+    color: rgba(255, 255, 255, 0.98) !important;
+  }
+
+  /* Keep colored text visible but slightly brightened */
+  .text-blue-600,
+  .text-blue-700,
+  .text-blue-800 {
+    color: #60a5fa !important;
+  }
+
+  .text-green-600,
+  .text-green-700,
+  .text-green-800 {
+    color: #4ade80 !important;
+  }
+
+  .text-purple-600,
+  .text-purple-700,
+  .text-purple-800 {
+    color: #c084fc !important;
+  }
+
+  .text-red-600,
+  .text-red-700,
+  .text-red-800 {
+    color: #f87171 !important;
+  }
+
+  .text-yellow-600,
+  .text-yellow-700 {
+    color: #fbbf24 !important;
+  }
+
+  .text-amber-600,
+  .text-amber-700 {
+    color: #fbbf24 !important;
+  }
+
+  .text-emerald-600,
+  .text-emerald-700 {
+    color: #34d399 !important;
+  }
+
+  .text-orange-600,
+  .text-orange-700 {
+    color: #fb923c !important;
+  }
+
+  .text-primary-600,
+  .text-primary-700,
+  .text-primary-800 {
+    color: #60a5fa !important;
+  }
+
+  /* Font weights - ensure all text is bold enough to be visible */
+  .font-medium {
+    font-weight: 600 !important;
+  }
+
+  .font-semibold {
+    font-weight: 700 !important;
+  }
+
+  /* Labels and smaller text */
+  label, .label {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Input placeholder text */
+  ::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Border colors for better visibility */
+  .border-slate-200,
+  .border-slate-300 {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
   /* Hover lift effect */
   .hover-lift {
     transition: all 0.3s ease;
