@@ -451,9 +451,9 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
 
       {/* Tips */}
       {!parsedQuery && (
-        <div className="card bg-gradient-to-br from-slate-50 to-slate-100 animate-fade-in">
-          <h4 className="font-semibold text-slate-800 mb-3">💡 Tips for better results:</h4>
-          <ul className="space-y-2 text-sm text-slate-700">
+        <div className="card animate-fade-in">
+          <h4 className="font-semibold text-white mb-3">💡 Tips for better results:</h4>
+          <ul className="space-y-2 text-sm text-white">
             <li className="flex items-start gap-2">
               <span className="text-primary-600 font-bold">•</span>
               <span>Include the player's full name or last name</span>
