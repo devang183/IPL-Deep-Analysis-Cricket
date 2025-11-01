@@ -460,25 +460,25 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         {/* Wicket Kind - Additional dismissal details */}
                         {dismissal.wicketKind && (
                           <div className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-2 rounded border border-slate-200">
-                            <span className="font-medium text-slate-700">Wicket Kind:</span>
-                            <span className="text-slate-600">{dismissal.wicketKind}</span>
+                            <span className="font-medium text-amber-400">Wicket Kind:</span>
+                            <span className="text-white">{dismissal.wicketKind}</span>
                           </div>
                         )}
 
                         {/* Match Fixture */}
                         {dismissal.battingTeam && dismissal.bowlingTeam && (
-                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 bg-white px-3 py-2 rounded border border-slate-200">
-                            <span className="text-primary-600">{dismissal.battingTeam}</span>
-                            <span className="text-slate-400">vs</span>
-                            <span className="text-purple-600">{dismissal.bowlingTeam}</span>
+                          <div className="flex items-center gap-2 text-sm font-semibold bg-white/5 px-3 py-2 rounded border border-white/10">
+                            <span className="text-blue-400">{dismissal.battingTeam}</span>
+                            <span className="text-white/60">vs</span>
+                            <span className="text-purple-400">{dismissal.bowlingTeam}</span>
                           </div>
                         )}
 
                         {/* Fielders Involved - For run outs and catches */}
                         {dismissal.fielders && (
                           <div className="flex items-start gap-2 text-xs bg-blue-50 px-3 py-2 rounded border border-blue-200">
-                            <span className="font-medium text-blue-800">Fielders:</span>
-                            <span className="text-blue-700">
+                            <span className="font-medium text-blue-400">Fielders:</span>
+                            <span className="text-white">
                               {Array.isArray(dismissal.fielders)
                                 ? dismissal.fielders.join(', ')
                                 : dismissal.fielders}
@@ -487,27 +487,31 @@ function BatsmanVsBowler({ player, initialBowler }) {
                         )}
 
                         {/* Match Details */}
-                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
                           <div className="flex items-center gap-1">
-                            <span className="font-medium">Over:</span> {dismissal.over}
+                            <span className="font-medium text-cyan-400">Over:</span>
+                            <span className="text-white">{dismissal.over}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="font-medium">Runs:</span> {dismissal.runsScored}
+                            <span className="font-medium text-green-400">Runs:</span>
+                            <span className="text-white">{dismissal.runsScored}</span>
                           </div>
                           {dismissal.venue && (
                             <div className="col-span-2 flex items-center gap-1">
-                              <span className="font-medium">Venue:</span>
-                              <span className="text-slate-700">{dismissal.venue}</span>
+                              <span className="font-medium text-purple-400">Venue:</span>
+                              <span className="text-white">{dismissal.venue}</span>
                             </div>
                           )}
                           {dismissal.season && (
                             <div className="flex items-center gap-1">
-                              <span className="font-medium">Season:</span> {dismissal.season}
+                              <span className="font-medium text-orange-400">Season:</span>
+                              <span className="text-white">{dismissal.season}</span>
                             </div>
                           )}
                           {dismissal.date && (
                             <div className="flex items-center gap-1">
-                              <span className="font-medium">Date:</span> {formatDate(dismissal.date)}
+                              <span className="font-medium text-pink-400">Date:</span>
+                              <span className="text-white">{formatDate(dismissal.date)}</span>
                             </div>
                           )}
                         </div>
