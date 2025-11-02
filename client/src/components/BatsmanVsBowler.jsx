@@ -258,19 +258,20 @@ function BatsmanVsBowler({ player, initialBowler }) {
           <div
             id="bowler-listbox"
             role="listbox"
-            className="mt-2 max-h-64 overflow-y-auto border border-slate-200 rounded-lg bg-white shadow-lg"
+            className="mt-2 max-h-64 overflow-y-auto border-2 border-purple-400/30 rounded-lg shadow-lg"
+            style={{background: 'rgba(168, 85, 247, 0.1)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)'}}
             aria-label="Bowler options"
           >
             {loadingBowlers ? (
-              <div className="p-4 text-center text-slate-500">Loading bowlers...</div>
+              <div className="p-4 text-center text-white">Loading bowlers...</div>
             ) : filteredBowlers.length === 0 ? (
               <div className="p-4 text-center">
-                <p className="text-slate-500">No bowlers found{searchTerm ? ` matching "${searchTerm}"` : ''}</p>
+                <p className="text-white">No bowlers found{searchTerm ? ` matching "${searchTerm}"` : ''}</p>
                 {bowlers.length === 0 && (
-                  <p className="text-xs text-red-500 mt-2">No bowlers loaded. Check console for errors.</p>
+                  <p className="text-xs text-red-400 mt-2">No bowlers loaded. Check console for errors.</p>
                 )}
                 {bowlers.length > 0 && (
-                  <p className="text-xs text-slate-400 mt-2">Total bowlers available: {bowlers.length}</p>
+                  <p className="text-xs text-white/60 mt-2">Total bowlers available: {bowlers.length}</p>
                 )}
               </div>
             ) : (
@@ -282,9 +283,10 @@ function BatsmanVsBowler({ player, initialBowler }) {
                   aria-selected={selectedBowler === bowler}
                   onClick={() => handleBowlerSelect(bowler)}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`w-full text-left px-4 py-2 hover:bg-primary-50 transition-colors ${
-                    selectedBowler === bowler ? 'bg-primary-100 font-semibold' : ''
-                  } ${highlightedIndex === index ? 'bg-primary-50' : ''}`}
+                  className={`w-full text-left px-4 py-2 transition-colors border-b border-white/10 ${
+                    selectedBowler === bowler ? 'font-semibold text-purple-300' : 'text-white'
+                  } ${highlightedIndex === index ? 'text-purple-300' : ''}`}
+                  style={highlightedIndex === index || selectedBowler === bowler ? {background: 'rgba(168, 85, 247, 0.2)'} : {}}
                 >
                   {bowler}
                 </button>
