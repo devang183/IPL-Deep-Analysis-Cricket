@@ -196,14 +196,14 @@ function BowlerStats({ player }) {
 
       {/* Five Wicket Hauls - Special Highlight */}
       {stats.fiveWickets > 0 && (
-        <div className="card mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400">
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-              <Target className="w-8 h-8 text-white" />
+        <div className="mb-8 rounded-2xl shadow-2xl p-8 bg-gradient-to-r from-amber-200 via-orange-200 to-amber-200 border-4 border-amber-500 transform hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center gap-6">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500 via-orange-600 to-amber-500 flex items-center justify-center shadow-2xl animate-pulse">
+              <Target className="w-12 h-12 text-white" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-orange-900">{stats.fiveWickets} Five Wicket Hauls</h3>
-              <p className="text-orange-700">Outstanding bowling performances!</p>
+              <h3 className="text-4xl font-extrabold text-orange-900 mb-2">{stats.fiveWickets} Five Wicket Hauls</h3>
+              <p className="text-orange-900 font-bold text-xl">Outstanding bowling performances!</p>
             </div>
           </div>
         </div>
