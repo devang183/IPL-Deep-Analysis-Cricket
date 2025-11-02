@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Target, Loader2, AlertCircle, TrendingUp, Users, Activity, Zap } from 'lucide-react';
+import { Target, Loader2, AlertCircle, TrendingUp, Users, Activity, Zap, User } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { findBestPlayerMatch } from '../utils/nameMatching';
@@ -14,6 +14,8 @@ function BatsmanVsBowler({ player, initialBowler }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingBowlers, setLoadingBowlers] = useState(true);
+  const [batsmanImage, setBatsmanImage] = useState(null);
+  const [bowlerImage, setBowlerImage] = useState(null);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -129,6 +131,37 @@ function BatsmanVsBowler({ player, initialBowler }) {
       setLoading(false);
     }
   };
+
+  const fetchPlayerImages = async () => {
+    // Fetch batsman image
+    try {
+      const batsmanResponse = await axios.get(`/api/player/${player}/image`);
+      if (batsmanResponse.data.image_path) {
+        setBatsmanImage(batsmanResponse.data.image_path);
+      }
+    } catch (err) {
+      console.log('Batsman image not found');
+      setBatsmanImage(null);
+    }
+
+    // Fetch bowler image if bowler is selected
+    if (selectedBowler) {
+      try {
+        const bowlerResponse = await axios.get(`/api/player/${selectedBowler}/image`);
+        if (bowlerResponse.data.image_path) {
+          setBowlerImage(bowlerResponse.data.image_path);
+        }
+      } catch (err) {
+        console.log('Bowler image not found');
+        setBowlerImage(null);
+      }
+    }
+  };
+
+  // Fetch player images when player or selectedBowler changes
+  useEffect(() => {
+    fetchPlayerImages();
+  }, [player, selectedBowler]);
 
   const handleKeyDown = (e) => {
     if (!isDropdownOpen || filteredBowlers.length === 0) {
@@ -349,9 +382,61 @@ function BatsmanVsBowler({ player, initialBowler }) {
         <div className="space-y-6" role="region" aria-live="polite" aria-label="Matchup statistics">
           {/* Summary Header */}
           <div className="rounded-lg p-6 border border-white/20" style={{background: 'transparent', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)'}}>
-            <h3 className="text-xl font-semibold text-white mb-4">
-              {player} vs {selectedBowler}
-            </h3>
+            {/* Player Images and Title */}
+            <div className="flex items-center justify-center gap-4 mb-6">
+              {/* Batsman Image */}
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  {batsmanImage ? (
+                    <img
+                      src={batsmanImage}
+                      alt={player}
+                      className="w-20 h-20 rounded-full object-cover border-4 border-blue-500 shadow-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center border-4 border-blue-500 shadow-lg"
+                    style={{ display: batsmanImage ? 'none' : 'flex' }}
+                  >
+                    <User className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-blue-300 mt-2">{player}</span>
+              </div>
+
+              {/* VS Text */}
+              <div className="text-3xl font-bold text-white/80">VS</div>
+
+              {/* Bowler Image */}
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  {bowlerImage ? (
+                    <img
+                      src={bowlerImage}
+                      alt={selectedBowler}
+                      className="w-20 h-20 rounded-full object-cover border-4 border-purple-500 shadow-lg"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center border-4 border-purple-500 shadow-lg"
+                    style={{ display: bowlerImage ? 'none' : 'flex' }}
+                  >
+                    <User className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-purple-300 mt-2">{selectedBowler}</span>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center rounded-lg p-4 border border-blue-200/30" style={{background: 'rgba(59, 130, 246, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
                 <div className="text-3xl font-bold text-white">{stats.totalRuns}</div>
