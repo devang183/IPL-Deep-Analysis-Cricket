@@ -549,9 +549,15 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
     console.log('Fetching bowler stats for:', bowler);
 
     // First, get innings-wise wickets for 3W, 4W, 5W calculations
-    // Only count wickets credited to bowler (exclude run outs, retired hurt, etc.)
+    // Use striker_out = true and exclude run outs
     const inningsWickets = await collection.aggregate([
-      { $match: { bowler: bowler, valid_ball: 1 } },
+      {
+        $match: {
+          bowler: bowler,
+          valid_ball: 1,
+          striker_out: true  // Only balls where striker was out
+        }
+      },
       {
         $group: {
           _id: { matchId: '$match_id', innings: '$innings' },
@@ -559,8 +565,6 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
             $sum: {
               $cond: [
                 { $and: [
-                  { $ne: ['$player_out', null] },
-                  { $ne: ['$player_out', ''] },
                   { $ne: ['$wicket_kind', 'run out'] },
                   { $ne: ['$wicket_kind', 'retired hurt'] },
                   { $ne: ['$wicket_kind', 'retired out'] },
@@ -598,19 +602,33 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
     const wicketStats = inningsWickets[0] || { threeWickets: 0, fourWickets: 0, fiveWickets: 0 };
 
     // Get overall bowling statistics
-    const stats = await collection.aggregate([
+    // Count total balls separately, then count wickets only from striker_out = true
+    const ballsStats = await collection.aggregate([
       { $match: { bowler: bowler, valid_ball: 1 } },
       {
         $group: {
           _id: null,
           totalBalls: { $sum: 1 },
-          totalRuns: { $sum: '$runs_total' },
+          totalRuns: { $sum: '$runs_total' }
+        }
+      }
+    ]).toArray();
+
+    const wicketsStats = await collection.aggregate([
+      {
+        $match: {
+          bowler: bowler,
+          valid_ball: 1,
+          striker_out: true  // Only balls where striker was out
+        }
+      },
+      {
+        $group: {
+          _id: null,
           totalWickets: {
             $sum: {
               $cond: [
                 { $and: [
-                  { $ne: ['$player_out', null] },
-                  { $ne: ['$player_out', ''] },
                   { $ne: ['$wicket_kind', 'run out'] },
                   { $ne: ['$wicket_kind', 'retired hurt'] },
                   { $ne: ['$wicket_kind', 'retired out'] },
@@ -620,17 +638,17 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
                 0
               ]
             }
-          },
-          maidens: { $sum: 0 } // Will calculate separately
+          }
         }
       }
     ]).toArray();
 
-    if (!stats || stats.length === 0) {
+    if (!ballsStats || ballsStats.length === 0) {
       return res.status(404).json({ error: 'Bowler not found' });
     }
 
-    const result = stats[0];
+    const result = ballsStats[0];
+    result.totalWickets = wicketsStats.length > 0 && wicketsStats[0].totalWickets ? wicketsStats[0].totalWickets : 0;
 
     // Calculate overs properly (cricket style: 6 balls = 1 over)
     const completedOvers = Math.floor(result.totalBalls / 6);
