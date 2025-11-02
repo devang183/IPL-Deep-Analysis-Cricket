@@ -436,6 +436,8 @@ app.get('/api/player/:name/image', async (req, res) => {
     const playersCollection = db.collection('All-Players');
     const playerName = req.params.name;
 
+    console.log('Searching for player image:', playerName);
+
     // Try to find player with fuzzy matching
     // First try exact match on fullname
     let player = await playersCollection.findOne(
@@ -443,26 +445,46 @@ app.get('/api/player/:name/image', async (req, res) => {
       { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
     );
 
-    // If no exact match, try firstname lastname combination
+    // If no exact match, check if name has initials (e.g., "V Kohli")
     if (!player) {
       const nameParts = playerName.split(' ');
       if (nameParts.length >= 2) {
-        const firstname = nameParts[0];
-        const lastname = nameParts.slice(1).join(' ');
+        const firstPart = nameParts[0];
+        const lastPart = nameParts.slice(1).join(' ');
 
-        player = await playersCollection.findOne(
-          {
-            $or: [
-              { firstname: { $regex: new RegExp(`^${firstname}$`, 'i') }, lastname: { $regex: new RegExp(`^${lastname}$`, 'i') } },
-              { fullname: { $regex: new RegExp(playerName, 'i') } }
-            ]
-          },
-          { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
-        );
+        // Check if first part is an initial (single letter, possibly with dot)
+        const isInitial = firstPart.replace('.', '').length === 1;
+
+        if (isInitial) {
+          // Extract the initial letter
+          const initial = firstPart.replace('.', '').toUpperCase();
+
+          // Search for players where firstname starts with this initial and lastname matches
+          player = await playersCollection.findOne(
+            {
+              firstname: { $regex: new RegExp(`^${initial}`, 'i') },
+              lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') }
+            },
+            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+          );
+
+          console.log('Initial search result:', player ? player.fullname : 'not found');
+        } else {
+          // Try firstname lastname combination
+          player = await playersCollection.findOne(
+            {
+              $or: [
+                { firstname: { $regex: new RegExp(`^${firstPart}$`, 'i') }, lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') } },
+                { fullname: { $regex: new RegExp(playerName, 'i') } }
+              ]
+            },
+            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+          );
+        }
       }
     }
 
-    // If still no match, try partial match
+    // If still no match, try partial match on fullname
     if (!player) {
       player = await playersCollection.findOne(
         { fullname: { $regex: new RegExp(playerName, 'i') } },
@@ -471,6 +493,7 @@ app.get('/api/player/:name/image', async (req, res) => {
     }
 
     if (!player || !player.image_path) {
+      console.log('Player image not found for:', playerName);
       return res.json({
         playerName,
         image_path: null,
@@ -478,6 +501,7 @@ app.get('/api/player/:name/image', async (req, res) => {
       });
     }
 
+    console.log('Found player:', player.fullname, 'with image:', player.image_path);
     res.json({
       playerName: player.fullname || playerName,
       image_path: player.image_path,
