@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Loader2, AlertCircle, TrendingUp, Target, Activity } from 'lucide-react';
+import { BarChart3, Loader2, AlertCircle, TrendingUp, Target, Activity, User } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function PlayerStats({ player }) {
   const [stats, setStats] = useState(null);
+  const [playerImage, setPlayerImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchStats();
+    fetchPlayerImage();
   }, [player]);
 
   const fetchStats = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await axios.get(`/api/stats/${player}`);
       setStats(response.data.stats);
@@ -23,6 +25,18 @@ function PlayerStats({ player }) {
       setError(err.response?.data?.error || 'Failed to fetch statistics');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPlayerImage = async () => {
+    try {
+      const response = await axios.get(`/api/player/${player}/image`);
+      if (response.data.image_path) {
+        setPlayerImage(response.data.image_path);
+      }
+    } catch (err) {
+      console.log('Player image not found, using placeholder');
+      setPlayerImage(null);
     }
   };
 
@@ -63,9 +77,33 @@ function PlayerStats({ player }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
-        <BarChart3 className="w-6 h-6 text-primary-600" />
-        <h2 className="text-2xl font-bold text-slate-800">Overall Statistics for {player}</h2>
+      <div className="flex items-center gap-4 mb-6">
+        {/* Player Image */}
+        <div className="flex-shrink-0">
+          {playerImage ? (
+            <img
+              src={playerImage}
+              alt={player}
+              className="w-16 h-16 rounded-full object-cover border-4 border-primary-500 shadow-lg"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center border-4 border-primary-500 shadow-lg"
+            style={{ display: playerImage ? 'none' : 'flex' }}
+          >
+            <User className="w-8 h-8 text-white" />
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-primary-600" />
+          <h2 className="text-2xl font-bold text-slate-800">Overall Statistics for {player}</h2>
+        </div>
       </div>
 
       {/* Key Stats Grid */}

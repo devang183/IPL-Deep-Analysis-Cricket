@@ -429,6 +429,67 @@ app.get('/api/stats/:name', async (req, res) => {
   }
 });
 
+// Get player image from All-Players collection
+app.get('/api/player/:name/image', async (req, res) => {
+  try {
+    const { db } = await connectToDatabase();
+    const playersCollection = db.collection('All-Players');
+    const playerName = req.params.name;
+
+    // Try to find player with fuzzy matching
+    // First try exact match on fullname
+    let player = await playersCollection.findOne(
+      { fullname: { $regex: new RegExp(`^${playerName}$`, 'i') } },
+      { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+    );
+
+    // If no exact match, try firstname lastname combination
+    if (!player) {
+      const nameParts = playerName.split(' ');
+      if (nameParts.length >= 2) {
+        const firstname = nameParts[0];
+        const lastname = nameParts.slice(1).join(' ');
+
+        player = await playersCollection.findOne(
+          {
+            $or: [
+              { firstname: { $regex: new RegExp(`^${firstname}$`, 'i') }, lastname: { $regex: new RegExp(`^${lastname}$`, 'i') } },
+              { fullname: { $regex: new RegExp(playerName, 'i') } }
+            ]
+          },
+          { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+        );
+      }
+    }
+
+    // If still no match, try partial match
+    if (!player) {
+      player = await playersCollection.findOne(
+        { fullname: { $regex: new RegExp(playerName, 'i') } },
+        { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+      );
+    }
+
+    if (!player || !player.image_path) {
+      return res.json({
+        playerName,
+        image_path: null,
+        message: 'Player image not found'
+      });
+    }
+
+    res.json({
+      playerName: player.fullname || playerName,
+      image_path: player.image_path,
+      firstname: player.firstname,
+      lastname: player.lastname
+    });
+  } catch (error) {
+    console.error('Error fetching player image:', error);
+    res.status(500).json({ error: 'Failed to fetch player image' });
+  }
+});
+
 // Alternative route for player stats (redirect to main route)
 app.get('/api/player/:name/stats', async (req, res) => {
   // Redirect to the main stats endpoint
