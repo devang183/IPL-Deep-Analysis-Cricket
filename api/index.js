@@ -675,6 +675,14 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
 
     const maidens = maidensData.length > 0 ? maidensData[0].maidens : 0;
 
+    // Calculate dot balls (balls where runs_total = 0)
+    const dotBallsData = await collection.aggregate([
+      { $match: { bowler: bowler, valid_ball: 1, runs_total: 0 } },
+      { $count: 'dotBalls' }
+    ]).toArray();
+
+    const dotBalls = dotBallsData.length > 0 ? dotBallsData[0].dotBalls : 0;
+
     // Calculate bowling average (runs per wicket)
     const bowlingAverage = result.totalWickets > 0
       ? parseFloat((result.totalRuns / result.totalWickets).toFixed(2))
@@ -690,6 +698,15 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
       ? parseFloat((result.totalBalls / result.totalWickets).toFixed(2))
       : 0;
 
+    // Calculate number of matches (unique match_id count)
+    const matchesData = await collection.aggregate([
+      { $match: { bowler: bowler, valid_ball: 1 } },
+      { $group: { _id: '$match_id' } },
+      { $count: 'matches' }
+    ]).toArray();
+
+    const matches = matchesData.length > 0 ? matchesData[0].matches : 0;
+
     res.json({
       bowler,
       stats: {
@@ -703,7 +720,9 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
         fourWickets: wicketStats.fourWickets,
         fiveWickets: wicketStats.fiveWickets,
         economyRate: economyRate,
-        bowlingStrikeRate: bowlingStrikeRate
+        bowlingStrikeRate: bowlingStrikeRate,
+        dotBalls: dotBalls,
+        matches: matches
       }
     });
   } catch (error) {

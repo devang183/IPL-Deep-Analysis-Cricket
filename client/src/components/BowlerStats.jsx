@@ -216,20 +216,20 @@ function BowlerStats({ player }) {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
             <div className="text-sm text-blue-700 mb-1">Wickets per Match</div>
             <div className="text-2xl font-bold text-blue-900">
-              {stats.wickets > 0 ? (stats.wickets / (stats.balls / 120)).toFixed(2) : 0}
+              {stats.matches > 0 ? (stats.wickets / stats.matches).toFixed(2) : 0}
             </div>
             <div className="text-xs text-blue-600 mt-1">
-              Assuming 20 overs per match
+              Average wickets in {stats.matches} matches
             </div>
           </div>
 
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
             <div className="text-sm text-green-700 mb-1">Dot Ball Percentage</div>
             <div className="text-2xl font-bold text-green-900">
-              {stats.balls > 0 ? ((stats.balls - stats.totalRuns) / stats.balls * 100).toFixed(1) : 0}%
+              {stats.balls > 0 ? ((stats.dotBalls / stats.balls) * 100).toFixed(1) : 0}%
             </div>
             <div className="text-xs text-green-600 mt-1">
-              Economical bowling
+              {stats.dotBalls} dot balls in {stats.balls} deliveries
             </div>
           </div>
 
