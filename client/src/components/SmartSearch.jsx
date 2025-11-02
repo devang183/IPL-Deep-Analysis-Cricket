@@ -234,7 +234,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask me anything... e.g., 'Show Virat Kohli's dismissal patterns'"
-              className="w-full pl-14 pr-4 py-4 text-lg border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+              className="w-full pl-14 pr-4 py-4 text-lg border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-black placeholder:text-slate-400"
               disabled={loading}
             />
             {query && (
