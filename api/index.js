@@ -549,6 +549,7 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
     console.log('Fetching bowler stats for:', bowler);
 
     // First, get innings-wise wickets for 3W, 4W, 5W calculations
+    // Only count wickets credited to bowler (exclude run outs, retired hurt, etc.)
     const inningsWickets = await collection.aggregate([
       { $match: { bowler: bowler, valid_ball: 1 } },
       {
@@ -559,7 +560,11 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
               $cond: [
                 { $and: [
                   { $ne: ['$player_out', null] },
-                  { $ne: ['$player_out', ''] }
+                  { $ne: ['$player_out', ''] },
+                  { $ne: ['$wicket_kind', 'run out'] },
+                  { $ne: ['$wicket_kind', 'retired hurt'] },
+                  { $ne: ['$wicket_kind', 'retired out'] },
+                  { $ne: ['$wicket_kind', 'obstructing the field'] }
                 ]},
                 1,
                 0
@@ -605,7 +610,11 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
               $cond: [
                 { $and: [
                   { $ne: ['$player_out', null] },
-                  { $ne: ['$player_out', ''] }
+                  { $ne: ['$player_out', ''] },
+                  { $ne: ['$wicket_kind', 'run out'] },
+                  { $ne: ['$wicket_kind', 'retired hurt'] },
+                  { $ne: ['$wicket_kind', 'retired out'] },
+                  { $ne: ['$wicket_kind', 'obstructing the field'] }
                 ]},
                 1,
                 0
