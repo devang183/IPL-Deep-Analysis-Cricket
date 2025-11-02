@@ -228,7 +228,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
       <div className="card animate-scale-in">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6" style={{ color: '#94a3b8' }} />
             <input
               type="text"
               value={query}
