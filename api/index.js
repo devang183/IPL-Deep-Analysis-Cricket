@@ -540,6 +540,137 @@ app.get('/api/player/:name/stats', async (req, res) => {
   return app._router.handle(req, res);
 });
 
+// Get bowler statistics
+app.get('/api/bowler-stats/:name', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const bowler = req.params.name;
+
+    console.log('Fetching bowler stats for:', bowler);
+
+    // First, get innings-wise wickets for 3W, 4W, 5W calculations
+    const inningsWickets = await collection.aggregate([
+      { $match: { bowler: bowler, valid_ball: 1 } },
+      {
+        $group: {
+          _id: { matchId: '$match_id', innings: '$innings' },
+          wickets: {
+            $sum: {
+              $cond: [{ $eq: ['$striker_out', 1] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          threeWickets: {
+            $sum: {
+              $cond: [{ $eq: ['$wickets', 3] }, 1, 0]
+            }
+          },
+          fourWickets: {
+            $sum: {
+              $cond: [{ $eq: ['$wickets', 4] }, 1, 0]
+            }
+          },
+          fiveWickets: {
+            $sum: {
+              $cond: [{ $gte: ['$wickets', 5] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]).toArray();
+
+    const wicketStats = inningsWickets[0] || { threeWickets: 0, fourWickets: 0, fiveWickets: 0 };
+
+    // Get overall bowling statistics
+    const stats = await collection.aggregate([
+      { $match: { bowler: bowler, valid_ball: 1 } },
+      {
+        $group: {
+          _id: null,
+          totalBalls: { $sum: 1 },
+          totalRuns: { $sum: '$runs_total' },
+          totalWickets: {
+            $sum: {
+              $cond: [{ $eq: ['$striker_out', 1] }, 1, 0]
+            }
+          },
+          maidens: { $sum: 0 } // Will calculate separately
+        }
+      }
+    ]).toArray();
+
+    if (!stats || stats.length === 0) {
+      return res.status(404).json({ error: 'Bowler not found' });
+    }
+
+    const result = stats[0];
+
+    // Calculate overs properly (cricket style: 6 balls = 1 over)
+    const completedOvers = Math.floor(result.totalBalls / 6);
+    const remainingBalls = result.totalBalls % 6;
+    const oversFormatted = remainingBalls > 0 ? `${completedOvers}.${remainingBalls}` : `${completedOvers}.0`;
+    const totalOversDecimal = completedOvers + (remainingBalls / 10); // For economy calculation
+
+    // Calculate maidens (overs with 0 runs)
+    const maidensData = await collection.aggregate([
+      { $match: { bowler: bowler, valid_ball: 1 } },
+      {
+        $group: {
+          _id: { matchId: '$match_id', innings: '$innings', over: '$over' },
+          runsInOver: { $sum: '$runs_total' }
+        }
+      },
+      {
+        $match: { runsInOver: 0 }
+      },
+      {
+        $count: 'maidens'
+      }
+    ]).toArray();
+
+    const maidens = maidensData.length > 0 ? maidensData[0].maidens : 0;
+
+    // Calculate bowling average (runs per wicket)
+    const bowlingAverage = result.totalWickets > 0
+      ? parseFloat((result.totalRuns / result.totalWickets).toFixed(2))
+      : 0;
+
+    // Calculate economy rate (runs per over)
+    const economyRate = totalOversDecimal > 0
+      ? parseFloat((result.totalRuns / totalOversDecimal).toFixed(2))
+      : 0;
+
+    // Calculate bowling strike rate (balls per wicket)
+    const bowlingStrikeRate = result.totalWickets > 0
+      ? parseFloat((result.totalBalls / result.totalWickets).toFixed(2))
+      : 0;
+
+    res.json({
+      bowler,
+      stats: {
+        overs: oversFormatted,
+        balls: result.totalBalls,
+        maidens: maidens,
+        totalRuns: result.totalRuns,
+        wickets: result.totalWickets,
+        bowlingAverage: bowlingAverage,
+        threeWickets: wicketStats.threeWickets,
+        fourWickets: wicketStats.fourWickets,
+        fiveWickets: wicketStats.fiveWickets,
+        economyRate: economyRate,
+        bowlingStrikeRate: bowlingStrikeRate
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching bowler stats:', error);
+    res.status(500).json({ error: 'Failed to fetch bowler stats' });
+  }
+});
+
 // Analyze phase performance
 app.post('/api/analyze/phase-performance', async (req, res) => {
   try {

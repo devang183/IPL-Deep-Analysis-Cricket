@@ -4,6 +4,7 @@ import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
 import PlayerStats from './components/PlayerStats';
+import BowlerStats from './components/BowlerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import MOTMAnalysis from './components/MOTMAnalysis';
 import AdminDashboard from './components/AdminDashboard';
@@ -99,6 +100,7 @@ function App() {
     { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
     { id: 'stats', name: 'Overall Stats', icon: BarChart3 },
+    { id: 'bowler', name: 'Bowler Stats', icon: Target },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'motm', name: 'MOTM', icon: Trophy },
     { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
@@ -234,6 +236,12 @@ function App() {
           {activeTab === 'stats' && selectedPlayer && (
             <div className="card">
               <PlayerStats player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'bowler' && selectedPlayer && (
+            <div className="card">
+              <BowlerStats player={selectedPlayer} />
             </div>
           )}
 
