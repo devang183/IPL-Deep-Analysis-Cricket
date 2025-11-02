@@ -445,30 +445,47 @@ app.get('/api/player/:name/image', async (req, res) => {
       { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
     );
 
-    // If no exact match, check if name has initials (e.g., "V Kohli")
+    // If no exact match, check if name has initials (e.g., "V Kohli", "TM Dilshan")
     if (!player) {
       const nameParts = playerName.split(' ');
       if (nameParts.length >= 2) {
         const firstPart = nameParts[0];
         const lastPart = nameParts.slice(1).join(' ');
 
-        // Check if first part is an initial (single letter, possibly with dot)
-        const isInitial = firstPart.replace('.', '').length === 1;
+        // Check if first part contains initials (all uppercase letters, possibly with dots)
+        // Examples: "V", "TM", "MS", "V.", "T.M."
+        const cleanedFirstPart = firstPart.replace(/\./g, '');
+        const isInitials = /^[A-Z]{1,3}$/i.test(cleanedFirstPart);
 
-        if (isInitial) {
-          // Extract the initial letter
-          const initial = firstPart.replace('.', '').toUpperCase();
+        if (isInitials) {
+          // Extract the first initial letter
+          const firstInitial = cleanedFirstPart[0].toUpperCase();
 
           // Search for players where firstname starts with this initial and lastname matches
           player = await playersCollection.findOne(
             {
-              firstname: { $regex: new RegExp(`^${initial}`, 'i') },
+              firstname: { $regex: new RegExp(`^${firstInitial}`, 'i') },
               lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') }
             },
             { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
           );
 
-          console.log('Initial search result:', player ? player.fullname : 'not found');
+          console.log(`Searching with initial "${firstInitial}" and lastname "${lastPart}":`, player ? player.fullname : 'not found');
+
+          // If still not found with firstname match, try matching fullname pattern
+          // This handles cases where the All-Players collection might have different structure
+          if (!player) {
+            player = await playersCollection.findOne(
+              {
+                $and: [
+                  { fullname: { $regex: new RegExp(`^[A-Z].*${lastPart}$`, 'i') } },
+                  { fullname: { $regex: new RegExp(`^${firstInitial}`, 'i') } }
+                ]
+              },
+              { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+            );
+            console.log('Fullname pattern search result:', player ? player.fullname : 'not found');
+          }
         } else {
           // Try firstname lastname combination
           player = await playersCollection.findOne(
