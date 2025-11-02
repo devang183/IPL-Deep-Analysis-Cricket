@@ -556,7 +556,14 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
           _id: { matchId: '$match_id', innings: '$innings' },
           wickets: {
             $sum: {
-              $cond: [{ $eq: ['$striker_out', 1] }, 1, 0]
+              $cond: [
+                { $and: [
+                  { $ne: ['$player_out', null] },
+                  { $ne: ['$player_out', ''] }
+                ]},
+                1,
+                0
+              ]
             }
           }
         }
@@ -595,7 +602,14 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
           totalRuns: { $sum: '$runs_total' },
           totalWickets: {
             $sum: {
-              $cond: [{ $eq: ['$striker_out', 1] }, 1, 0]
+              $cond: [
+                { $and: [
+                  { $ne: ['$player_out', null] },
+                  { $ne: ['$player_out', ''] }
+                ]},
+                1,
+                0
+              ]
             }
           },
           maidens: { $sum: 0 } // Will calculate separately
