@@ -293,16 +293,16 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
 
         {/* Player Suggestions - Scrollable Dropdown */}
         {suggestions.length > 0 && (
-          <div className="mt-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-lg animate-scale-in">
+          <div className="mt-4 p-5 rounded-xl shadow-lg animate-scale-in border-2 border-blue-400/30" style={{background: 'rgba(59, 130, 246, 0.1)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)'}}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
-                <h4 className="font-bold text-blue-900 text-base">
+                <Sparkles className="w-5 h-5 text-blue-400 animate-pulse" />
+                <h4 className="font-bold text-white text-base">
                   Select the player you're looking for:
                 </h4>
               </div>
-              <div className="px-3 py-1 bg-blue-200 text-blue-800 text-xs font-bold rounded-full">
-                {suggestions.length} players
+              <div className="px-3 py-1 text-xs font-bold rounded-full" style={{background: 'rgba(59, 130, 246, 0.2)'}}>
+                <span className="text-blue-300">{suggestions.length} players</span>
               </div>
             </div>
 
@@ -312,30 +312,35 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion.player)}
-                  className="w-full text-left px-5 py-3 bg-white border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-400 hover:shadow-md transition-all group animate-fade-in-up"
-                  style={{ animationDelay: `${Math.min(index * 0.03, 0.5)}s` }}
+                  className="w-full text-left px-5 py-3 rounded-lg border-2 border-white/20 hover:border-blue-400/50 hover:shadow-md transition-all group animate-fade-in-up"
+                  style={{
+                    animationDelay: `${Math.min(index * 0.03, 0.5)}s`,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)'
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
                         {index + 1}
                       </div>
-                      <span className="text-slate-800 group-hover:text-blue-900 font-semibold text-base">
+                      <span className="text-white group-hover:text-blue-300 font-semibold text-base">
                         {suggestion.player}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-slate-500 group-hover:text-blue-700 font-medium">
+                      <span className="text-xs text-white/70 group-hover:text-blue-300 font-medium">
                         {suggestion.score}% match
                       </span>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full group-hover:animate-ping"></div>
+                      <div className="w-2 h-2 bg-blue-400 rounded-full group-hover:animate-ping"></div>
                     </div>
                   </div>
                 </button>
               ))}
             </div>
 
-            <p className="mt-3 text-xs text-blue-700 text-center font-medium">
+            <p className="mt-3 text-xs text-white/80 text-center font-medium">
               {suggestions.length > 10 && '⬆️ Scroll to see all players • '}
               Click on a player to view their analysis
             </p>
