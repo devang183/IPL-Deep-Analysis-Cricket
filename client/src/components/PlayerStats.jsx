@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 function PlayerStats({ player }) {
   const [stats, setStats] = useState(null);
   const [playerImage, setPlayerImage] = useState(null);
+  const [playerInfo, setPlayerInfo] = useState({ battingstyle: null, bowlingstyle: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,6 +35,11 @@ function PlayerStats({ player }) {
       if (response.data.image_path) {
         setPlayerImage(response.data.image_path);
       }
+      // Store batting and bowling styles
+      setPlayerInfo({
+        battingstyle: response.data.battingstyle,
+        bowlingstyle: response.data.bowlingstyle
+      });
     } catch (err) {
       console.log('Player image not found, using placeholder');
       setPlayerImage(null);
@@ -99,10 +105,32 @@ function PlayerStats({ player }) {
           </div>
         </div>
 
-        {/* Title */}
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-primary-600" />
-          <h2 className="text-2xl font-bold text-slate-800">Overall Statistics for {player}</h2>
+        {/* Title and Player Info */}
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="w-6 h-6 text-primary-600" />
+            <h2 className="text-2xl font-bold text-slate-800">Overall Statistics for {player}</h2>
+          </div>
+
+          {/* Batting and Bowling Styles */}
+          {(playerInfo.battingstyle || playerInfo.bowlingstyle) && (
+            <div className="flex flex-wrap gap-3 mt-3">
+              {playerInfo.battingstyle && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-blue-400/30" style={{background: 'rgba(59, 130, 246, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
+                  <Target className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-medium text-white">Batting: </span>
+                  <span className="text-sm font-semibold text-blue-300">{playerInfo.battingstyle}</span>
+                </div>
+              )}
+              {playerInfo.bowlingstyle && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-purple-400/30" style={{background: 'rgba(168, 85, 247, 0.1)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)'}}>
+                  <Activity className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm font-medium text-white">Bowling: </span>
+                  <span className="text-sm font-semibold text-purple-300">{playerInfo.bowlingstyle}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

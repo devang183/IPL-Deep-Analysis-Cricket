@@ -442,7 +442,7 @@ app.get('/api/player/:name/image', async (req, res) => {
     // First try exact match on fullname
     let player = await playersCollection.findOne(
       { fullname: { $regex: new RegExp(`^${playerName}$`, 'i') } },
-      { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+      { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
     );
 
     // If no exact match, check if name has initials (e.g., "V Kohli", "TM Dilshan")
@@ -467,7 +467,7 @@ app.get('/api/player/:name/image', async (req, res) => {
               firstname: { $regex: new RegExp(`^${firstInitial}`, 'i') },
               lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') }
             },
-            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
           );
 
           console.log(`Searching with initial "${firstInitial}" and lastname "${lastPart}":`, player ? player.fullname : 'not found');
@@ -482,7 +482,7 @@ app.get('/api/player/:name/image', async (req, res) => {
                   { fullname: { $regex: new RegExp(`^${firstInitial}`, 'i') } }
                 ]
               },
-              { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+              { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
             );
             console.log('Fullname pattern search result:', player ? player.fullname : 'not found');
           }
@@ -495,7 +495,7 @@ app.get('/api/player/:name/image', async (req, res) => {
                 { fullname: { $regex: new RegExp(playerName, 'i') } }
               ]
             },
-            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
           );
         }
       }
@@ -505,7 +505,7 @@ app.get('/api/player/:name/image', async (req, res) => {
     if (!player) {
       player = await playersCollection.findOne(
         { fullname: { $regex: new RegExp(playerName, 'i') } },
-        { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1 } }
+        { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
       );
     }
 
@@ -523,7 +523,9 @@ app.get('/api/player/:name/image', async (req, res) => {
       playerName: player.fullname || playerName,
       image_path: player.image_path,
       firstname: player.firstname,
-      lastname: player.lastname
+      lastname: player.lastname,
+      battingstyle: player.battingstyle || null,
+      bowlingstyle: player.bowlingstyle || null
     });
   } catch (error) {
     console.error('Error fetching player image:', error);
