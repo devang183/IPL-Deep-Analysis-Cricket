@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Activity, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import CricketBackground from './CricketBackground';
 
 function Login({ onSwitchToRegister }) {
   const [email, setEmail] = useState('');
@@ -26,36 +27,30 @@ function Login({ onSwitchToRegister }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animated-gradient">
-      {/* Cricket-themed background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
-        <div className="absolute top-10 left-10 text-primary-300 animate-float">
-          <Trophy className="w-32 h-32" />
-        </div>
-        <div className="absolute bottom-10 right-10 text-primary-300 animate-float" style={{animationDelay: '1s'}}>
-          <Activity className="w-40 h-40" />
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Animated Cricket Background */}
+      <CricketBackground />
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         {/* Header */}
         <div className="text-center animate-fade-in-down">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Activity className="w-12 h-12 text-primary-600 animate-bounce-subtle" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+            <Activity className="w-12 h-12 text-yellow-400 animate-bounce-subtle drop-shadow-lg" />
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent drop-shadow-xl">
               IPL Analytics
             </h1>
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-800">
+          <h2 className="mt-6 text-3xl font-extrabold text-white drop-shadow-lg">
             Welcome Back!
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-base text-blue-200 font-medium drop-shadow-md">
             Sign in to access advanced cricket analytics
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border border-slate-200 animate-scale-in hover:shadow-3xl transition-shadow duration-300">
+        <div className="rounded-2xl shadow-2xl p-8 border-2 border-blue-400/40 animate-scale-in hover:shadow-blue-500/50 hover:shadow-3xl transition-all duration-300"
+             style={{background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)'}}>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Error Message */}
             {error && (
@@ -163,9 +158,9 @@ function Login({ onSwitchToRegister }) {
         </div>
 
         {/* Footer */}
-        <div className="text-center text-sm text-slate-600">
-          <p className="flex items-center justify-center gap-2">
-            <Trophy className="w-4 h-4 text-yellow-600" />
+        <div className="text-center text-base font-medium">
+          <p className="flex items-center justify-center gap-2 text-blue-200 drop-shadow-md">
+            <Trophy className="w-5 h-5 text-yellow-400 animate-pulse" />
             <span>Unlock player insights, match predictions & more</span>
           </p>
         </div>
