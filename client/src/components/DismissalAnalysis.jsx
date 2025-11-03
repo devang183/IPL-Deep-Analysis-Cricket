@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Target, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -8,6 +8,13 @@ function DismissalAnalysis({ player, initialBallsPlayed }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Update ballsPlayed when initialBallsPlayed prop changes
+  useEffect(() => {
+    if (initialBallsPlayed) {
+      setBallsPlayed(initialBallsPlayed);
+    }
+  }, [initialBallsPlayed]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
