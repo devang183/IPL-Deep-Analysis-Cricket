@@ -18,6 +18,7 @@ import axios from 'axios';
 function App() {
   const { isAuthenticated, user, logout, loading: authLoading } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState('');
+  const [initialBowler, setInitialBowler] = useState('');
   const [activeTab, setActiveTab] = useState('smart');
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,8 +100,8 @@ function App() {
     { id: 'smart', name: 'Smart Search', icon: Sparkles },
     { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
-    { id: 'stats', name: 'Overall Stats', icon: BarChart3 },
-    { id: 'bowler', name: 'Bowler Stats', icon: Target },
+    { id: 'stats', name: 'Batting Stats', icon: BarChart3 },
+    { id: 'bowler', name: 'Bowling Stats', icon: Target },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'motm', name: 'MOTM', icon: Trophy },
     { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
@@ -199,6 +200,7 @@ function App() {
               players={players}
               onPlayerSelect={setSelectedPlayer}
               onTabChange={setActiveTab}
+              onBowlerSelect={setInitialBowler}
             />
           )}
 
@@ -247,7 +249,7 @@ function App() {
 
           {activeTab === 'matchup' && selectedPlayer && (
             <div className="card">
-              <BatsmanVsBowler player={selectedPlayer} />
+              <BatsmanVsBowler player={selectedPlayer} initialBowler={initialBowler} />
             </div>
           )}
 

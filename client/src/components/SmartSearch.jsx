@@ -7,7 +7,7 @@ import BatsmanVsBowler from './BatsmanVsBowler';
 import MOTMAnalysis from './MOTMAnalysis';
 import { findBestPlayerMatch, findPlayerSuggestions, checkCommonNameMapping } from '../utils/nameMatching';
 
-function SmartSearch({ players, onPlayerSelect, onTabChange }) {
+function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [parsedQuery, setParsedQuery] = useState(null);
@@ -161,6 +161,12 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
       setParsedQuery(parsed);
       onPlayerSelect(parsed.player);
       onTabChange(parsed.analysisType);
+
+      // Set bowler if matchup query
+      if (parsed.analysisType === 'matchup' && parsed.secondPlayer && onBowlerSelect) {
+        onBowlerSelect(parsed.secondPlayer);
+      }
+
       setLoading(false);
     }, 800);
   };
@@ -171,6 +177,12 @@ function SmartSearch({ players, onPlayerSelect, onTabChange }) {
     setParsedQuery({ ...parsed, player: playerName, matchScore: 100 });
     onPlayerSelect(playerName);
     onTabChange(parsed.analysisType);
+
+    // Set bowler if matchup query
+    if (parsed.analysisType === 'matchup' && parsed.secondPlayer && onBowlerSelect) {
+      onBowlerSelect(parsed.secondPlayer);
+    }
+
     setSuggestions([]);
     setError('');
   };
