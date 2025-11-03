@@ -158,35 +158,35 @@ function PhaseAnalysis({ player }) {
 
       {result && result.analysis && (
         <div className="space-y-6" role="region" aria-live="polite" aria-label="Analysis results">
-          <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-6 border border-primary-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">
+          <div className="rounded-xl p-6 border-2 border-blue-400/40" style={{background: 'rgba(59, 130, 246, 0.1)', backdropFilter: 'blur(10px)'}}>
+            <h3 className="text-lg font-semibold text-white mb-5">
               Query: If {player} has played {formData.ballsPlayedBefore} balls by over {formData.oversPlayedBefore},
               what happens in the next {formData.nextOvers} overs (minimum {formData.ballsInNextPhase} balls)?
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-primary-600">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 shadow-xl border-2 border-blue-400 transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-extrabold text-white">
                   {result.analysis.averageRuns}
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Average Runs</div>
+                <div className="text-sm text-blue-100 mt-2 font-semibold">Average Runs</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-green-600">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 shadow-xl border-2 border-green-400 transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-extrabold text-white">
                   {result.analysis.strikeRate}
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Strike Rate</div>
+                <div className="text-sm text-green-100 mt-2 font-semibold">Strike Rate</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-orange-600">
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 shadow-xl border-2 border-orange-400 transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-extrabold text-white">
                   {result.analysis.dismissalRate}%
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Dismissal Rate</div>
+                <div className="text-sm text-orange-100 mt-2 font-semibold">Dismissal Rate</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-3xl font-bold text-purple-600">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 shadow-xl border-2 border-purple-400 transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-extrabold text-white">
                   {result.matchingInnings}
                 </div>
-                <div className="text-sm text-slate-600 mt-1">Innings Analyzed</div>
+                <div className="text-sm text-purple-100 mt-2 font-semibold">Innings Analyzed</div>
               </div>
             </div>
           </div>
