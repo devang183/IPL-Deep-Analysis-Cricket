@@ -389,50 +389,56 @@ function MOTMAnalysis({ player }) {
             return (
               <div
                 key={index}
-                className={`rounded-lg p-4 border transition-all ${
+                className={`rounded-xl p-5 border-2 transition-all cursor-pointer ${
                   isFiltered
-                    ? 'bg-slate-50 border-slate-200 opacity-30'
+                    ? 'opacity-20'
                     : isSelected
-                    ? 'bg-gradient-to-br from-primary-50 to-primary-100 border-primary-400 border-2 shadow-lg'
-                    : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 hover:shadow-md hover:border-primary-300'
+                    ? 'border-primary-400 shadow-2xl animate-pulse-glow'
+                    : 'border-blue-400/30 hover:shadow-lg hover:border-blue-400/50 hover:scale-105'
                 }`}
+                style={{
+                  background: isSelected
+                    ? 'rgba(59, 130, 246, 0.2)'
+                    : 'rgba(59, 130, 246, 0.08)',
+                  backdropFilter: 'blur(10px)'
+                }}
               >
                 {/* Venue Header - Clickable for filter */}
                 <div
                   onClick={() => handleVenueClick(venue.venue)}
-                  className="cursor-pointer"
                 >
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h5 className={`font-semibold text-sm mb-1 ${
-                        isSelected ? 'text-primary-900' : 'text-slate-800'
+                      <h5 className={`font-bold text-base mb-2 ${
+                        isSelected ? 'text-white' : 'text-white'
                       }`}>
                         {venue.venue}
                       </h5>
                       <div className="flex items-center gap-2">
-                        <Trophy className={`w-4 h-4 ${isSelected ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                        <span className={`text-2xl font-bold ${
-                          isSelected ? 'text-primary-700' : 'text-primary-600'
+                        <Trophy className={`w-5 h-5 ${isSelected ? 'text-yellow-400 animate-pulse' : 'text-yellow-400'}`} />
+                        <span className={`text-3xl font-extrabold ${
+                          isSelected ? 'text-white' : 'text-white'
                         }`}>
                           {venue.count}
                         </span>
-                        <span className="text-xs text-slate-500">award{venue.count !== 1 ? 's' : ''}</span>
+                        <span className="text-sm text-blue-100 font-medium">award{venue.count !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-slate-600 mt-2">
-                    <Calendar className="w-3 h-3 inline mr-1" />
-                    Seasons: {venue.seasons.sort().join(', ')}
+                  <div className="text-sm text-white mt-3 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">Seasons:</span>
+                    <span>{venue.seasons.sort().join(', ')}</span>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-slate-200">
-                    <div className="text-xs text-slate-500">
+                  <div className="mt-3 pt-3 border-t border-blue-300/30">
+                    <div className="text-sm text-white font-medium">
                       {venue.matches.length} match{venue.matches.length !== 1 ? 'es' : ''}
                     </div>
                   </div>
                   {isSelected && (
-                    <div className="mt-2 pt-2 border-t border-primary-300">
-                      <div className="text-xs text-primary-600 font-medium flex items-center gap-1">
-                        <Filter className="w-3 h-3" />
+                    <div className="mt-3 pt-3 border-t border-primary-300/50">
+                      <div className="text-sm text-yellow-300 font-bold flex items-center gap-2 animate-pulse">
+                        <Filter className="w-4 h-4" />
                         Currently filtered
                       </div>
                     </div>
@@ -442,21 +448,22 @@ function MOTMAnalysis({ player }) {
                 {/* Expand/Collapse Button */}
                 <button
                   onClick={(e) => toggleVenueExpansion(venue.venue, e)}
-                  className={`w-full mt-3 py-2 px-3 rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                  className={`w-full mt-4 py-2.5 px-4 rounded-lg border-2 transition-all flex items-center justify-center gap-2 font-semibold ${
                     isExpanded
-                      ? 'bg-primary-600 hover:bg-primary-700 text-white border-primary-700'
-                      : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white border-primary-500 shadow-lg'
+                      : 'text-white border-blue-300/50 hover:border-blue-300 hover:bg-blue-400/20 shadow-md'
                   }`}
+                  style={!isExpanded ? {background: 'rgba(59, 130, 246, 0.15)', backdropFilter: 'blur(8px)'} : {}}
                 >
                   {isExpanded ? (
                     <>
                       <ChevronUp className="w-4 h-4" />
-                      <span className="text-xs font-medium">Hide Matches</span>
+                      <span className="text-sm">Hide Matches</span>
                     </>
                   ) : (
                     <>
                       <ChevronDown className="w-4 h-4" />
-                      <span className="text-xs font-medium">View Matches</span>
+                      <span className="text-sm">View Matches</span>
                     </>
                   )}
                 </button>

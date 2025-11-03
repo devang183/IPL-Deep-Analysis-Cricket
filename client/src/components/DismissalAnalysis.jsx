@@ -87,11 +87,11 @@ function DismissalAnalysis({ player }) {
 
       {result && result.totalDismissals > 0 && (
         <div className="space-y-6" role="region" aria-live="polite" aria-label="Dismissal analysis results">
-          <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-6 border border-orange-200">
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">
+          <div className="rounded-xl p-6 border-2 border-orange-400/40" style={{background: 'rgba(249, 115, 22, 0.1)', backdropFilter: 'blur(10px)'}}>
+            <h3 className="text-lg font-semibold text-white mb-3">
               Where does {player} get out most after playing {ballsPlayed}+ balls?
             </h3>
-            <div className="text-3xl font-bold text-orange-600 mt-4">
+            <div className="text-4xl font-extrabold text-white mt-4">
               {result.totalDismissals} dismissals analyzed
             </div>
           </div>
