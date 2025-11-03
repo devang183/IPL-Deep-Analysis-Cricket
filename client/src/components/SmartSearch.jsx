@@ -108,12 +108,24 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
       }
     }
 
+    // Extract ball threshold for dismissal analysis
+    let ballThreshold = null;
+    if (analysisType === 'dismissal') {
+      // Look for patterns like "after 15 balls", "after playing 20 balls", "15+ balls", etc.
+      const ballPattern = /(?:after|playing|played|facing|faced)?\s*(\d+)\+?\s*(?:balls?|deliveries)/i;
+      const ballMatch = lowerQuery.match(ballPattern);
+      if (ballMatch) {
+        ballThreshold = parseInt(ballMatch[1]);
+      }
+    }
+
     return {
       player: detectedPlayer,
       analysisType,
       secondPlayer,
       matchScore,
       secondPlayerScore,
+      ballThreshold,
       originalQuery: queryText,
     };
   };
@@ -451,7 +463,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
               <PhaseAnalysis player={parsedQuery.player} />
             )}
             {parsedQuery.analysisType === 'dismissal' && (
-              <DismissalAnalysis player={parsedQuery.player} />
+              <DismissalAnalysis player={parsedQuery.player} initialBallsPlayed={parsedQuery.ballThreshold} />
             )}
             {parsedQuery.analysisType === 'stats' && (
               <PlayerStats player={parsedQuery.player} />

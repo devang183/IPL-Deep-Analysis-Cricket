@@ -3,8 +3,8 @@ import { Target, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-function DismissalAnalysis({ player }) {
-  const [ballsPlayed, setBallsPlayed] = useState(20);
+function DismissalAnalysis({ player, initialBallsPlayed }) {
+  const [ballsPlayed, setBallsPlayed] = useState(initialBallsPlayed || 20);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
