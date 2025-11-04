@@ -21,7 +21,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
     { text: "Rohit Sharma stats", icon: BarChart3 },
     { text: "AB de Villiers vs Jasprit Bumrah", icon: Users },
     { text: "Virat Kohli man of the match awards", icon: Trophy },
-    { text: "MS Dhoni powerplay stats", icon: TrendingUp },
+    { text: "Starc stats", icon: TrendingUp },
   ];
 
   // Keywords mapping to analysis types

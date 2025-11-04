@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Target, Loader2, AlertCircle, TrendingDown, Activity, Zap, User, Clock } from 'lucide-react';
+import { Target, Loader2, AlertCircle, TrendingDown, Activity, Zap, User, Clock, Filter } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -9,6 +9,7 @@ function BowlerStats({ player }) {
   const [playerInfo, setPlayerInfo] = useState({ battingstyle: null, bowlingstyle: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedPhase, setSelectedPhase] = useState(null); // For filtering phase stats
 
   useEffect(() => {
     fetchStats();
@@ -44,6 +45,11 @@ function BowlerStats({ player }) {
       console.log('Player image not found, using placeholder');
       setPlayerImage(null);
     }
+  };
+
+  const handlePhaseClick = (phase) => {
+    // Toggle selection: if clicking the same phase, deselect it
+    setSelectedPhase(selectedPhase === phase ? null : phase);
   };
 
   if (loading) {
@@ -221,7 +227,19 @@ function BowlerStats({ player }) {
           {/* Phase Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Powerplay (1-6 overs) */}
-            <div className="rounded-xl p-6 border-2 border-blue-400/40 transform hover:scale-105 transition-all duration-300 shadow-lg" style={{background: 'rgba(59, 130, 246, 0.15)', backdropFilter: 'blur(10px)'}}>
+            <div
+              onClick={() => handlePhaseClick('powerplay')}
+              className={`rounded-xl p-6 border-2 transition-all duration-300 shadow-lg cursor-pointer ${
+                selectedPhase === null || selectedPhase === 'powerplay'
+                  ? 'border-blue-400/40 transform hover:scale-105 opacity-100'
+                  : 'opacity-30 border-blue-400/20'
+              } ${
+                selectedPhase === 'powerplay'
+                  ? 'ring-4 ring-blue-400/50 shadow-2xl scale-105'
+                  : ''
+              }`}
+              style={{background: 'rgba(59, 130, 246, 0.15)', backdropFilter: 'blur(10px)'}}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
                   <Zap className="w-6 h-6 text-white" />
@@ -245,10 +263,30 @@ function BowlerStats({ player }) {
                   <span className="text-2xl font-extrabold text-white">{stats.phaseBreakdown.powerplay.economyRate}</span>
                 </div>
               </div>
+              {selectedPhase === 'powerplay' && (
+                <div className="mt-4 pt-4 border-t border-blue-300/30">
+                  <div className="text-sm text-yellow-300 font-bold flex items-center gap-2 animate-pulse">
+                    <Filter className="w-4 h-4" />
+                    Currently filtered
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Middle Overs (7-15) */}
-            <div className="rounded-xl p-6 border-2 border-green-400/40 transform hover:scale-105 transition-all duration-300 shadow-lg" style={{background: 'rgba(16, 185, 129, 0.15)', backdropFilter: 'blur(10px)'}}>
+            <div
+              onClick={() => handlePhaseClick('middle')}
+              className={`rounded-xl p-6 border-2 transition-all duration-300 shadow-lg cursor-pointer ${
+                selectedPhase === null || selectedPhase === 'middle'
+                  ? 'border-green-400/40 transform hover:scale-105 opacity-100'
+                  : 'opacity-30 border-green-400/20'
+              } ${
+                selectedPhase === 'middle'
+                  ? 'ring-4 ring-green-400/50 shadow-2xl scale-105'
+                  : ''
+              }`}
+              style={{background: 'rgba(16, 185, 129, 0.15)', backdropFilter: 'blur(10px)'}}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
                   <Activity className="w-6 h-6 text-white" />
@@ -272,10 +310,30 @@ function BowlerStats({ player }) {
                   <span className="text-2xl font-extrabold text-white">{stats.phaseBreakdown.middle.economyRate}</span>
                 </div>
               </div>
+              {selectedPhase === 'middle' && (
+                <div className="mt-4 pt-4 border-t border-green-300/30">
+                  <div className="text-sm text-yellow-300 font-bold flex items-center gap-2 animate-pulse">
+                    <Filter className="w-4 h-4" />
+                    Currently filtered
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Death Overs (16-20) */}
-            <div className="rounded-xl p-6 border-2 border-red-400/40 transform hover:scale-105 transition-all duration-300 shadow-lg" style={{background: 'rgba(239, 68, 68, 0.15)', backdropFilter: 'blur(10px)'}}>
+            <div
+              onClick={() => handlePhaseClick('death')}
+              className={`rounded-xl p-6 border-2 transition-all duration-300 shadow-lg cursor-pointer ${
+                selectedPhase === null || selectedPhase === 'death'
+                  ? 'border-red-400/40 transform hover:scale-105 opacity-100'
+                  : 'opacity-30 border-red-400/20'
+              } ${
+                selectedPhase === 'death'
+                  ? 'ring-4 ring-red-400/50 shadow-2xl scale-105'
+                  : ''
+              }`}
+              style={{background: 'rgba(239, 68, 68, 0.15)', backdropFilter: 'blur(10px)'}}
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
                   <Target className="w-6 h-6 text-white" />
@@ -299,35 +357,58 @@ function BowlerStats({ player }) {
                   <span className="text-2xl font-extrabold text-white">{stats.phaseBreakdown.death.economyRate}</span>
                 </div>
               </div>
+              {selectedPhase === 'death' && (
+                <div className="mt-4 pt-4 border-t border-red-300/30">
+                  <div className="text-sm text-yellow-300 font-bold flex items-center gap-2 animate-pulse">
+                    <Filter className="w-4 h-4" />
+                    Currently filtered
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Visual Chart Comparison */}
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-lg">
-            <h4 className="text-lg font-semibold text-slate-800 mb-6">Economy Rate Comparison Across Phases</h4>
+            <h4 className="text-lg font-semibold text-slate-800 mb-6">
+              Economy Rate Comparison Across Phases
+              {selectedPhase && (
+                <span className="ml-3 text-sm text-primary-600 font-normal">
+                  (Click on a bar or card to filter)
+                </span>
+              )}
+            </h4>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
                 data={[
                   {
                     phase: 'Powerplay\n(1-6)',
+                    phaseKey: 'powerplay',
                     'Economy Rate': stats.phaseBreakdown.powerplay.economyRate,
                     'Runs': stats.phaseBreakdown.powerplay.runs,
                     'Balls': stats.phaseBreakdown.powerplay.balls
                   },
                   {
                     phase: 'Middle\n(7-15)',
+                    phaseKey: 'middle',
                     'Economy Rate': stats.phaseBreakdown.middle.economyRate,
                     'Runs': stats.phaseBreakdown.middle.runs,
                     'Balls': stats.phaseBreakdown.middle.balls
                   },
                   {
                     phase: 'Death\n(16-20)',
+                    phaseKey: 'death',
                     'Economy Rate': stats.phaseBreakdown.death.economyRate,
                     'Runs': stats.phaseBreakdown.death.runs,
                     'Balls': stats.phaseBreakdown.death.balls
                   }
                 ]}
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                onClick={(data) => {
+                  if (data && data.activePayload && data.activePayload[0]) {
+                    handlePhaseClick(data.activePayload[0].payload.phaseKey);
+                  }
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
@@ -348,12 +429,38 @@ function BowlerStats({ player }) {
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}
                   labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
+                  cursor={{ fill: 'rgba(14, 165, 233, 0.1)' }}
                 />
                 <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="circle"
                 />
-                <Bar dataKey="Economy Rate" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                <Bar
+                  dataKey="Economy Rate"
+                  radius={[8, 8, 0, 0]}
+                  cursor="pointer"
+                  shape={(props) => {
+                    const { fill, x, y, width, height, payload } = props;
+                    const isSelected = selectedPhase === payload.phaseKey;
+                    const isFiltered = selectedPhase && selectedPhase !== payload.phaseKey;
+
+                    return (
+                      <rect
+                        x={x}
+                        y={y}
+                        width={width}
+                        height={height}
+                        fill={isFiltered ? '#94a3b8' : fill}
+                        opacity={isFiltered ? 0.3 : 1}
+                        stroke={isSelected ? '#0ea5e9' : 'none'}
+                        strokeWidth={isSelected ? 3 : 0}
+                        rx={8}
+                        ry={8}
+                      />
+                    );
+                  }}
+                  fill="#0ea5e9"
+                />
               </BarChart>
             </ResponsiveContainer>
 
