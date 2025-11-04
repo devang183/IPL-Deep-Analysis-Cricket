@@ -358,12 +358,12 @@ function BowlerStats({ player }) {
             </ResponsiveContainer>
 
             {/* Summary Insight */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg border-l-4 border-primary-500">
+            <div className="mt-6 p-4 rounded-lg border-2 border-primary-400/40" style={{background: 'rgba(59, 130, 246, 0.15)', backdropFilter: 'blur(10px)'}}>
               <div className="flex items-start gap-3">
-                <TrendingDown className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
+                <TrendingDown className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
                 <div>
-                  <h5 className="font-semibold text-slate-800 mb-1">Performance Insight</h5>
-                  <p className="text-sm text-slate-600">
+                  <h5 className="font-semibold text-white mb-1">Performance Insight</h5>
+                  <p className="text-sm text-blue-100">
                     {stats.phaseBreakdown.powerplay.economyRate <= stats.phaseBreakdown.middle.economyRate &&
                      stats.phaseBreakdown.powerplay.economyRate <= stats.phaseBreakdown.death.economyRate
                       ? `Most economical in the Powerplay phase (${stats.phaseBreakdown.powerplay.economyRate} economy). Great control in the field restrictions!`
