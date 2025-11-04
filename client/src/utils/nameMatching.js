@@ -127,26 +127,41 @@ export function calculateNameSimilarity(query, playerName) {
 export function findBestPlayerMatch(query, players, threshold = 60) {
   if (!query || !players || players.length === 0) return null;
 
-  let bestMatch = null;
-  let bestScore = 0;
-
-  for (const player of players) {
+  // Calculate scores for all players
+  const matches = players.map(player => {
     const score = calculateNameSimilarity(query, player);
+    const priority = playerPriority[player] || 0;
 
-    if (score > bestScore && score >= threshold) {
-      bestScore = score;
-      bestMatch = player;
-    }
-  }
+    // Add priority bonus (scaled down to not overwhelm the similarity score)
+    // Priority only matters when scores are close (within 10 points)
+    const adjustedScore = score + (priority * 0.1);
 
-  if (bestMatch) {
     return {
-      player: bestMatch,
-      score: bestScore
+      player,
+      score,
+      adjustedScore,
+      priority
     };
-  }
+  }).filter(match => match.score >= threshold);
 
-  return null;
+  if (matches.length === 0) return null;
+
+  // Sort by adjusted score (which includes priority bonus)
+  matches.sort((a, b) => {
+    // If scores are within 10 points, prioritize by player priority
+    if (Math.abs(a.score - b.score) <= 10) {
+      return b.adjustedScore - a.adjustedScore;
+    }
+    // Otherwise, just use similarity score
+    return b.score - a.score;
+  });
+
+  const bestMatch = matches[0];
+
+  return {
+    player: bestMatch.player,
+    score: bestMatch.score
+  };
 }
 
 /**
@@ -187,6 +202,33 @@ export const commonNameMappings = {
   'hardik pandya': ['hh pandya', 'h pandya'],
   'kl rahul': ['kl rahul', 'k rahul'],
   'suryakumar yadav': ['sa yadav', 's yadav'],
+};
+
+/**
+ * Player popularity/priority mapping
+ * Higher priority players get a boost in scoring when there are ambiguous matches
+ * This helps prioritize "V Kohli" (Virat) over "T Kohli" when user searches "Kohli"
+ */
+export const playerPriority = {
+  'V Kohli': 100,
+  'RG Sharma': 95,
+  'MS Dhoni': 95,
+  'AB de Villiers': 90,
+  'JJ Bumrah': 90,
+  'SR Tendulkar': 85,
+  'CH Gayle': 85,
+  'DA Warner': 80,
+  'RA Jadeja': 80,
+  'SK Raina': 80,
+  'HH Pandya': 75,
+  'KL Rahul': 75,
+  'YK Pathan': 75,
+  'DJ Bravo': 70,
+  'R Ashwin': 70,
+  'SA Yadav': 70,
+  'PP Shaw': 65,
+  'SS Iyer': 65,
+  'KA Pollard': 65,
 };
 
 /**
