@@ -156,7 +156,25 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
         return;
       }
 
-      // ALWAYS show ALL matching players for confirmation (unless 100% match)
+      // For matchup queries, be more lenient - auto-execute if both players found
+      if (parsed.analysisType === 'matchup' && parsed.secondPlayer) {
+        // If both players are found with decent confidence, proceed
+        if (parsed.matchScore >= 70 && parsed.secondPlayerScore >= 70) {
+          // Auto-execute - both players are confident matches
+          setParsedQuery(parsed);
+          onPlayerSelect(parsed.player);
+          onTabChange(parsed.analysisType);
+
+          if (onBowlerSelect) {
+            onBowlerSelect(parsed.secondPlayer);
+          }
+
+          setLoading(false);
+          return;
+        }
+      }
+
+      // For non-matchup queries or low confidence, show suggestions
       if (parsed.matchScore < 100) {
         const allSuggestions = findPlayerSuggestions(query, players, 100, 40);
 

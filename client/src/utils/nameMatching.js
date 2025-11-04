@@ -239,6 +239,10 @@ export const commonNameMappings = {
   'dwayne bravo': ['dj bravo'],
   'ashwin': ['r ashwin'],
   'ravichandran ashwin': ['r ashwin'],
+  'deepak chahar': ['dl chahar'],
+  'dl chahar': ['dl chahar'],
+  'rahul chahar': ['rd chahar'],
+  'rd chahar': ['rd chahar'],
 };
 
 /**
