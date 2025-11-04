@@ -53,13 +53,23 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
     let detectedPlayer = null;
     let matchScore = 0;
 
-    // First, try common name mappings
-    detectedPlayer = checkCommonNameMapping(lowerQuery, players);
+    // For matchup queries, extract first player before "vs"
+    let searchQuery = lowerQuery;
+    if (analysisType === 'matchup') {
+      const vsPattern = /^(.+?)\s+(?:vs|versus|against|facing)\s+/i;
+      const match = lowerQuery.match(vsPattern);
+      if (match) {
+        searchQuery = match[1].trim();
+      }
+    }
+
+    // First, try common name mappings on the search query
+    detectedPlayer = checkCommonNameMapping(searchQuery, players);
 
     if (!detectedPlayer) {
       // Split query into potential player name parts
       // For queries like "virat kohli stats", we want to extract "virat kohli"
-      const words = lowerQuery.split(/\s+/);
+      const words = searchQuery.split(/\s+/);
 
       // Try combinations of consecutive words as player names
       for (let i = 0; i < words.length; i++) {
@@ -79,6 +89,11 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
           }
         }
       }
+    }
+
+    // If still no player detected and it's a matchup, update matchScore
+    if (detectedPlayer) {
+      matchScore = matchScore || 100;
     }
 
     // Extract second player for matchup using same fuzzy matching

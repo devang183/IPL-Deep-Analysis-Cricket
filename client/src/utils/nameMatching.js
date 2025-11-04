@@ -243,6 +243,8 @@ export const commonNameMappings = {
   'dl chahar': ['dl chahar'],
   'rahul chahar': ['rd chahar'],
   'rd chahar': ['rd chahar'],
+  'harshal patel': ['hv patel'],
+  'harshal': ['hv patel'],
 };
 
 /**
@@ -274,6 +276,7 @@ export const playerPriority = {
   'PP Shaw': 65,
   'SS Iyer': 65,
   'KA Pollard': 65,
+  'HV Patel': 72,
   'DL Chahar': 40,
   'RD Chahar': 35,
 };
