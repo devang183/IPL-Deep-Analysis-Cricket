@@ -707,6 +707,49 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
 
     const matches = matchesData.length > 0 ? matchesData[0].matches : 0;
 
+    // Phase-wise bowling statistics
+    // Powerplay: overs 1-6, Middle: overs 7-15, Death: overs 16-20
+    const phaseStats = await collection.aggregate([
+      { $match: { bowler: bowler, valid_ball: 1 } },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $lte: ['$over', 6] }, 'Powerplay',
+              { $cond: [
+                { $lte: ['$over', 15] }, 'Middle',
+                'Death'
+              ]}
+            ]
+          },
+          balls: { $sum: 1 },
+          runs: { $sum: '$runs_total' }
+        }
+      }
+    ]).toArray();
+
+    // Format phase stats with economy rate
+    const phaseBreakdown = {
+      powerplay: { balls: 0, runs: 0, economyRate: 0 },
+      middle: { balls: 0, runs: 0, economyRate: 0 },
+      death: { balls: 0, runs: 0, economyRate: 0 }
+    };
+
+    phaseStats.forEach(phase => {
+      const balls = phase.balls;
+      const runs = phase.runs;
+      const overs = Math.floor(balls / 6) + ((balls % 6) / 10);
+      const economy = overs > 0 ? parseFloat((runs / overs).toFixed(2)) : 0;
+
+      if (phase._id === 'Powerplay') {
+        phaseBreakdown.powerplay = { balls, runs, economyRate: economy };
+      } else if (phase._id === 'Middle') {
+        phaseBreakdown.middle = { balls, runs, economyRate: economy };
+      } else if (phase._id === 'Death') {
+        phaseBreakdown.death = { balls, runs, economyRate: economy };
+      }
+    });
+
     res.json({
       bowler,
       stats: {
@@ -722,7 +765,8 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
         economyRate: economyRate,
         bowlingStrikeRate: bowlingStrikeRate,
         dotBalls: dotBalls,
-        matches: matches
+        matches: matches,
+        phaseBreakdown: phaseBreakdown
       }
     });
   } catch (error) {

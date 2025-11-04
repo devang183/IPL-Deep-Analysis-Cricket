@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Target, Loader2, AlertCircle, TrendingDown, Activity, Zap, User } from 'lucide-react';
+import { Target, Loader2, AlertCircle, TrendingDown, Activity, Zap, User, Clock } from 'lucide-react';
 import axios from 'axios';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function BowlerStats({ player }) {
   const [stats, setStats] = useState(null);
@@ -204,6 +205,176 @@ function BowlerStats({ player }) {
             <div>
               <h3 className="text-4xl font-extrabold text-orange-900 mb-2">{stats.fiveWickets} Five Wicket Hauls</h3>
               <p className="text-orange-900 font-bold text-xl">Outstanding bowling performances!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase-wise Bowling Breakdown */}
+      {stats.phaseBreakdown && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Clock className="w-6 h-6 text-primary-600" />
+            <h3 className="text-2xl font-bold text-slate-800">Phase-wise Performance Breakdown</h3>
+          </div>
+
+          {/* Phase Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Powerplay (1-6 overs) */}
+            <div className="rounded-xl p-6 border-2 border-blue-400/40 transform hover:scale-105 transition-all duration-300 shadow-lg" style={{background: 'rgba(59, 130, 246, 0.15)', backdropFilter: 'blur(10px)'}}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-white">Powerplay</h4>
+                  <p className="text-sm text-blue-200">Overs 1-6</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-blue-100">Balls Bowled</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.powerplay.balls}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-blue-100">Runs Conceded</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.powerplay.runs}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-500/30 to-blue-600/30 rounded-lg backdrop-blur-sm border-2 border-blue-400/50">
+                  <span className="text-sm font-semibold text-blue-100">Economy Rate</span>
+                  <span className="text-2xl font-extrabold text-white">{stats.phaseBreakdown.powerplay.economyRate}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Overs (7-15) */}
+            <div className="rounded-xl p-6 border-2 border-green-400/40 transform hover:scale-105 transition-all duration-300 shadow-lg" style={{background: 'rgba(16, 185, 129, 0.15)', backdropFilter: 'blur(10px)'}}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-white">Middle Overs</h4>
+                  <p className="text-sm text-green-200">Overs 7-15</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-green-100">Balls Bowled</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.middle.balls}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-green-100">Runs Conceded</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.middle.runs}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-500/30 to-green-600/30 rounded-lg backdrop-blur-sm border-2 border-green-400/50">
+                  <span className="text-sm font-semibold text-green-100">Economy Rate</span>
+                  <span className="text-2xl font-extrabold text-white">{stats.phaseBreakdown.middle.economyRate}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Death Overs (16-20) */}
+            <div className="rounded-xl p-6 border-2 border-red-400/40 transform hover:scale-105 transition-all duration-300 shadow-lg" style={{background: 'rgba(239, 68, 68, 0.15)', backdropFilter: 'blur(10px)'}}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-white">Death Overs</h4>
+                  <p className="text-sm text-red-200">Overs 16-20</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-red-100">Balls Bowled</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.death.balls}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-red-100">Runs Conceded</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.death.runs}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-red-500/30 to-red-600/30 rounded-lg backdrop-blur-sm border-2 border-red-400/50">
+                  <span className="text-sm font-semibold text-red-100">Economy Rate</span>
+                  <span className="text-2xl font-extrabold text-white">{stats.phaseBreakdown.death.economyRate}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Visual Chart Comparison */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-lg">
+            <h4 className="text-lg font-semibold text-slate-800 mb-6">Economy Rate Comparison Across Phases</h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={[
+                  {
+                    phase: 'Powerplay\n(1-6)',
+                    'Economy Rate': stats.phaseBreakdown.powerplay.economyRate,
+                    'Runs': stats.phaseBreakdown.powerplay.runs,
+                    'Balls': stats.phaseBreakdown.powerplay.balls
+                  },
+                  {
+                    phase: 'Middle\n(7-15)',
+                    'Economy Rate': stats.phaseBreakdown.middle.economyRate,
+                    'Runs': stats.phaseBreakdown.middle.runs,
+                    'Balls': stats.phaseBreakdown.middle.balls
+                  },
+                  {
+                    phase: 'Death\n(16-20)',
+                    'Economy Rate': stats.phaseBreakdown.death.economyRate,
+                    'Runs': stats.phaseBreakdown.death.runs,
+                    'Balls': stats.phaseBreakdown.death.balls
+                  }
+                ]}
+                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="phase"
+                  tick={{ fill: '#475569', fontSize: 12, fontWeight: 600 }}
+                  stroke="#94a3b8"
+                />
+                <YAxis
+                  tick={{ fill: '#475569', fontSize: 12 }}
+                  stroke="#94a3b8"
+                  label={{ value: 'Economy Rate', angle: -90, position: 'insideLeft', fill: '#475569', fontWeight: 600 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '2px solid #0ea5e9',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  }}
+                  labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
+                />
+                <Legend
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="circle"
+                />
+                <Bar dataKey="Economy Rate" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* Summary Insight */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg border-l-4 border-primary-500">
+              <div className="flex items-start gap-3">
+                <TrendingDown className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h5 className="font-semibold text-slate-800 mb-1">Performance Insight</h5>
+                  <p className="text-sm text-slate-600">
+                    {stats.phaseBreakdown.powerplay.economyRate <= stats.phaseBreakdown.middle.economyRate &&
+                     stats.phaseBreakdown.powerplay.economyRate <= stats.phaseBreakdown.death.economyRate
+                      ? `Most economical in the Powerplay phase (${stats.phaseBreakdown.powerplay.economyRate} economy). Great control in the field restrictions!`
+                      : stats.phaseBreakdown.middle.economyRate <= stats.phaseBreakdown.powerplay.economyRate &&
+                        stats.phaseBreakdown.middle.economyRate <= stats.phaseBreakdown.death.economyRate
+                      ? `Most economical in the Middle overs (${stats.phaseBreakdown.middle.economyRate} economy). Excellent at containing runs during consolidation!`
+                      : `Most economical in the Death overs (${stats.phaseBreakdown.death.economyRate} economy). Outstanding pressure bowling when it matters most!`
+                    }
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
