@@ -1022,12 +1022,26 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
       'Death (16-20)': 0
     };
 
+    // Break down middle overs into sub-phases
+    const middleOversBreakdown = {
+      'Early Middle (7-9)': 0,
+      'Mid Middle (10-12)': 0,
+      'Late Middle (13-15)': 0
+    };
+
     const dismissalTypes = {};
     const dismissalKinds = {};
 
     dismissals.forEach(d => {
       if (d.over <= 6) overRanges['Powerplay (1-6)']++;
-      else if (d.over <= 15) overRanges['Middle (7-15)']++;
+      else if (d.over <= 15) {
+        overRanges['Middle (7-15)']++;
+
+        // Sub-categorize middle overs
+        if (d.over <= 9) middleOversBreakdown['Early Middle (7-9)']++;
+        else if (d.over <= 12) middleOversBreakdown['Mid Middle (10-12)']++;
+        else middleOversBreakdown['Late Middle (13-15)']++;
+      }
       else overRanges['Death (16-20)']++;
 
       // Count wicket_type
@@ -1046,6 +1060,7 @@ app.post('/api/analyze/dismissal-patterns', async (req, res) => {
       ballsPlayed,
       totalDismissals: results[0].totalDismissals,
       overRanges,
+      middleOversBreakdown,
       dismissalTypes,
       dismissalKinds,
       dismissals: dismissals.slice(0, 20) // Return sample

@@ -145,6 +145,49 @@ function DismissalAnalysis({ player, initialBallsPlayed }) {
               </div>
             </div>
 
+            {/* Middle Overs Breakdown */}
+            {result.middleOversBreakdown && Object.values(result.middleOversBreakdown).some(v => v > 0) && (
+              <div className="bg-white rounded-lg p-6 border border-slate-200">
+                <h4 className="text-lg font-semibold text-slate-800 mb-4">Middle Overs Breakdown</h4>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={Object.entries(result.middleOversBreakdown).map(([name, value]) => ({
+                        name,
+                        value,
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {Object.keys(result.middleOversBreakdown).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => value} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {Object.entries(result.middleOversBreakdown).map(([phase, count], index) => (
+                    <div key={phase} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: COLORS[(index + 3) % COLORS.length] }}
+                        />
+                        <span className="text-sm font-medium text-slate-700">{phase}</span>
+                      </div>
+                      <span className="text-sm font-bold text-slate-800">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Dismissal Types (wicket_type) */}
             {Object.keys(result.dismissalTypes).length > 0 && (
               <div className="bg-white rounded-lg p-6 border border-slate-200">
