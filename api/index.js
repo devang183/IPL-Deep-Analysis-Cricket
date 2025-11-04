@@ -13,6 +13,14 @@ app.use(express.json());
 // JWT Secret (in production, use environment variable)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
+// Player name disambiguation map for handling cases where multiple players have similar names
+// Maps abbreviated names to their full names to avoid confusion
+const PLAYER_DISAMBIGUATION = {
+  'HV Patel': 'Harshal Patel',  // Prefer Harshal Patel over Hiral Patel
+  'H Patel': 'Harshal Patel',
+  // Add more as needed
+};
+
 // MongoDB connection
 let cachedDb = null;
 let cachedCollection = null;
@@ -434,9 +442,15 @@ app.get('/api/player/:name/image', async (req, res) => {
   try {
     const { db } = await connectToDatabase();
     const playersCollection = db.collection('All-Players');
-    const playerName = req.params.name;
+    let playerName = req.params.name;
 
     console.log('Searching for player image:', playerName);
+
+    // Check if this player name needs disambiguation
+    if (PLAYER_DISAMBIGUATION[playerName]) {
+      playerName = PLAYER_DISAMBIGUATION[playerName];
+      console.log('Using disambiguated name:', playerName);
+    }
 
     // Try to find player with fuzzy matching
     // First try exact match on fullname
@@ -461,16 +475,37 @@ app.get('/api/player/:name/image', async (req, res) => {
           // Extract the first initial letter
           const firstInitial = cleanedFirstPart[0].toUpperCase();
 
-          // Search for players where firstname starts with this initial and lastname matches
-          player = await playersCollection.findOne(
-            {
-              firstname: { $regex: new RegExp(`^${firstInitial}`, 'i') },
-              lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') }
-            },
-            { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
-          );
+          // Check if there are multiple initials (e.g., "HV", "MS", "TM")
+          const hasMultipleInitials = cleanedFirstPart.length > 1;
 
-          console.log(`Searching with initial "${firstInitial}" and lastname "${lastPart}":`, player ? player.fullname : 'not found');
+          if (hasMultipleInitials) {
+            // For multi-initial names like "HV Patel", try to match the full initials pattern
+            // This helps distinguish between "Harshal V Patel" and "Hiral Patel"
+            const initialsPattern = cleanedFirstPart.split('').join('.*');
+
+            player = await playersCollection.findOne(
+              {
+                $and: [
+                  { fullname: { $regex: new RegExp(`^${initialsPattern}.*${lastPart}$`, 'i') } },
+                  { lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') } }
+                ]
+              },
+              { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
+            );
+
+            console.log(`Searching with multi-initials "${cleanedFirstPart}" and lastname "${lastPart}":`, player ? player.fullname : 'not found');
+          } else {
+            // Single initial - search for players where firstname starts with this initial and lastname matches
+            player = await playersCollection.findOne(
+              {
+                firstname: { $regex: new RegExp(`^${firstInitial}`, 'i') },
+                lastname: { $regex: new RegExp(`^${lastPart}$`, 'i') }
+              },
+              { projection: { image_path: 1, fullname: 1, firstname: 1, lastname: 1, battingstyle: 1, bowlingstyle: 1 } }
+            );
+
+            console.log(`Searching with initial "${firstInitial}" and lastname "${lastPart}":`, player ? player.fullname : 'not found');
+          }
 
           // If still not found with firstname match, try matching fullname pattern
           // This handles cases where the All-Players collection might have different structure
