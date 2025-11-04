@@ -189,19 +189,56 @@ export function findPlayerSuggestions(query, players, limit = 5, threshold = 40)
 
 /**
  * Common cricket player name mappings
- * Maps full names to common abbreviations
+ * Maps common search terms to actual player names in database
  */
 export const commonNameMappings = {
   'virat kohli': ['v kohli', 'vk'],
-  'rohit sharma': ['rg sharma', 'r sharma'],
+  'rohit sharma': ['rohit sharma', 'r sharma'],
   'ms dhoni': ['ms dhoni', 'm dhoni'],
+  'dhoni': ['ms dhoni'],
+  'kohli': ['v kohli'],
+  'rohit': ['rohit sharma'],
+  'sharma': ['rohit sharma'],
   'sachin tendulkar': ['sr tendulkar', 's tendulkar'],
+  'sachin': ['sr tendulkar'],
   'ab de villiers': ['ab de villiers', 'ab devilliers'],
+  'ab': ['ab de villiers'],
+  'de villiers': ['ab de villiers'],
+  'devilliers': ['ab de villiers'],
   'jasprit bumrah': ['jj bumrah', 'j bumrah'],
+  'bumrah': ['jj bumrah'],
+  'jasprit': ['jj bumrah'],
   'ravindra jadeja': ['ra jadeja', 'r jadeja'],
+  'jadeja': ['ra jadeja'],
   'hardik pandya': ['hh pandya', 'h pandya'],
+  'hardik': ['hh pandya'],
+  'pandya': ['hh pandya'],
   'kl rahul': ['kl rahul', 'k rahul'],
+  'rahul': ['kl rahul'],
   'suryakumar yadav': ['sa yadav', 's yadav'],
+  'suryakumar': ['sa yadav'],
+  'yadav': ['sa yadav'],
+  'yuzvendra chahal': ['yz chahal'],
+  'chahal': ['yz chahal'],
+  'yuzi': ['yz chahal'],
+  'rashid khan': ['rashid khan'],
+  'rashid': ['rashid khan'],
+  'david warner': ['da warner'],
+  'warner': ['da warner'],
+  'chris gayle': ['ch gayle'],
+  'gayle': ['ch gayle'],
+  'raina': ['sk raina'],
+  'suresh raina': ['sk raina'],
+  'pollard': ['ka pollard'],
+  'kieron pollard': ['ka pollard'],
+  'russell': ['ad russell'],
+  'andre russell': ['ad russell'],
+  'malinga': ['sl malinga'],
+  'lasith malinga': ['sl malinga'],
+  'bravo': ['dj bravo'],
+  'dwayne bravo': ['dj bravo'],
+  'ashwin': ['r ashwin'],
+  'ravichandran ashwin': ['r ashwin'],
 };
 
 /**
@@ -211,7 +248,7 @@ export const commonNameMappings = {
  */
 export const playerPriority = {
   'V Kohli': 100,
-  'RG Sharma': 95,
+  'Rohit Sharma': 95,
   'MS Dhoni': 95,
   'AB de Villiers': 90,
   'JJ Bumrah': 90,
@@ -220,15 +257,21 @@ export const playerPriority = {
   'DA Warner': 80,
   'RA Jadeja': 80,
   'SK Raina': 80,
+  'YZ Chahal': 78,
   'HH Pandya': 75,
   'KL Rahul': 75,
   'YK Pathan': 75,
+  'Rashid Khan': 73,
   'DJ Bravo': 70,
   'R Ashwin': 70,
   'SA Yadav': 70,
+  'SL Malinga': 68,
+  'AD Russell': 67,
   'PP Shaw': 65,
   'SS Iyer': 65,
   'KA Pollard': 65,
+  'DL Chahar': 40,
+  'RD Chahar': 35,
 };
 
 /**
