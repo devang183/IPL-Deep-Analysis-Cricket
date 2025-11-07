@@ -88,14 +88,15 @@ function BowlerStats({ player }) {
 
     return {
       ...stats,
+      // Phase-specific stats (available from backend)
       balls: phaseData.balls,
       overs: overs.toFixed(1),
       totalRuns: phaseData.runs,
+      wickets: phaseData.wickets,
       economyRate: phaseData.economyRate,
+      bowlingAverage: phaseData.bowlingAverage,
+      bowlingStrikeRate: phaseData.bowlingStrikeRate,
       // These stats are not available per phase, so we keep overall stats
-      wickets: stats.wickets,
-      bowlingAverage: stats.bowlingAverage,
-      bowlingStrikeRate: stats.bowlingStrikeRate,
       maidens: stats.maidens,
       dotBalls: stats.dotBalls,
       threeWickets: stats.threeWickets,
@@ -188,25 +189,25 @@ function BowlerStats({ player }) {
 
       {/* Key Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg relative">
+        <div className={`bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg relative ${isFiltered ? 'ring-4 ring-yellow-400/50' : ''}`}>
           <div className="flex items-center gap-2 mb-2">
             <Target className="w-5 h-5" />
             <div className="text-sm opacity-90">Wickets</div>
           </div>
           <div className="text-4xl font-bold">{displayStats.wickets}</div>
           {isFiltered && (
-            <div className="mt-2 text-xs opacity-75 italic">Overall stat</div>
+            <div className="mt-2 text-xs opacity-90 font-semibold">Phase-specific</div>
           )}
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg relative">
+        <div className={`bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg relative ${isFiltered ? 'ring-4 ring-yellow-400/50' : ''}`}>
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="w-5 h-5" />
             <div className="text-sm opacity-90">Bowling Average</div>
           </div>
           <div className="text-4xl font-bold">{displayStats.bowlingAverage}</div>
           {isFiltered && (
-            <div className="mt-2 text-xs opacity-75 italic">Overall stat</div>
+            <div className="mt-2 text-xs opacity-90 font-semibold">Phase-specific</div>
           )}
         </div>
 
@@ -221,14 +222,14 @@ function BowlerStats({ player }) {
           )}
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg relative">
+        <div className={`bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg relative ${isFiltered ? 'ring-4 ring-yellow-400/50' : ''}`}>
           <div className="flex items-center gap-2 mb-2">
             <Zap className="w-5 h-5" />
             <div className="text-sm opacity-90">Strike Rate</div>
           </div>
           <div className="text-4xl font-bold">{displayStats.bowlingStrikeRate}</div>
           {isFiltered && (
-            <div className="mt-2 text-xs opacity-75 italic">Overall stat</div>
+            <div className="mt-2 text-xs opacity-90 font-semibold">Phase-specific</div>
           )}
         </div>
       </div>
@@ -328,6 +329,10 @@ function BowlerStats({ player }) {
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-blue-100">Wickets</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.powerplay.wickets}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
                   <span className="text-sm font-medium text-blue-100">Balls Bowled</span>
                   <span className="text-xl font-bold text-white">{stats.phaseBreakdown.powerplay.balls}</span>
                 </div>
@@ -375,6 +380,10 @@ function BowlerStats({ player }) {
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-green-100">Wickets</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.middle.wickets}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
                   <span className="text-sm font-medium text-green-100">Balls Bowled</span>
                   <span className="text-xl font-bold text-white">{stats.phaseBreakdown.middle.balls}</span>
                 </div>
@@ -421,6 +430,10 @@ function BowlerStats({ player }) {
                 </div>
               </div>
               <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <span className="text-sm font-medium text-red-100">Wickets</span>
+                  <span className="text-xl font-bold text-white">{stats.phaseBreakdown.death.wickets}</span>
+                </div>
                 <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
                   <span className="text-sm font-medium text-red-100">Balls Bowled</span>
                   <span className="text-xl font-bold text-white">{stats.phaseBreakdown.death.balls}</span>

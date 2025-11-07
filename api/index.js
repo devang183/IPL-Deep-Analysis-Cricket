@@ -758,30 +758,48 @@ app.get('/api/bowler-stats/:name', async (req, res) => {
             ]
           },
           balls: { $sum: 1 },
-          runs: { $sum: '$runs_total' }
+          runs: { $sum: '$runs_total' },
+          wickets: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $eq: ['$striker_out', true] },
+                  { $ne: ['$wicket_kind', 'run out'] },
+                  { $ne: ['$wicket_kind', 'retired hurt'] },
+                  { $ne: ['$wicket_kind', 'retired out'] },
+                  { $ne: ['$wicket_kind', 'obstructing the field'] }
+                ]},
+                1,
+                0
+              ]
+            }
+          }
         }
       }
     ]).toArray();
 
-    // Format phase stats with economy rate
+    // Format phase stats with economy rate, bowling average, and strike rate
     const phaseBreakdown = {
-      powerplay: { balls: 0, runs: 0, economyRate: 0 },
-      middle: { balls: 0, runs: 0, economyRate: 0 },
-      death: { balls: 0, runs: 0, economyRate: 0 }
+      powerplay: { balls: 0, runs: 0, wickets: 0, economyRate: 0, bowlingAverage: 0, bowlingStrikeRate: 0 },
+      middle: { balls: 0, runs: 0, wickets: 0, economyRate: 0, bowlingAverage: 0, bowlingStrikeRate: 0 },
+      death: { balls: 0, runs: 0, wickets: 0, economyRate: 0, bowlingAverage: 0, bowlingStrikeRate: 0 }
     };
 
     phaseStats.forEach(phase => {
       const balls = phase.balls;
       const runs = phase.runs;
+      const wickets = phase.wickets;
       const overs = Math.floor(balls / 6) + ((balls % 6) / 10);
       const economy = overs > 0 ? parseFloat((runs / overs).toFixed(2)) : 0;
+      const bowlingAvg = wickets > 0 ? parseFloat((runs / wickets).toFixed(2)) : 0;
+      const bowlingStrikeRate = wickets > 0 ? parseFloat((balls / wickets).toFixed(2)) : 0;
 
       if (phase._id === 'Powerplay') {
-        phaseBreakdown.powerplay = { balls, runs, economyRate: economy };
+        phaseBreakdown.powerplay = { balls, runs, wickets, economyRate: economy, bowlingAverage: bowlingAvg, bowlingStrikeRate };
       } else if (phase._id === 'Middle') {
-        phaseBreakdown.middle = { balls, runs, economyRate: economy };
+        phaseBreakdown.middle = { balls, runs, wickets, economyRate: economy, bowlingAverage: bowlingAvg, bowlingStrikeRate };
       } else if (phase._id === 'Death') {
-        phaseBreakdown.death = { balls, runs, economyRate: economy };
+        phaseBreakdown.death = { balls, runs, wickets, economyRate: economy, bowlingAverage: bowlingAvg, bowlingStrikeRate };
       }
     });
 
