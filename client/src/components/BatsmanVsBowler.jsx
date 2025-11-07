@@ -519,13 +519,18 @@ function BatsmanVsBowler({ player, initialBowler }) {
               <div className="card">
                 <h4 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                   <Target className="w-5 h-5 text-red-600" />
-                  Dismissal Information ({stats.dismissalDetails.length} dismissals)
+                  Dismissal Information ({stats.dismissalDetails.length} dismissal{stats.dismissalDetails.length !== 1 ? 's' : ''})
                 </h4>
-                <div className="space-y-3">
+                <div className={stats.dismissalDetails.length > 1
+                  ? "flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100"
+                  : "space-y-3"
+                }>
                   {stats.dismissalDetails.map((dismissal, index) => {
                     const isRunOut = dismissal.wicketType === 'run out';
                     return (
                     <div key={index} className={`p-4 rounded-lg border-2 hover:shadow-md transition-all ${
+                      stats.dismissalDetails.length > 1 ? 'flex-shrink-0 w-80' : ''
+                    } ${
                       isRunOut
                         ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 hover:border-blue-300'
                         : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200 hover:border-red-300'
