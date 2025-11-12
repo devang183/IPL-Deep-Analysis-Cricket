@@ -73,8 +73,8 @@ function Register({ onSwitchToLogin }) {
         </div>
 
         {/* Register Card */}
-        <div className="rounded-2xl shadow-2xl p-8 border-2 border-blue-400/40 animate-scale-in hover:shadow-blue-500/50 hover:shadow-3xl transition-all duration-300"
-             style={{background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)'}}>
+        <div className="rounded-2xl shadow-2xl p-8 border-2 border-white/30 animate-scale-in hover:shadow-blue-500/50 hover:shadow-3xl transition-all duration-300"
+             style={{background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)'}}>
           <form className="space-y-5" onSubmit={handleSubmit}>
             {/* Error Message */}
             {error && (
@@ -89,7 +89,7 @@ function Register({ onSwitchToLogin }) {
 
             {/* Name Field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="name" className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
                 Full Name
               </label>
               <div className="relative">
@@ -110,7 +110,7 @@ function Register({ onSwitchToLogin }) {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
                 Email Address
               </label>
               <div className="relative">
@@ -131,7 +131,7 @@ function Register({ onSwitchToLogin }) {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
                 Password
               </label>
               <div className="relative">
@@ -171,7 +171,7 @@ function Register({ onSwitchToLogin }) {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
                 Confirm Password
               </label>
               <div className="relative">
@@ -240,7 +240,7 @@ function Register({ onSwitchToLogin }) {
                 <div className="w-full border-t border-slate-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500">Already have an account?</span>
+                <span className="px-3 py-1 rounded-full text-white font-semibold drop-shadow-lg" style={{background: 'rgba(255, 255, 255, 0.2)'}}>Already have an account?</span>
               </div>
             </div>
           </div>
