@@ -1619,6 +1619,66 @@ app.get('/api/teams', async (_req, res) => {
   }
 });
 
+// Reddit IPL Feed - Proxy endpoint with caching
+let redditCache = null;
+let redditCacheTime = 0;
+const REDDIT_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+app.get('/api/reddit/ipl', async (_req, res) => {
+  try {
+    const now = Date.now();
+
+    // Return cached data if still valid
+    if (redditCache && (now - redditCacheTime) < REDDIT_CACHE_DURATION) {
+      return res.json(redditCache);
+    }
+
+    // Fetch fresh data from Reddit (using native fetch in Node.js 18+)
+    const response = await fetch('https://www.reddit.com/r/IPL/.json', {
+      headers: {
+        'User-Agent': 'IPL-Analytics-App/1.0'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Reddit API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Extract and format posts
+    const posts = data.data.children.map(child => {
+      const post = child.data;
+      return {
+        id: post.id,
+        title: post.title,
+        author: post.author,
+        score: post.score,
+        numComments: post.num_comments,
+        created: post.created_utc,
+        url: post.url,
+        permalink: `https://www.reddit.com${post.permalink}`,
+        thumbnail: post.thumbnail !== 'self' && post.thumbnail !== 'default' ? post.thumbnail : null,
+        linkFlairText: post.link_flair_text || null,
+        linkFlairBackgroundColor: post.link_flair_background_color || null,
+        selftext: post.selftext || null,
+        isVideo: post.is_video || false
+      };
+    });
+
+    const result = { posts, count: posts.length };
+
+    // Update cache
+    redditCache = result;
+    redditCacheTime = now;
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching Reddit data:', error);
+    res.status(500).json({ error: 'Failed to fetch Reddit posts' });
+  }
+});
+
 // For local development
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;

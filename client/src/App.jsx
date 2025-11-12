@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -8,6 +8,7 @@ import BowlerStats from './components/BowlerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import BatsmanVsTeam from './components/BatsmanVsTeam';
 import MOTMAnalysis from './components/MOTMAnalysis';
+import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
 import ShareButton from './components/ShareButton';
@@ -106,6 +107,7 @@ function App() {
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'vsteam', name: 'Vs Team', icon: Shield },
     { id: 'motm', name: 'MOTM', icon: Trophy },
+    { id: 'community', name: 'Community', icon: MessageSquare },
     { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
   ];
 
@@ -185,8 +187,8 @@ function App() {
             })}
           </div>
 
-          {/* Share Button - only show when player is selected and not on smart/admin tab */}
-          {selectedPlayer && activeTab !== 'smart' && activeTab !== 'admin' && (
+          {/* Share Button - only show when player is selected and not on smart/admin/community tab */}
+          {selectedPlayer && activeTab !== 'smart' && activeTab !== 'admin' && activeTab !== 'community' && (
             <ShareButton
               player={selectedPlayer}
               tabName={tabs.find(t => t.id === activeTab)?.name || 'Analysis'}
@@ -264,6 +266,12 @@ function App() {
           {activeTab === 'motm' && selectedPlayer && (
             <div className="card">
               <MOTMAnalysis player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'community' && (
+            <div className="card">
+              <RedditFeed />
             </div>
           )}
 
