@@ -65,7 +65,7 @@ function Login({ onSwitchToRegister }) {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-900 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -86,7 +86,7 @@ function Login({ onSwitchToRegister }) {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-900 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -140,7 +140,7 @@ function Login({ onSwitchToRegister }) {
                 <div className="w-full border-t border-slate-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500">New to IPL Analytics?</span>
+                <span className="px-2 bg-white text-slate-900 font-medium">New to IPL Analytics?</span>
               </div>
             </div>
           </div>
