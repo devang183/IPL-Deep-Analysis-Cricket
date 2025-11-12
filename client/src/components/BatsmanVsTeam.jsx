@@ -99,6 +99,14 @@ function BatsmanVsTeam({ player }) {
     fetchMatchupStats(team);
   };
 
+  const handleInputFocus = () => {
+    setIsDropdownOpen(true);
+    // Clear search term when focusing to show all teams
+    if (selectedTeam) {
+      setSearchTerm('');
+    }
+  };
+
   const handleKeyDown = (e) => {
     const filteredTeams = teams.filter((team) =>
       team.toLowerCase().includes(searchTerm.toLowerCase())
@@ -194,7 +202,7 @@ function BatsmanVsTeam({ player }) {
                 setSearchTerm(e.target.value);
                 setIsDropdownOpen(true);
               }}
-              onFocus={() => setIsDropdownOpen(true)}
+              onFocus={handleInputFocus}
               onKeyDown={handleKeyDown}
               placeholder={selectedTeam || 'Search for a team...'}
               className="w-full pl-12 pr-4 py-3 border-2 border-white/30 rounded-lg focus:border-primary-400 focus:outline-none transition-all text-slate-900 placeholder-slate-400"
@@ -212,7 +220,7 @@ function BatsmanVsTeam({ player }) {
               id="team-listbox"
               role="listbox"
               className="absolute z-10 w-full mt-2 border-2 border-white/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
-              style={{background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)'}}
+              style={{background: 'rgba(30, 41, 59, 0.95)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)'}}
             >
               {filteredTeams.length > 0 ? (
                 filteredTeams.map((team, index) => (
