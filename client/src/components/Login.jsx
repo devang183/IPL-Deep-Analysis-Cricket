@@ -49,8 +49,8 @@ function Login({ onSwitchToRegister }) {
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl shadow-2xl p-8 border-2 border-blue-400/40 animate-scale-in hover:shadow-blue-500/50 hover:shadow-3xl transition-all duration-300"
-             style={{background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)'}}>
+        <div className="rounded-2xl shadow-2xl p-8 border-2 border-white/30 animate-scale-in hover:shadow-blue-500/50 hover:shadow-3xl transition-all duration-300"
+             style={{background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)'}}>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Error Message */}
             {error && (
@@ -65,7 +65,7 @@ function Login({ onSwitchToRegister }) {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
                 Email Address
               </label>
               <div className="relative">
@@ -86,7 +86,7 @@ function Login({ onSwitchToRegister }) {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
                 Password
               </label>
               <div className="relative">
@@ -140,7 +140,7 @@ function Login({ onSwitchToRegister }) {
                 <div className="w-full border-t border-slate-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-900 font-medium">New to IPL Analytics?</span>
+                <span className="px-3 py-1 rounded-full text-white font-semibold drop-shadow-lg" style={{background: 'rgba(255, 255, 255, 0.2)'}}>New to IPL Analytics?</span>
               </div>
             </div>
           </div>
