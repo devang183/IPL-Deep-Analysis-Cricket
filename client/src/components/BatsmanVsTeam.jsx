@@ -180,7 +180,7 @@ function BatsmanVsTeam({ player }) {
 
       {/* Team Selector */}
       <div className="mb-6">
-        <label className="block text-sm font-semibold text-slate-700 mb-2">
+        <label className="block text-sm font-semibold text-white mb-2 drop-shadow-lg">
           Select Opposition Team
         </label>
         <div className="relative" ref={dropdownRef}>
@@ -197,7 +197,8 @@ function BatsmanVsTeam({ player }) {
               onFocus={() => setIsDropdownOpen(true)}
               onKeyDown={handleKeyDown}
               placeholder={selectedTeam || 'Search for a team...'}
-              className="w-full pl-12 pr-4 py-3 border-2 border-slate-300 rounded-lg focus:border-primary-500 focus:outline-none transition-all"
+              className="w-full pl-12 pr-4 py-3 border-2 border-white/30 rounded-lg focus:border-primary-400 focus:outline-none transition-all text-slate-900 placeholder-slate-400"
+              style={{background: 'rgba(255, 255, 255, 0.9)'}}
               disabled={loadingTeams}
               aria-label="Search teams"
               aria-autocomplete="list"
@@ -210,7 +211,8 @@ function BatsmanVsTeam({ player }) {
             <div
               id="team-listbox"
               role="listbox"
-              className="absolute z-10 w-full mt-2 bg-white border-2 border-slate-300 rounded-lg shadow-xl max-h-64 overflow-y-auto"
+              className="absolute z-10 w-full mt-2 border-2 border-white/30 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
+              style={{background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)'}}
             >
               {filteredTeams.length > 0 ? (
                 filteredTeams.map((team, index) => (
@@ -220,20 +222,20 @@ function BatsmanVsTeam({ player }) {
                     role="option"
                     aria-selected={selectedTeam === team}
                     onClick={() => handleTeamSelect(team)}
-                    className={`px-4 py-3 cursor-pointer transition-colors ${
+                    className={`px-4 py-3 cursor-pointer transition-all text-white font-medium ${
                       index === highlightedIndex
-                        ? 'bg-primary-100'
-                        : 'hover:bg-slate-50'
-                    } ${selectedTeam === team ? 'bg-primary-50 font-semibold' : ''}`}
+                        ? 'bg-white/30'
+                        : 'hover:bg-white/20'
+                    } ${selectedTeam === team ? 'bg-white/25 font-bold' : ''}`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary-600" />
+                    <div className="flex items-center gap-2 drop-shadow-md">
+                      <Shield className="w-4 h-4 text-yellow-400" />
                       {team}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="px-4 py-3 text-slate-500 text-center">
+                <div className="px-4 py-3 text-white text-center font-medium drop-shadow-md">
                   No teams found
                 </div>
               )}
