@@ -6,6 +6,7 @@ import DismissalAnalysis from './components/DismissalAnalysis';
 import PlayerStats from './components/PlayerStats';
 import BowlerStats from './components/BowlerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
+import BatsmanVsTeam from './components/BatsmanVsTeam';
 import MOTMAnalysis from './components/MOTMAnalysis';
 import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
@@ -103,6 +104,7 @@ function App() {
     { id: 'stats', name: 'Batting Stats', icon: BarChart3 },
     { id: 'bowler', name: 'Bowling Stats', icon: Target },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
+    { id: 'vsteam', name: 'Vs Team', icon: Shield },
     { id: 'motm', name: 'MOTM', icon: Trophy },
     { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
   ];
@@ -250,6 +252,12 @@ function App() {
           {activeTab === 'matchup' && selectedPlayer && (
             <div className="card">
               <BatsmanVsBowler player={selectedPlayer} initialBowler={initialBowler} />
+            </div>
+          )}
+
+          {activeTab === 'vsteam' && selectedPlayer && (
+            <div className="card">
+              <BatsmanVsTeam player={selectedPlayer} />
             </div>
           )}
 

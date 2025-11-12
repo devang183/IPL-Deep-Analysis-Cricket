@@ -1385,6 +1385,240 @@ app.get('/api/motm/:player', async (req, res) => {
   }
 });
 
+// Get batsman vs team stats
+app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const batsman = req.params.batsmanName;
+    const team = req.params.teamName;
+
+    // Get innings-wise scores to calculate 50s and 100s
+    const inningsScores = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowling_team: team,
+          valid_ball: 1
+        }
+      },
+      {
+        $group: {
+          _id: { matchId: '$match_id', innings: '$innings' },
+          runs: { $sum: '$runs_batter' },
+          balls: { $sum: 1 }
+        }
+      }
+    ]).toArray();
+
+    // Calculate 50s and 100s
+    const fifties = inningsScores.filter(inn => inn.runs >= 50 && inn.runs < 100).length;
+    const hundreds = inningsScores.filter(inn => inn.runs >= 100).length;
+    const highestScore = inningsScores.length > 0
+      ? Math.max(...inningsScores.map(inn => inn.runs))
+      : 0;
+
+    // Get overall stats against this team
+    const stats = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowling_team: team,
+          valid_ball: 1
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRuns: { $sum: '$runs_batter' },
+          totalBalls: { $sum: 1 },
+          fours: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
+            }
+          },
+          sixes: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0]
+            }
+          },
+          dots: {
+            $sum: {
+              $cond: [{ $and: [{ $eq: ['$runs_batter', 0] }, { $eq: ['$runs_extras', 0] }] }, 1, 0]
+            }
+          },
+          dismissals: {
+            $sum: {
+              $cond: [{ $eq: ['$striker_out', true] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]).toArray();
+
+    if (stats.length === 0) {
+      return res.json({
+        batsman,
+        team,
+        matches: 0,
+        stats: null,
+        message: `${batsman} has not played against ${team} in available data`
+      });
+    }
+
+    const result = stats[0];
+    const strikeRate = result.totalBalls > 0
+      ? parseFloat(((result.totalRuns / result.totalBalls) * 100).toFixed(2))
+      : 0;
+    const average = result.dismissals > 0
+      ? parseFloat((result.totalRuns / result.dismissals).toFixed(2))
+      : result.totalRuns;
+
+    // Get number of unique matches
+    const matches = await collection.distinct('match_id', {
+      batter: batsman,
+      bowling_team: team,
+      valid_ball: 1
+    });
+
+    // Get phase-wise breakdown
+    const phaseStats = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowling_team: team,
+          valid_ball: 1
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $lte: ['$over', 6] }, 'Powerplay',
+              { $cond: [
+                { $lte: ['$over', 15] }, 'Middle',
+                'Death'
+              ]}
+            ]
+          },
+          runs: { $sum: '$runs_batter' },
+          balls: { $sum: 1 },
+          fours: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
+            }
+          },
+          sixes: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]).toArray();
+
+    const phaseBreakdown = {
+      powerplay: { runs: 0, balls: 0, strikeRate: 0, fours: 0, sixes: 0 },
+      middle: { runs: 0, balls: 0, strikeRate: 0, fours: 0, sixes: 0 },
+      death: { runs: 0, balls: 0, strikeRate: 0, fours: 0, sixes: 0 }
+    };
+
+    phaseStats.forEach(phase => {
+      const sr = phase.balls > 0 ? parseFloat(((phase.runs / phase.balls) * 100).toFixed(2)) : 0;
+      if (phase._id === 'Powerplay') {
+        phaseBreakdown.powerplay = { ...phase, strikeRate: sr };
+      } else if (phase._id === 'Middle') {
+        phaseBreakdown.middle = { ...phase, strikeRate: sr };
+      } else if (phase._id === 'Death') {
+        phaseBreakdown.death = { ...phase, strikeRate: sr };
+      }
+    });
+
+    // Get season-wise performance
+    const seasonStats = await collection.aggregate([
+      {
+        $match: {
+          batter: batsman,
+          bowling_team: team,
+          valid_ball: 1
+        }
+      },
+      {
+        $group: {
+          _id: '$season',
+          runs: { $sum: '$runs_batter' },
+          balls: { $sum: 1 },
+          fours: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
+            }
+          },
+          sixes: {
+            $sum: {
+              $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          season: '$_id',
+          runs: 1,
+          balls: 1,
+          fours: 1,
+          sixes: 1,
+          strikeRate: {
+            $cond: [
+              { $gt: ['$balls', 0] },
+              { $round: [{ $multiply: [{ $divide: ['$runs', '$balls'] }, 100] }, 2] },
+              0
+            ]
+          }
+        }
+      },
+      { $sort: { season: 1 } }
+    ]).toArray();
+
+    res.json({
+      batsman,
+      team,
+      matches: matches.length,
+      stats: {
+        totalRuns: result.totalRuns,
+        totalBalls: result.totalBalls,
+        strikeRate,
+        average,
+        fours: result.fours,
+        sixes: result.sixes,
+        dots: result.dots,
+        dismissals: result.dismissals,
+        fifties,
+        hundreds,
+        highestScore,
+        phaseBreakdown,
+        seasonStats
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching batsman vs team stats:', error);
+    res.status(500).json({ error: 'Failed to fetch batsman vs team statistics' });
+  }
+});
+
+// Get all unique teams
+app.get('/api/teams', async (_req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const teams = await collection.distinct('batting_team');
+    const teamsList = teams.filter(t => t && t.trim() !== '').sort();
+    res.json({ teams: teamsList, count: teamsList.length });
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
 // For local development
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;
