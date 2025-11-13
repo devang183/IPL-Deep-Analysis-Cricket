@@ -304,7 +304,7 @@ function RedditFeed() {
           <p className="text-white/70 text-lg">No posts found for this filter</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="overflow-y-auto max-h-[calc(100vh-350px)] pr-2 space-y-6 scrollbar-thin scrollbar-thumb-primary-500 scrollbar-track-white/10">
           {filteredPosts.map(post => (
             <div
               key={post.id}
