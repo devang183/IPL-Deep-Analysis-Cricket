@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, MessageCircle, ExternalLink, TrendingUp, Calendar, User, Filter, RefreshCw, AlertCircle } from 'lucide-react';
-import axios from 'axios';
 
 function RedditFeed() {
   const [posts, setPosts] = useState([]);
@@ -13,9 +12,26 @@ function RedditFeed() {
   const fetchRedditPosts = async () => {
     try {
       setError(null);
-      const response = await axios.get('/api/reddit/ipl');
-      setPosts(response.data.posts);
-      setFilteredPosts(response.data.posts);
+      const response = await fetch('https://www.reddit.com/r/IPL/hot/.json?limit=25');
+      const data = await response.json();
+
+      // Transform Reddit API response to match our component's expected format
+      const transformedPosts = data.data.children.map(child => ({
+        id: child.data.id,
+        title: child.data.title,
+        author: child.data.author,
+        score: child.data.score,
+        numComments: child.data.num_comments,
+        created: child.data.created_utc,
+        permalink: `https://www.reddit.com${child.data.permalink}`,
+        linkFlairText: child.data.link_flair_text,
+        linkFlairBackgroundColor: child.data.link_flair_background_color,
+        thumbnail: child.data.thumbnail && child.data.thumbnail !== 'self' && child.data.thumbnail !== 'default' ? child.data.thumbnail : null,
+        selftext: child.data.selftext
+      }));
+
+      setPosts(transformedPosts);
+      setFilteredPosts(transformedPosts);
       setLoading(false);
       setRefreshing(false);
     } catch (err) {
