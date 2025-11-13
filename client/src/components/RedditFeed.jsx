@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, MessageCircle, ExternalLink, TrendingUp, Calendar, User, Filter, RefreshCw, AlertCircle, X, Loader2, ChevronRight } from 'lucide-react';
+import { MessageSquare, ThumbsUp, MessageCircle, ExternalLink, TrendingUp, Calendar, User, Filter, RefreshCw, AlertCircle, X, Loader2, ChevronRight, Search } from 'lucide-react';
 
 function RedditFeed() {
   const [posts, setPosts] = useState([]);
@@ -12,6 +12,7 @@ function RedditFeed() {
   const [postComments, setPostComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentsError, setCommentsError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchRedditPosts = async () => {
     try {
@@ -106,14 +107,27 @@ function RedditFeed() {
   // Get unique flairs
   const flairs = ['All', ...new Set(posts.filter(p => p.linkFlairText).map(p => p.linkFlairText))];
 
-  // Filter posts by flair
+  // Filter posts by flair and search query
   useEffect(() => {
-    if (selectedFlair === 'All') {
-      setFilteredPosts(posts);
-    } else {
-      setFilteredPosts(posts.filter(p => p.linkFlairText === selectedFlair));
+    let result = posts;
+
+    // Filter by flair
+    if (selectedFlair !== 'All') {
+      result = result.filter(p => p.linkFlairText === selectedFlair);
     }
-  }, [selectedFlair, posts]);
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(query) ||
+        p.author.toLowerCase().includes(query) ||
+        (p.selftext && p.selftext.toLowerCase().includes(query))
+      );
+    }
+
+    setFilteredPosts(result);
+  }, [selectedFlair, posts, searchQuery]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -274,6 +288,32 @@ function RedditFeed() {
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
         </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
+        <input
+          type="text"
+          placeholder="Search posts by title, author, or content..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-12 pr-12 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-white placeholder-white/50"
+          style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '2px solid rgba(255, 255, 255, 0.3)'
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Flair Filters */}
