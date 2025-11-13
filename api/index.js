@@ -1634,19 +1634,38 @@ app.get('/api/reddit/ipl', async (_req, res) => {
       return res.json(redditCache);
     }
 
-    // Fetch fresh data from Reddit using https module
+    // Fetch fresh data from Reddit using https module with timeout
     const data = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Request timeout'));
+      }, 10000); // 10 second timeout
+
       const options = {
         hostname: 'www.reddit.com',
         path: '/r/IPL/.json',
         method: 'GET',
         headers: {
-          'User-Agent': 'IPL-Analytics-App/1.0'
-        }
+          'User-Agent': 'IPL-Analytics-App/1.0',
+          'Accept': 'application/json'
+        },
+        timeout: 10000
       };
 
-      https.get(options, (response) => {
+      const request = https.get(options, (response) => {
+        clearTimeout(timeout);
         let rawData = '';
+
+        // Handle redirects
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          reject(new Error('Redirect not supported'));
+          return;
+        }
+
+        // Check for error status codes
+        if (response.statusCode !== 200) {
+          reject(new Error(`Reddit API returned status ${response.statusCode}`));
+          return;
+        }
 
         response.on('data', (chunk) => {
           rawData += chunk;
@@ -1655,13 +1674,26 @@ app.get('/api/reddit/ipl', async (_req, res) => {
         response.on('end', () => {
           try {
             const parsedData = JSON.parse(rawData);
+            if (!parsedData || !parsedData.data || !parsedData.data.children) {
+              reject(new Error('Invalid Reddit response format'));
+              return;
+            }
             resolve(parsedData);
           } catch (e) {
-            reject(new Error('Failed to parse Reddit response'));
+            reject(new Error('Failed to parse Reddit response: ' + e.message));
           }
         });
-      }).on('error', (e) => {
+      });
+
+      request.on('error', (e) => {
+        clearTimeout(timeout);
         reject(e);
+      });
+
+      request.on('timeout', () => {
+        request.destroy();
+        clearTimeout(timeout);
+        reject(new Error('Request timeout'));
       });
     });
 
@@ -1693,8 +1725,19 @@ app.get('/api/reddit/ipl', async (_req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error fetching Reddit data:', error);
-    res.status(500).json({ error: 'Failed to fetch Reddit posts' });
+    console.error('Error fetching Reddit data:', error.message || error);
+
+    // If we have cached data (even if expired), return it as fallback
+    if (redditCache) {
+      console.log('Returning stale cached data as fallback');
+      return res.json({ ...redditCache, cached: true, cacheAge: Date.now() - redditCacheTime });
+    }
+
+    res.status(500).json({
+      error: 'Failed to fetch Reddit posts',
+      message: error.message || 'Unknown error',
+      details: 'Reddit API may be temporarily unavailable'
+    });
   }
 });
 
