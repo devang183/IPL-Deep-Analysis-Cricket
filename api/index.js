@@ -1394,19 +1394,20 @@ app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
     const team = req.params.teamName;
 
     // Get innings-wise scores to calculate 50s and 100s
+    // Note: We count ALL runs (including runs off no-balls) for batsman's score
+    // but only valid balls for balls faced count
     const inningsScores = await collection.aggregate([
       {
         $match: {
           batter: batsman,
-          bowling_team: team,
-          valid_ball: 1
+          bowling_team: team
         }
       },
       {
         $group: {
           _id: { matchId: '$match_id', innings: '$innings' },
-          runs: { $sum: '$runs_batter' },
-          balls: { $sum: 1 }
+          runs: { $sum: '$runs_batter' },  // All runs including off no-balls
+          balls: { $sum: { $cond: [{ $eq: ['$valid_ball', 1] }, 1, 0] } }  // Only valid balls
         }
       }
     ]).toArray();
@@ -1419,19 +1420,19 @@ app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
       : 0;
 
     // Get overall stats against this team
+    // Note: totalRuns includes all runs (even off no-balls), but totalBalls counts only valid balls
     const stats = await collection.aggregate([
       {
         $match: {
           batter: batsman,
-          bowling_team: team,
-          valid_ball: 1
+          bowling_team: team
         }
       },
       {
         $group: {
           _id: null,
-          totalRuns: { $sum: '$runs_batter' },
-          totalBalls: { $sum: 1 },
+          totalRuns: { $sum: '$runs_batter' },  // All runs including off no-balls
+          totalBalls: { $sum: { $cond: [{ $eq: ['$valid_ball', 1] }, 1, 0] } },  // Only valid balls
           fours: {
             $sum: {
               $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
@@ -1444,7 +1445,7 @@ app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
           },
           dots: {
             $sum: {
-              $cond: [{ $and: [{ $eq: ['$runs_batter', 0] }, { $eq: ['$runs_extras', 0] }] }, 1, 0]
+              $cond: [{ $and: [{ $eq: ['$runs_batter', 0] }, { $eq: ['$runs_extras', 0] }, { $eq: ['$valid_ball', 1] }] }, 1, 0]
             }
           },
           dismissals: {
@@ -1477,17 +1478,16 @@ app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
     // Get number of unique matches
     const matches = await collection.distinct('match_id', {
       batter: batsman,
-      bowling_team: team,
-      valid_ball: 1
+      bowling_team: team
     });
 
     // Get phase-wise breakdown
+    // Note: runs includes all runs (even off no-balls), but balls counts only valid balls
     const phaseStats = await collection.aggregate([
       {
         $match: {
           batter: batsman,
-          bowling_team: team,
-          valid_ball: 1
+          bowling_team: team
         }
       },
       {
@@ -1501,8 +1501,8 @@ app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
               ]}
             ]
           },
-          runs: { $sum: '$runs_batter' },
-          balls: { $sum: 1 },
+          runs: { $sum: '$runs_batter' },  // All runs including off no-balls
+          balls: { $sum: { $cond: [{ $eq: ['$valid_ball', 1] }, 1, 0] } },  // Only valid balls
           fours: {
             $sum: {
               $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
@@ -1535,19 +1535,19 @@ app.get('/api/batsman-vs-team/:batsmanName/:teamName', async (req, res) => {
     });
 
     // Get season-wise performance
+    // Note: runs includes all runs (even off no-balls), but balls counts only valid balls
     const seasonStats = await collection.aggregate([
       {
         $match: {
           batter: batsman,
-          bowling_team: team,
-          valid_ball: 1
+          bowling_team: team
         }
       },
       {
         $group: {
           _id: '$season',
-          runs: { $sum: '$runs_batter' },
-          balls: { $sum: 1 },
+          runs: { $sum: '$runs_batter' },  // All runs including off no-balls
+          balls: { $sum: { $cond: [{ $eq: ['$valid_ball', 1] }, 1, 0] } },  // Only valid balls
           fours: {
             $sum: {
               $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0]
