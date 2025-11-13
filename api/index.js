@@ -3,6 +3,7 @@ const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const https = require('https');
 
 const app = express();
 
@@ -1633,18 +1634,36 @@ app.get('/api/reddit/ipl', async (_req, res) => {
       return res.json(redditCache);
     }
 
-    // Fetch fresh data from Reddit (using native fetch in Node.js 18+)
-    const response = await fetch('https://www.reddit.com/r/IPL/.json', {
-      headers: {
-        'User-Agent': 'IPL-Analytics-App/1.0'
-      }
+    // Fetch fresh data from Reddit using https module
+    const data = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'www.reddit.com',
+        path: '/r/IPL/.json',
+        method: 'GET',
+        headers: {
+          'User-Agent': 'IPL-Analytics-App/1.0'
+        }
+      };
+
+      https.get(options, (response) => {
+        let rawData = '';
+
+        response.on('data', (chunk) => {
+          rawData += chunk;
+        });
+
+        response.on('end', () => {
+          try {
+            const parsedData = JSON.parse(rawData);
+            resolve(parsedData);
+          } catch (e) {
+            reject(new Error('Failed to parse Reddit response'));
+          }
+        });
+      }).on('error', (e) => {
+        reject(e);
+      });
     });
-
-    if (!response.ok) {
-      throw new Error(`Reddit API returned ${response.status}`);
-    }
-
-    const data = await response.json();
 
     // Extract and format posts
     const posts = data.data.children.map(child => {
