@@ -20,19 +20,72 @@ function RedditFeed() {
       const data = await response.json();
 
       // Transform Reddit API response to match our component's expected format
-      const transformedPosts = data.data.children.map(child => ({
-        id: child.data.id,
-        title: child.data.title,
-        author: child.data.author,
-        score: child.data.score,
-        numComments: child.data.num_comments,
-        created: child.data.created_utc,
-        permalink: `https://www.reddit.com${child.data.permalink}`,
-        linkFlairText: child.data.link_flair_text,
-        linkFlairBackgroundColor: child.data.link_flair_background_color,
-        thumbnail: child.data.thumbnail && child.data.thumbnail !== 'self' && child.data.thumbnail !== 'default' ? child.data.thumbnail : null,
-        selftext: child.data.selftext
-      }));
+      const transformedPosts = data.data.children.map(child => {
+        const post = child.data;
+
+        // Determine media type and URL
+        let mediaType = null;
+        let mediaUrl = null;
+        let isGallery = false;
+        let galleryItems = [];
+
+        // Check for gallery
+        if (post.is_gallery && post.media_metadata) {
+          isGallery = true;
+          galleryItems = Object.values(post.media_metadata).map(item => {
+            const imageData = item.s || item.p?.[item.p.length - 1];
+            return {
+              url: imageData?.u?.replace(/&amp;/g, '&') || imageData?.gif?.replace(/&amp;/g, '&'),
+              type: item.e === 'AnimatedImage' ? 'gif' : 'image'
+            };
+          });
+          mediaType = 'gallery';
+        }
+        // Check for video
+        else if (post.is_video && post.media?.reddit_video) {
+          mediaType = 'video';
+          mediaUrl = post.media.reddit_video.fallback_url;
+        }
+        // Check for external video (like gfycat, imgur, etc.)
+        else if (post.secure_media?.oembed) {
+          mediaType = 'embed';
+          mediaUrl = post.secure_media.oembed.thumbnail_url;
+        }
+        // Check for direct image link
+        else if (post.post_hint === 'image' || (post.url && (post.url.match(/\.(jpeg|jpg|gif|png|webp)$/i)))) {
+          mediaType = post.url.match(/\.gif$/i) ? 'gif' : 'image';
+          mediaUrl = post.url;
+        }
+        // Check for imgur/gfycat links
+        else if (post.url && (post.url.includes('imgur.com') || post.url.includes('gfycat.com') || post.url.includes('redgifs.com'))) {
+          mediaType = 'link';
+          mediaUrl = post.preview?.images?.[0]?.source?.url?.replace(/&amp;/g, '&');
+        }
+        // Check for preview images
+        else if (post.preview?.images?.[0]?.source?.url) {
+          mediaType = 'image';
+          mediaUrl = post.preview.images[0].source.url.replace(/&amp;/g, '&');
+        }
+
+        return {
+          id: post.id,
+          title: post.title,
+          author: post.author,
+          score: post.score,
+          numComments: post.num_comments,
+          created: post.created_utc,
+          permalink: `https://www.reddit.com${post.permalink}`,
+          linkFlairText: post.link_flair_text,
+          linkFlairBackgroundColor: post.link_flair_background_color,
+          thumbnail: post.thumbnail && post.thumbnail !== 'self' && post.thumbnail !== 'default' && post.thumbnail !== 'nsfw' && post.thumbnail !== 'spoiler' ? post.thumbnail : null,
+          selftext: post.selftext,
+          mediaType,
+          mediaUrl,
+          isGallery,
+          galleryItems,
+          url: post.url
+        };
+      });
 
       setPosts(transformedPosts);
       setFilteredPosts(transformedPosts);
@@ -284,8 +337,45 @@ function RedditFeed() {
                 {post.title}
               </h3>
 
-              {/* Thumbnail if available */}
-              {post.thumbnail && (
+              {/* Media Preview */}
+              {post.isGallery && post.galleryItems.length > 0 ? (
+                <div className="mb-4 rounded-lg overflow-hidden relative">
+                  <img
+                    src={post.galleryItems[0].url}
+                    alt={post.title}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                  {post.galleryItems.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs font-semibold">
+                      +{post.galleryItems.length - 1} more
+                    </div>
+                  )}
+                </div>
+              ) : post.mediaType === 'video' && post.thumbnail ? (
+                <div className="mb-4 rounded-lg overflow-hidden relative">
+                  <img
+                    src={post.thumbnail}
+                    alt={post.title}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center">
+                      <div className="w-0 h-0 border-l-8 border-t-6 border-b-6 border-l-slate-900 border-t-transparent border-b-transparent ml-1"></div>
+                    </div>
+                  </div>
+                </div>
+              ) : post.mediaUrl ? (
+                <div className="mb-4 rounded-lg overflow-hidden">
+                  <img
+                    src={post.mediaUrl}
+                    alt={post.title}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              ) : post.thumbnail ? (
                 <div className="mb-4 rounded-lg overflow-hidden">
                   <img
                     src={post.thumbnail}
@@ -294,7 +384,7 @@ function RedditFeed() {
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 </div>
-              )}
+              ) : null}
 
               {/* Self text preview */}
               {post.selftext && post.selftext.length > 0 && (
@@ -402,21 +492,79 @@ function RedditFeed() {
             <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-6">
               {/* Post Content */}
               <div className="mb-8">
-                {selectedPost.thumbnail && (
-                  <div className="mb-4 rounded-lg overflow-hidden">
+                {/* Media Content */}
+                {selectedPost.isGallery && selectedPost.galleryItems.length > 0 ? (
+                  <div className="mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedPost.galleryItems.map((item, index) => (
+                        <div key={index} className="rounded-lg overflow-hidden bg-slate-800">
+                          <img
+                            src={item.url}
+                            alt={`Gallery item ${index + 1}`}
+                            className="w-full h-auto object-contain max-h-96"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : selectedPost.mediaType === 'video' && selectedPost.mediaUrl ? (
+                  <div className="mb-4 rounded-lg overflow-hidden bg-slate-800">
+                    <video
+                      controls
+                      className="w-full max-h-[500px]"
+                      preload="metadata"
+                    >
+                      <source src={selectedPost.mediaUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                ) : selectedPost.mediaType === 'gif' && selectedPost.mediaUrl ? (
+                  <div className="mb-4 rounded-lg overflow-hidden bg-slate-800">
                     <img
-                      src={selectedPost.thumbnail}
+                      src={selectedPost.mediaUrl}
                       alt={selectedPost.title}
-                      className="w-full max-h-96 object-contain bg-slate-800"
+                      className="w-full h-auto object-contain max-h-[500px]"
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   </div>
-                )}
+                ) : selectedPost.mediaType === 'image' && selectedPost.mediaUrl ? (
+                  <div className="mb-4 rounded-lg overflow-hidden bg-slate-800">
+                    <img
+                      src={selectedPost.mediaUrl}
+                      alt={selectedPost.title}
+                      className="w-full h-auto object-contain max-h-[500px]"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                ) : selectedPost.mediaType === 'link' && selectedPost.mediaUrl ? (
+                  <div className="mb-4 rounded-lg overflow-hidden bg-slate-800">
+                    <img
+                      src={selectedPost.mediaUrl}
+                      alt={selectedPost.title}
+                      className="w-full h-auto object-contain max-h-[500px]"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    <a
+                      href={selectedPost.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm mt-2"
+                    >
+                      View Original
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                ) : null}
+
+                {/* Self Text */}
                 {selectedPost.selftext && selectedPost.selftext.length > 0 && (
                   <div className="bg-white/5 rounded-lg p-4 mb-6">
                     <p className="text-white/90 whitespace-pre-wrap break-words">{selectedPost.selftext}</p>
                   </div>
                 )}
+
+                {/* Reddit Link */}
                 <a
                   href={selectedPost.permalink}
                   target="_blank"
