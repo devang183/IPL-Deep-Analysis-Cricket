@@ -208,7 +208,7 @@ function App() {
             />
           )}
 
-          {activeTab !== 'smart' && activeTab !== 'admin' && !selectedPlayer && (
+          {activeTab !== 'smart' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (
             <div className="card text-center py-16">
               <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-700 mb-2">
