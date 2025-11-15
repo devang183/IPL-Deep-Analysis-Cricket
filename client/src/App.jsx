@@ -7,6 +7,7 @@ import PlayerStats from './components/PlayerStats';
 import BowlerStats from './components/BowlerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import BatsmanVsTeam from './components/BatsmanVsTeam';
+import BatsmanVsBowlingStyle from './components/BatsmanVsBowlingStyle';
 import MOTMAnalysis from './components/MOTMAnalysis';
 import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
@@ -23,6 +24,7 @@ function App() {
   const [initialBowler, setInitialBowler] = useState('');
   const [activeTab, setActiveTab] = useState('smart');
   const [players, setPlayers] = useState([]);
+  const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
 
@@ -39,10 +41,20 @@ function App() {
     }
   };
 
-  // Fetch players only when authenticated
+  const fetchBowlers = async () => {
+    try {
+      const response = await axios.get('/api/bowlers');
+      setBowlers(response.data.bowlers);
+    } catch (error) {
+      console.error('Error fetching bowlers:', error);
+    }
+  };
+
+  // Fetch players and bowlers only when authenticated
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       fetchPlayers();
+      fetchBowlers();
     }
   }, [isAuthenticated, authLoading]);
 
@@ -106,6 +118,7 @@ function App() {
     { id: 'bowler', name: 'Bowling Stats', icon: Target },
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'vsteam', name: 'Vs Team', icon: Shield },
+    { id: 'vsbowlingstyle', name: 'Vs Bowling Style', icon: Activity },
     { id: 'motm', name: 'MOTM', icon: Trophy },
     { id: 'community', name: 'Community', icon: MessageSquare },
     { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
@@ -208,7 +221,7 @@ function App() {
             />
           )}
 
-          {activeTab !== 'smart' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (
+          {activeTab !== 'smart' && activeTab !== 'stats' && activeTab !== 'bowler' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (
             <div className="card text-center py-16">
               <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-700 mb-2">
@@ -239,16 +252,38 @@ function App() {
             </div>
           )}
 
-          {activeTab === 'stats' && selectedPlayer && (
-            <div className="card">
-              <PlayerStats player={selectedPlayer} />
-            </div>
+          {activeTab === 'stats' && (
+            <>
+              <SmartSearch
+                players={players}
+                onPlayerSelect={setSelectedPlayer}
+                onTabChange={setActiveTab}
+                onBowlerSelect={setInitialBowler}
+                mode="batting"
+              />
+              {selectedPlayer && (
+                <div className="card mt-6">
+                  <PlayerStats player={selectedPlayer} />
+                </div>
+              )}
+            </>
           )}
 
-          {activeTab === 'bowler' && selectedPlayer && (
-            <div className="card">
-              <BowlerStats player={selectedPlayer} />
-            </div>
+          {activeTab === 'bowler' && (
+            <>
+              <SmartSearch
+                players={bowlers}
+                onPlayerSelect={setSelectedPlayer}
+                onTabChange={setActiveTab}
+                onBowlerSelect={setInitialBowler}
+                mode="bowling"
+              />
+              {selectedPlayer && (
+                <div className="card mt-6">
+                  <BowlerStats player={selectedPlayer} />
+                </div>
+              )}
+            </>
           )}
 
           {activeTab === 'matchup' && selectedPlayer && (
@@ -260,6 +295,12 @@ function App() {
           {activeTab === 'vsteam' && selectedPlayer && (
             <div className="card">
               <BatsmanVsTeam player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'vsbowlingstyle' && selectedPlayer && (
+            <div className="card">
+              <BatsmanVsBowlingStyle player={selectedPlayer} />
             </div>
           )}
 

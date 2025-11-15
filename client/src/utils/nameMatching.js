@@ -245,6 +245,9 @@ export const commonNameMappings = {
   'rd chahar': ['rd chahar'],
   'harshal patel': ['hv patel'],
   'harshal': ['hv patel'],
+  'pathirana': ['m pathirana'],
+  'matheesha pathirana': ['m pathirana'],
+  'matheesha': ['m pathirana'],
 };
 
 /**

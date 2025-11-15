@@ -1685,6 +1685,139 @@ app.get('/api/teams', async (_req, res) => {
   }
 });
 
+// Get batsman vs bowling style stats
+app.get('/api/batsman-vs-bowling-style/:batsmanName', async (req, res) => {
+  try {
+    const { collection, db } = await connectToDatabase();
+    const batsman = req.params.batsmanName;
+    const playersCollection = db.collection('All-Players');
+
+    // Get all balls faced by the batsman
+    const batsmanBalls = await collection.find({
+      batter: batsman
+    }).toArray();
+
+    if (batsmanBalls.length === 0) {
+      return res.json({
+        batsman,
+        stats: null,
+        message: `${batsman} has not played in available data`
+      });
+    }
+
+    // Get unique bowlers
+    const bowlers = [...new Set(batsmanBalls.map(b => b.bowler))];
+
+    // Fetch bowling styles for all bowlers
+    const bowlerStyles = {};
+    for (const bowler of bowlers) {
+      const playerInfo = await playersCollection.findOne({
+        $or: [
+          { fullname: { $regex: new RegExp(`^${bowler}$`, 'i') } },
+          { fullname: { $regex: new RegExp(bowler, 'i') } }
+        ]
+      });
+
+      if (playerInfo && playerInfo.bowlingstyle) {
+        bowlerStyles[bowler] = playerInfo.bowlingstyle;
+      }
+    }
+
+    // Group balls by bowling style
+    const styleStats = {};
+
+    batsmanBalls.forEach(ball => {
+      const bowlingStyle = bowlerStyles[ball.bowler] || 'Unknown';
+
+      if (!styleStats[bowlingStyle]) {
+        styleStats[bowlingStyle] = {
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          dots: 0,
+          dismissals: 0,
+          boundaries: 0,
+          bowlers: new Set()
+        };
+      }
+
+      const stats = styleStats[bowlingStyle];
+
+      // Count runs (including off no-balls)
+      stats.runs += ball.runs_batter || 0;
+
+      // Count valid balls only
+      if (ball.valid_ball === 1) {
+        stats.balls += 1;
+      }
+
+      // Count boundaries
+      if (ball.runs_batter === 4) {
+        stats.fours += 1;
+        stats.boundaries += 1;
+      }
+      if (ball.runs_batter === 6) {
+        stats.sixes += 1;
+        stats.boundaries += 1;
+      }
+
+      // Count dots (valid balls with no runs)
+      if (ball.valid_ball === 1 && ball.runs_batter === 0 && ball.runs_extras === 0) {
+        stats.dots += 1;
+      }
+
+      // Count dismissals
+      if (ball.striker_out === true) {
+        stats.dismissals += 1;
+      }
+
+      // Track unique bowlers
+      stats.bowlers.add(ball.bowler);
+    });
+
+    // Calculate derived stats and format response
+    const formattedStats = {};
+
+    Object.keys(styleStats).forEach(style => {
+      const stat = styleStats[style];
+      const strikeRate = stat.balls > 0 ? parseFloat(((stat.runs / stat.balls) * 100).toFixed(2)) : 0;
+      const average = stat.dismissals > 0 ? parseFloat((stat.runs / stat.dismissals).toFixed(2)) : stat.runs;
+      const dotPercentage = stat.balls > 0 ? parseFloat(((stat.dots / stat.balls) * 100).toFixed(2)) : 0;
+      const boundaryPercentage = stat.balls > 0 ? parseFloat(((stat.boundaries / stat.balls) * 100).toFixed(2)) : 0;
+
+      formattedStats[style] = {
+        bowlingStyle: style,
+        runs: stat.runs,
+        balls: stat.balls,
+        strikeRate,
+        average,
+        fours: stat.fours,
+        sixes: stat.sixes,
+        dots: stat.dots,
+        dotPercentage,
+        boundaries: stat.boundaries,
+        boundaryPercentage,
+        dismissals: stat.dismissals,
+        bowlersFaced: stat.bowlers.size
+      };
+    });
+
+    // Sort by balls faced (most to least)
+    const sortedStats = Object.values(formattedStats).sort((a, b) => b.balls - a.balls);
+
+    res.json({
+      batsman,
+      stats: sortedStats,
+      totalBowlingStyles: sortedStats.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching batsman vs bowling style stats:', error);
+    res.status(500).json({ error: 'Failed to fetch batsman vs bowling style statistics' });
+  }
+});
+
 // Reddit IPL Feed - Proxy endpoint with caching
 let redditCache = null;
 let redditCacheTime = 0;

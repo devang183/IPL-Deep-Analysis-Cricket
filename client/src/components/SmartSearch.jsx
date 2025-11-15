@@ -3,19 +3,27 @@ import { Search, Sparkles, Loader2, TrendingUp, Target, BarChart3, Users, Trophy
 import PhaseAnalysis from './PhaseAnalysis';
 import DismissalAnalysis from './DismissalAnalysis';
 import PlayerStats from './PlayerStats';
+import BowlerStats from './BowlerStats';
 import BatsmanVsBowler from './BatsmanVsBowler';
 import MOTMAnalysis from './MOTMAnalysis';
 import { findBestPlayerMatch, findPlayerSuggestions, checkCommonNameMapping } from '../utils/nameMatching';
 
-function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
+function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mode = 'batting' }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [parsedQuery, setParsedQuery] = useState(null);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
 
-  // Example queries to show users
-  const exampleQueries = [
+  // Example queries to show users - different based on mode
+  const exampleQueries = mode === 'bowling' ? [
+    { text: "Jasprit Bumrah bowling stats", icon: BarChart3 },
+    { text: "Rashid Khan stats", icon: TrendingUp },
+    { text: "Yuzvendra Chahal bowling performance", icon: Target },
+    { text: "Pathirana stats", icon: TrendingUp },
+    { text: "Lasith Malinga bowling stats", icon: BarChart3 },
+    { text: "Sunil Narine stats", icon: Target },
+  ] : [
     { text: "Show me Virat Kohli's phase performance", icon: TrendingUp },
     { text: "How does MS Dhoni get dismissed?", icon: Target },
     { text: "Rohit Sharma stats", icon: BarChart3 },
@@ -25,7 +33,9 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
   ];
 
   // Keywords mapping to analysis types
-  const keywords = {
+  const keywords = mode === 'bowling' ? {
+    stats: ['stats', 'statistics', 'overall', 'total', 'wickets', 'economy', 'average', 'bowling', 'performance'],
+  } : {
     phase: ['phase', 'powerplay', 'middle', 'death', 'overs', 'period'],
     dismissal: ['dismissal', 'dismissed', 'out', 'wicket', 'caught', 'bowled', 'lbw', 'how', 'get out'],
     stats: ['stats', 'statistics', 'overall', 'total', 'runs', 'average', 'strike rate', 'performance'],
@@ -492,20 +502,26 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
           </div>
 
           <div className="card">
-            {parsedQuery.analysisType === 'phase' && (
-              <PhaseAnalysis player={parsedQuery.player} />
-            )}
-            {parsedQuery.analysisType === 'dismissal' && (
-              <DismissalAnalysis player={parsedQuery.player} initialBallsPlayed={parsedQuery.ballThreshold} />
-            )}
-            {parsedQuery.analysisType === 'stats' && (
-              <PlayerStats player={parsedQuery.player} />
-            )}
-            {parsedQuery.analysisType === 'matchup' && (
-              <BatsmanVsBowler player={parsedQuery.player} initialBowler={parsedQuery.secondPlayer} />
-            )}
-            {parsedQuery.analysisType === 'motm' && (
-              <MOTMAnalysis player={parsedQuery.player} />
+            {mode === 'bowling' ? (
+              <BowlerStats player={parsedQuery.player} />
+            ) : (
+              <>
+                {parsedQuery.analysisType === 'phase' && (
+                  <PhaseAnalysis player={parsedQuery.player} />
+                )}
+                {parsedQuery.analysisType === 'dismissal' && (
+                  <DismissalAnalysis player={parsedQuery.player} initialBallsPlayed={parsedQuery.ballThreshold} />
+                )}
+                {parsedQuery.analysisType === 'stats' && (
+                  <PlayerStats player={parsedQuery.player} />
+                )}
+                {parsedQuery.analysisType === 'matchup' && (
+                  <BatsmanVsBowler player={parsedQuery.player} initialBowler={parsedQuery.secondPlayer} />
+                )}
+                {parsedQuery.analysisType === 'motm' && (
+                  <MOTMAnalysis player={parsedQuery.player} />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -518,20 +534,35 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect }) {
           <ul className="space-y-2 text-sm text-white">
             <li className="flex items-start gap-2">
               <span className="text-primary-600 font-bold">•</span>
-              <span>Include the player's full name or last name</span>
+              <span>Include the {mode === 'bowling' ? 'bowler' : 'player'}'s full name or last name</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary-600 font-bold">•</span>
-              <span>Mention what you want to see (stats, dismissals, phase, matchup, awards)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary-600 font-bold">•</span>
-              <span>For matchups, use "vs" or "against" followed by bowler name</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-primary-600 font-bold">•</span>
-              <span>Be specific: "powerplay", "death overs", "caught", "bowled", etc.</span>
-            </li>
+            {mode === 'bowling' ? (
+              <>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary-600 font-bold">•</span>
+                  <span>Search for bowlers like "Bumrah", "Pathirana", "Rashid Khan"</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary-600 font-bold">•</span>
+                  <span>Use keywords like "stats", "bowling", "performance"</span>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary-600 font-bold">•</span>
+                  <span>Mention what you want to see (stats, dismissals, phase, matchup, awards)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary-600 font-bold">•</span>
+                  <span>For matchups, use "vs" or "against" followed by bowler name</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary-600 font-bold">•</span>
+                  <span>Be specific: "powerplay", "death overs", "caught", "bowled", etc.</span>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       )}
