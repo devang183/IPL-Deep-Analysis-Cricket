@@ -10,3 +10,6 @@ client/dist/
 # Large data files
 *.csv
 IPL.csv
+
+# Markdown files
+*.md

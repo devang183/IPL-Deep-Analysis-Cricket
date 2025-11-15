@@ -141,16 +141,23 @@ app.post('/api/auth/register', async (req, res) => {
 
     const result = await usersCollection.insertOne(newUser);
 
-    // Create token
-    const token = jwt.sign(
-      { userId: result.insertedId, email: email.toLowerCase() },
+    // Create access token (15 minutes) and refresh token (7 days)
+    const accessToken = jwt.sign(
+      { userId: result.insertedId, email: email.toLowerCase(), type: 'access' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: result.insertedId, email: email.toLowerCase(), type: 'refresh' },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.status(201).json({
       message: 'User registered successfully',
-      token,
+      token: accessToken,
+      refreshToken: refreshToken,
       user: {
         id: result.insertedId,
         email: email.toLowerCase(),
@@ -192,16 +199,23 @@ app.post('/api/auth/login', async (req, res) => {
       { $set: { lastLogin: new Date() } }
     );
 
-    // Create token
-    const token = jwt.sign(
-      { userId: user._id, email: user.email },
+    // Create access token (15 minutes) and refresh token (7 days)
+    const accessToken = jwt.sign(
+      { userId: user._id, email: user.email, type: 'access' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id, email: user.email, type: 'refresh' },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.json({
       message: 'Login successful',
-      token,
+      token: accessToken,
+      refreshToken: refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -239,6 +253,57 @@ app.get('/api/auth/verify', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Verify error:', error);
     res.status(500).json({ error: 'Failed to verify token' });
+  }
+});
+
+// Refresh access token using refresh token
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'Refresh token required' });
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+
+    // Check if it's actually a refresh token
+    if (decoded.type !== 'refresh') {
+      return res.status(403).json({ error: 'Invalid token type' });
+    }
+
+    const { usersCollection } = await connectToDatabase();
+    const user = await usersCollection.findOne({ email: decoded.email });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create new access token
+    const newAccessToken = jwt.sign(
+      { userId: user._id, email: user.email, type: 'access' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    res.json({
+      message: 'Token refreshed successfully',
+      token: newAccessToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin || false,
+        role: user.role || 'user'
+      }
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Refresh token expired. Please login again.' });
+    }
+    res.status(403).json({ error: 'Invalid refresh token' });
   }
 });
 
