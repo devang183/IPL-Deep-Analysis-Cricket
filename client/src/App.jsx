@@ -260,6 +260,7 @@ function App() {
                 onTabChange={setActiveTab}
                 onBowlerSelect={setInitialBowler}
                 mode="batting"
+                showExamples={false}
               />
               {selectedPlayer && (
                 <div className="card mt-6">
@@ -277,6 +278,7 @@ function App() {
                 onTabChange={setActiveTab}
                 onBowlerSelect={setInitialBowler}
                 mode="bowling"
+                showExamples={false}
               />
               {selectedPlayer && (
                 <div className="card mt-6">

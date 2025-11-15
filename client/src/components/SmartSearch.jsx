@@ -8,7 +8,7 @@ import BatsmanVsBowler from './BatsmanVsBowler';
 import MOTMAnalysis from './MOTMAnalysis';
 import { findBestPlayerMatch, findPlayerSuggestions, checkCommonNameMapping } from '../utils/nameMatching';
 
-function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mode = 'batting' }) {
+function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mode = 'batting', showExamples = true }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [parsedQuery, setParsedQuery] = useState(null);
@@ -453,7 +453,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
       </div>
 
       {/* Example Queries */}
-      {!parsedQuery && (
+      {showExamples && !parsedQuery && (
         <div className="animate-fade-in-up">
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-yellow-600" />
@@ -528,7 +528,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
       )}
 
       {/* Tips */}
-      {!parsedQuery && (
+      {showExamples && !parsedQuery && (
         <div className="card animate-fade-in">
           <h4 className="font-semibold text-white mb-3">💡 Tips for better results:</h4>
           <ul className="space-y-2 text-sm text-white">
