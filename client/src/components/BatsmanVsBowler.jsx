@@ -144,17 +144,22 @@ function BatsmanVsBowler({ player, initialBowler }) {
       setBatsmanImage(null);
     }
 
-    // Fetch bowler image if bowler is selected
+    // Fetch bowler image if bowler is selected, otherwise clear it
     if (selectedBowler) {
       try {
         const bowlerResponse = await axios.get(`/api/player/${selectedBowler}/image`);
         if (bowlerResponse.data.image_path) {
           setBowlerImage(bowlerResponse.data.image_path);
+        } else {
+          setBowlerImage(null);
         }
       } catch (err) {
         console.log('Bowler image not found');
         setBowlerImage(null);
       }
+    } else {
+      // Clear bowler image when no bowler is selected
+      setBowlerImage(null);
     }
   };
 
