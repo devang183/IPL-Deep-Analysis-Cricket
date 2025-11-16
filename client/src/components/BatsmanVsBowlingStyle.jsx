@@ -1,13 +1,53 @@
 import { useState, useEffect } from 'react';
-import { Target, Loader2, AlertCircle, TrendingUp, Activity, Zap, BarChart3, Award, Shield } from 'lucide-react';
+import { Target, Loader2, AlertCircle, TrendingUp, Activity, Zap, BarChart3, Award, Shield, X } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
+
+// Modal component to display bowlers list
+const BowlersModal = ({ isOpen, onClose, bowlers, styleName }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-slate-800">
+              Bowlers - {styleName}
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-slate-500 hover:text-slate-700"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {bowlers.map((bowler, index) => (
+              <div 
+                key={index}
+                className="bg-slate-50 hover:bg-slate-100 rounded-lg p-3 text-sm font-medium text-slate-700"
+              >
+                {bowler}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-sm text-slate-500">
+            Total: {bowlers.length} bowlers
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function BatsmanVsBowlingStyle({ player }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playerImage, setPlayerImage] = useState(null);
+  const [showBowlers, setShowBowlers] = useState({ isOpen: false, bowlers: [], styleName: '' });
 
   useEffect(() => {
     fetchStats();
@@ -251,8 +291,22 @@ function BatsmanVsBowlingStyle({ player }) {
             </div>
 
             <div className="mt-3 pt-3 border-t border-slate-200">
-              <div className="text-xs text-slate-500">
-                Faced {stat.bowlersFaced} different bowler{stat.bowlersFaced !== 1 ? 's' : ''} of this style
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-slate-500">
+                  Faced {stat.bowlersFaced} different bowler{stat.bowlersFaced !== 1 ? 's' : ''} of this style
+                </div>
+                {stat.bowlers && stat.bowlers.length > 0 && (
+                  <button
+                    onClick={() => setShowBowlers({
+                      isOpen: true,
+                      bowlers: stat.bowlers,
+                      styleName: formatBowlingStyle(stat.bowlingStyle)
+                    })}
+                    className="text-xs font-medium text-primary-600 hover:text-primary-800 hover:underline"
+                  >
+                    View Bowlers
+                  </button>
+                )}
               </div>
             </div>
           </div>

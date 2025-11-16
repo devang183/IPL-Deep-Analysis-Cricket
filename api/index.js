@@ -1786,6 +1786,9 @@ app.get('/api/batsman-vs-bowling-style/:batsmanName', async (req, res) => {
       const dotPercentage = stat.balls > 0 ? parseFloat(((stat.dots / stat.balls) * 100).toFixed(2)) : 0;
       const boundaryPercentage = stat.balls > 0 ? parseFloat(((stat.boundaries / stat.balls) * 100).toFixed(2)) : 0;
 
+      // Convert Set to array for JSON serialization
+      const bowlersList = Array.from(stat.bowlers);
+      
       formattedStats[style] = {
         bowlingStyle: style,
         runs: stat.runs,
@@ -1799,7 +1802,8 @@ app.get('/api/batsman-vs-bowling-style/:batsmanName', async (req, res) => {
         boundaries: stat.boundaries,
         boundaryPercentage,
         dismissals: stat.dismissals,
-        bowlersFaced: stat.bowlers.size
+        bowlersFaced: stat.bowlers.size,
+        bowlers: bowlersList  // Include the list of bowlers
       };
     });
 
