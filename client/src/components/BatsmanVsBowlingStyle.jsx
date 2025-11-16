@@ -429,6 +429,14 @@ function BatsmanVsBowlingStyle({ player }) {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Bowlers Modal */}
+      <BowlersModal
+        isOpen={showBowlers.isOpen}
+        onClose={() => setShowBowlers({ isOpen: false, bowlers: [], styleName: '' })}
+        bowlers={showBowlers.bowlers}
+        styleName={showBowlers.styleName}
+      />
     </div>
   );
 }
