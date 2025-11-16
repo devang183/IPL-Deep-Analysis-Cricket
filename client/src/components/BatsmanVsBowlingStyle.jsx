@@ -70,6 +70,7 @@ function BatsmanVsBowlingStyle({ player }) {
     setError(null);
     try {
       const response = await axios.get(`/api/batsman-vs-bowling-style/${encodeURIComponent(player)}`);
+      console.log('API Response:', response.data);
       setStats(response.data);
     } catch (err) {
       console.error('Error fetching bowling style stats:', err);
@@ -295,17 +296,26 @@ function BatsmanVsBowlingStyle({ player }) {
                 <div className="text-xs text-slate-500">
                   Faced {stat.bowlersFaced} different bowler{stat.bowlersFaced !== 1 ? 's' : ''} of this style
                 </div>
-                {stat.bowlers && stat.bowlers.length > 0 && (
+                {stat.bowlers && stat.bowlers.length > 0 ? (
                   <button
-                    onClick={() => setShowBowlers({
-                      isOpen: true,
-                      bowlers: stat.bowlers,
-                      styleName: formatBowlingStyle(stat.bowlingStyle)
-                    })}
+                    onClick={() => {
+                      console.log('View Bowlers clicked:', {
+                        style: stat.bowlingStyle,
+                        bowlers: stat.bowlers,
+                        bowlersLength: stat.bowlers.length
+                      });
+                      setShowBowlers({
+                        isOpen: true,
+                        bowlers: stat.bowlers,
+                        styleName: formatBowlingStyle(stat.bowlingStyle)
+                      });
+                    }}
                     className="text-xs font-medium text-primary-600 hover:text-primary-800 hover:underline"
                   >
-                    View Bowlers
+                    View Bowlers ({stat.bowlers.length})
                   </button>
+                ) : (
+                  <span className="text-xs text-slate-400">No bowlers data</span>
                 )}
               </div>
             </div>
