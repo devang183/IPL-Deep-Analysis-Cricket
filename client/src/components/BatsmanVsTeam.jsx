@@ -398,7 +398,7 @@ function BatsmanVsTeam({ player }) {
             <div className="card">
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Season-wise Performance</h3>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={stats.stats.seasonStats}>
+                <LineChart data={[...stats.stats.seasonStats].sort((a, b) => a.season - b.season)}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="season" />
                   <YAxis yAxisId="left" />
