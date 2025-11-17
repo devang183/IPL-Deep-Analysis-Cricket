@@ -28,6 +28,12 @@ function ShareButton({ player, tabName, contentRef }) {
     setCaptureSuccess(false);
 
     try {
+      // Wait a bit to ensure all charts are rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Store original scroll position
+      const originalScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
       // Capture the content
       const canvas = await html2canvas(contentRef.current, {
         backgroundColor: '#ffffff',
@@ -37,6 +43,14 @@ function ShareButton({ player, tabName, contentRef }) {
         allowTaint: true,
         foreignObjectRendering: false, // Disable foreign object rendering for better text support
         imageTimeout: 0, // No timeout for images
+        windowWidth: contentRef.current.scrollWidth,
+        windowHeight: contentRef.current.scrollHeight,
+        width: contentRef.current.scrollWidth,
+        height: contentRef.current.scrollHeight,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: -window.scrollY,
         onclone: (clonedDoc) => {
           // Force all text elements to use system fonts for better rendering
           const allElements = clonedDoc.querySelectorAll('*');
@@ -56,9 +70,20 @@ function ShareButton({ player, tabName, contentRef }) {
             }
             // Ensure font family is explicitly set
             el.style.fontFamily = 'Arial, Helvetica, sans-serif';
+
+            // Remove any height constraints that might cut off content
+            if (el.style.maxHeight) {
+              el.style.maxHeight = 'none';
+            }
+            if (el.style.overflow === 'hidden' || el.style.overflow === 'auto') {
+              el.style.overflow = 'visible';
+            }
           });
         },
       });
+
+      // Restore scroll position
+      window.scrollTo(0, originalScrollTop);
 
       // Convert to blob
       canvas.toBlob((blob) => {
