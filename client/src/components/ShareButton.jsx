@@ -33,10 +33,40 @@ function ShareButton({ player, tabName, contentRef }) {
 
       const element = contentRef.current;
 
+      // Clone the element to modify styles without affecting the original
+      const clonedElement = element.cloneNode(true);
+      document.body.appendChild(clonedElement);
+      clonedElement.style.position = 'absolute';
+      clonedElement.style.left = '-9999px';
+
+      // Change ALL text elements to white (comprehensive coverage for all chart types)
+      // This covers: BarChart, LineChart, PieChart, RadarChart, and all axes/labels
+      const allTextSelectors = [
+        'text',                                    // All SVG text elements
+        'tspan',                                   // Text spans within SVG
+        '.recharts-text',                          // Generic Recharts text
+        '.recharts-cartesian-axis-tick-value',     // X/Y axis tick values
+        '.recharts-legend-item-text',              // Legend text
+        '.recharts-label',                         // Chart labels
+        '.recharts-polar-angle-axis-tick-value',   // Radar chart angle axis
+        '.recharts-polar-radius-axis-tick',        // Radar chart radius axis
+        '.recharts-pie-label-text',                // Pie chart labels
+        '.recharts-radial-bar-label',              // Radial bar labels
+        '.recharts-layer text',                    // Any text in chart layers
+        '[class*="recharts"] text',                // Any text in recharts components
+      ].join(', ');
+
+      const textElements = clonedElement.querySelectorAll(allTextSelectors);
+      textElements.forEach(el => {
+        el.style.fill = '#ffffff';
+        el.style.color = '#ffffff';
+        el.setAttribute('fill', '#ffffff');  // Force SVG fill attribute
+      });
+
       // Configure dom-to-image with optimal settings
       const options = {
         quality: 1,
-        bgcolor: '#f8fafc', // Light grey background (slate-50)
+        bgcolor: '#000000', // Black background
         style: {
           transform: 'scale(1)',
           transformOrigin: 'top left',
@@ -51,7 +81,10 @@ function ShareButton({ player, tabName, contentRef }) {
       };
 
       // Use toPng for better quality and compatibility with charts
-      const dataUrl = await domtoimage.toPng(element, options);
+      const dataUrl = await domtoimage.toPng(clonedElement, options);
+
+      // Remove the cloned element
+      document.body.removeChild(clonedElement);
 
       // Create download link
       const link = document.createElement('a');
