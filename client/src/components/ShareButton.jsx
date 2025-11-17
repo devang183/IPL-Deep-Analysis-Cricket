@@ -36,7 +36,7 @@ function ShareButton({ player, tabName, contentRef }) {
 
       // Capture the content
       const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f1f5f9', // Light grey background
         scale: 2, // Higher quality
         logging: false,
         useCORS: true,
