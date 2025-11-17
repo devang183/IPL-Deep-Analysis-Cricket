@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Share2, Download, MessageCircle, Facebook, Twitter, Linkedin, X, Check, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-more';
 
 function ShareButton({ player, tabName, contentRef }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,79 +28,40 @@ function ShareButton({ player, tabName, contentRef }) {
     setCaptureSuccess(false);
 
     try {
-      // Wait a bit to ensure all charts are rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for charts and images to fully render
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Store original scroll position
-      const originalScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const element = contentRef.current;
 
-      // Capture the content
-      const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: '#f1f5f9', // Light grey background
-        scale: 2, // Higher quality
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        foreignObjectRendering: false, // Disable foreign object rendering for better text support
-        imageTimeout: 0, // No timeout for images
-        windowWidth: contentRef.current.scrollWidth,
-        windowHeight: contentRef.current.scrollHeight,
-        width: contentRef.current.scrollWidth,
-        height: contentRef.current.scrollHeight,
-        x: 0,
-        y: 0,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        onclone: (clonedDoc) => {
-          // Force all text elements to use system fonts for better rendering
-          const allElements = clonedDoc.querySelectorAll('*');
-          allElements.forEach((el) => {
-            const computedStyle = window.getComputedStyle(el);
-            if (computedStyle.color) {
-              el.style.color = computedStyle.color;
-            }
-            if (computedStyle.backgroundColor) {
-              el.style.backgroundColor = computedStyle.backgroundColor;
-            }
-            if (computedStyle.fontSize) {
-              el.style.fontSize = computedStyle.fontSize;
-            }
-            if (computedStyle.fontWeight) {
-              el.style.fontWeight = computedStyle.fontWeight;
-            }
-            // Ensure font family is explicitly set
-            el.style.fontFamily = 'Arial, Helvetica, sans-serif';
-
-            // Remove any height constraints that might cut off content
-            if (el.style.maxHeight) {
-              el.style.maxHeight = 'none';
-            }
-            if (el.style.overflow === 'hidden' || el.style.overflow === 'auto') {
-              el.style.overflow = 'visible';
-            }
-          });
+      // Configure dom-to-image with optimal settings
+      const options = {
+        quality: 1,
+        bgcolor: '#f8fafc', // Light grey background (slate-50)
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
         },
-      });
+        filter: (node) => {
+          // Exclude certain elements that might cause issues
+          if (node.tagName === 'BUTTON' && node.getAttribute('aria-label') === 'Share options') {
+            return false;
+          }
+          return true;
+        },
+      };
 
-      // Restore scroll position
-      window.scrollTo(0, originalScrollTop);
+      // Use toPng for better quality and compatibility with charts
+      const dataUrl = await domtoimage.toPng(element, options);
 
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        if (blob) {
-          // Create download link
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          const fileName = `${player}_${tabName.replace(/\s+/g, '_')}_${new Date().getTime()}.png`;
-          link.download = fileName;
-          link.href = url;
-          link.click();
-          URL.revokeObjectURL(url);
+      // Create download link
+      const link = document.createElement('a');
+      const fileName = `${player}_${tabName.replace(/\s+/g, '_')}_${new Date().getTime()}.png`;
+      link.download = fileName;
+      link.href = dataUrl;
+      link.click();
 
-          setCaptureSuccess(true);
-          setTimeout(() => setCaptureSuccess(false), 2000);
-        }
-      }, 'image/png');
+      setCaptureSuccess(true);
+      setTimeout(() => setCaptureSuccess(false), 2000);
     } catch (error) {
       console.error('Error capturing screenshot:', error);
       alert('Failed to capture screenshot. Please try again.');
