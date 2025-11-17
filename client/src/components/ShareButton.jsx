@@ -35,6 +35,29 @@ function ShareButton({ player, tabName, contentRef }) {
         logging: false,
         useCORS: true,
         allowTaint: true,
+        foreignObjectRendering: false, // Disable foreign object rendering for better text support
+        imageTimeout: 0, // No timeout for images
+        onclone: (clonedDoc) => {
+          // Force all text elements to use system fonts for better rendering
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el) => {
+            const computedStyle = window.getComputedStyle(el);
+            if (computedStyle.color) {
+              el.style.color = computedStyle.color;
+            }
+            if (computedStyle.backgroundColor) {
+              el.style.backgroundColor = computedStyle.backgroundColor;
+            }
+            if (computedStyle.fontSize) {
+              el.style.fontSize = computedStyle.fontSize;
+            }
+            if (computedStyle.fontWeight) {
+              el.style.fontWeight = computedStyle.fontWeight;
+            }
+            // Ensure font family is explicitly set
+            el.style.fontFamily = 'Arial, Helvetica, sans-serif';
+          });
+        },
       });
 
       // Convert to blob
