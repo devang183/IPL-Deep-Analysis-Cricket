@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
  * Personalized loading component with rotating messages
  * Shows engaging messages with user's name
  */
-function PersonalizedLoading({ userName = 'there', context = 'statistics' }) {
+function PersonalizedLoading({ userName = 'honey', context = 'statistics' }) {
   const [messageIndex, setMessageIndex] = useState(0);
 
   // Personalized loading messages
