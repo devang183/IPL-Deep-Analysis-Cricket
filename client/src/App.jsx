@@ -12,7 +12,6 @@ import MOTMAnalysis from './components/MOTMAnalysis';
 import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
-import ShareButton from './components/ShareButton';
 import AuthPage from './components/AuthPage';
 import SpaceBackground from './components/SpaceBackground';
 import { useAuth } from './context/AuthContext';
@@ -199,15 +198,6 @@ function App() {
               );
             })}
           </div>
-
-          {/* Share Button - only show when player is selected and not on smart/admin/community tab */}
-          {selectedPlayer && activeTab !== 'smart' && activeTab !== 'admin' && activeTab !== 'community' && (
-            <ShareButton
-              player={selectedPlayer}
-              tabName={tabs.find(t => t.id === activeTab)?.name || 'Analysis'}
-              contentRef={contentRef}
-            />
-          )}
         </div>
 
         {/* Content */}
