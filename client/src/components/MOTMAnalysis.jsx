@@ -99,7 +99,7 @@ function MOTMAnalysis({ player }) {
   const filteredData = getFilteredData();
 
   if (loading) {
-    return <PersonalizedLoading userName={user?.username || 'there'} context="MOTM awards" />;
+    return <PersonalizedLoading userName={user?.username || 'honey'} context="MOTM awards" />;
   }
 
   if (error) {
