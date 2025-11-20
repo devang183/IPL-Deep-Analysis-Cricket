@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Trophy, MapPin, Loader2, AlertCircle, Calendar, Award, X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, MapPin, AlertCircle, Calendar, Award, X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import PersonalizedLoading from './PersonalizedLoading';
+import { useAuth } from '../context/AuthContext';
 
 function MOTMAnalysis({ player }) {
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -96,12 +99,7 @@ function MOTMAnalysis({ player }) {
   const filteredData = getFilteredData();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        <span className="ml-3 text-slate-600">Loading MOTM data...</span>
-      </div>
-    );
+    return <PersonalizedLoading userName={user?.username || 'there'} context="MOTM awards" />;
   }
 
   if (error) {

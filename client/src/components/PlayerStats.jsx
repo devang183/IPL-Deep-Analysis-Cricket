@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Loader2, AlertCircle, TrendingUp, Target, Activity, User } from 'lucide-react';
+import { BarChart3, AlertCircle, TrendingUp, Target, Activity, User } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import PersonalizedLoading from './PersonalizedLoading';
+import { useAuth } from '../context/AuthContext';
 
 function PlayerStats({ player }) {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [playerImage, setPlayerImage] = useState(null);
   const [playerInfo, setPlayerInfo] = useState({ battingstyle: null, bowlingstyle: null });
@@ -49,12 +52,7 @@ function PlayerStats({ player }) {
   const COLORS = ['#0ea5e9', '#06b6d4', '#8b5cf6', '#ec4899'];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        <span className="ml-3 text-slate-600">Loading statistics...</span>
-      </div>
-    );
+    return <PersonalizedLoading userName={user?.username || 'there'} context="batting statistics" />;
   }
 
   if (error) {

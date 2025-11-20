@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Target, Loader2, AlertCircle, TrendingDown, Activity, Zap, User, Clock, Filter } from 'lucide-react';
+import { Target, AlertCircle, TrendingDown, Activity, Zap, User, Clock, Filter } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import PersonalizedLoading from './PersonalizedLoading';
+import { useAuth } from '../context/AuthContext';
 
 function BowlerStats({ player }) {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [playerImage, setPlayerImage] = useState(null);
   const [playerInfo, setPlayerInfo] = useState({ battingstyle: null, bowlingstyle: null });
@@ -53,12 +56,7 @@ function BowlerStats({ player }) {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-        <span className="ml-3 text-slate-600">Loading bowling statistics...</span>
-      </div>
-    );
+    return <PersonalizedLoading userName={user?.username || 'there'} context="bowling statistics" />;
   }
 
   if (error) {
