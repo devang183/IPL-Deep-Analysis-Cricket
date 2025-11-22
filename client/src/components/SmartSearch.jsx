@@ -15,6 +15,20 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
 
+  // IPL teams and their aliases
+  const teams = {
+    'Mumbai Indians': ['mumbai', 'mi', 'mumbai indians'],
+    'Chennai Super Kings': ['chennai', 'csk', 'chennai super kings', 'super kings'],
+    'Royal Challengers Bangalore': ['bangalore', 'rcb', 'royal challengers', 'bengaluru'],
+    'Kolkata Knight Riders': ['kolkata', 'kkr', 'knight riders'],
+    'Delhi Capitals': ['delhi', 'dc', 'delhi capitals', 'daredevils', 'delhi daredevils'],
+    'Punjab Kings': ['punjab', 'pbks', 'punjab kings', 'kxip', 'kings xi punjab'],
+    'Rajasthan Royals': ['rajasthan', 'rr', 'rajasthan royals', 'royals'],
+    'Sunrisers Hyderabad': ['hyderabad', 'srh', 'sunrisers', 'sunrisers hyderabad'],
+    'Gujarat Titans': ['gujarat', 'gt', 'gujarat titans', 'titans'],
+    'Lucknow Super Giants': ['lucknow', 'lsg', 'lucknow super giants', 'super giants'],
+  };
+
   // Example queries to show users - different based on mode
   const exampleQueries = mode === 'bowling' ? [
     { text: "Jasprit Bumrah bowling stats", icon: BarChart3 },
@@ -24,13 +38,24 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
     { text: "Lasith Malinga bowling stats", icon: BarChart3 },
     { text: "Sunil Narine stats", icon: Target },
   ] : [
-    { text: "Show me Virat Kohli's phase performance", icon: TrendingUp },
+    { text: "Virat Kohli batting stats", icon: BarChart3 },
     { text: "How does MS Dhoni get dismissed?", icon: Target },
-    { text: "Rohit Sharma stats", icon: BarChart3 },
+    { text: "Rohit Sharma vs Chennai Super Kings", icon: Users },
     { text: "AB de Villiers vs Jasprit Bumrah", icon: Users },
     { text: "Virat Kohli man of the match awards", icon: Trophy },
-    { text: "Starc stats", icon: TrendingUp },
+    { text: "David Warner vs bowling styles", icon: TrendingUp },
   ];
+
+  // Function to detect team from query
+  const detectTeam = (queryText) => {
+    const lowerQuery = queryText.toLowerCase();
+    for (const [teamName, aliases] of Object.entries(teams)) {
+      if (aliases.some(alias => lowerQuery.includes(alias))) {
+        return teamName;
+      }
+    }
+    return null;
+  };
 
   // Keywords mapping to analysis types
   const keywords = mode === 'bowling' ? {
@@ -40,6 +65,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
     dismissal: ['dismissal', 'dismissed', 'out', 'wicket', 'caught', 'bowled', 'lbw', 'how', 'get out'],
     stats: ['stats', 'statistics', 'overall', 'total', 'runs', 'average', 'strike rate', 'performance'],
     matchup: ['vs', 'versus', 'against', 'bowler', 'bowling', 'face', 'facing'],
+    vsteam: ['vs', 'versus', 'against', 'team'],
     motm: ['motm', 'man of the match', 'awards', 'mom', 'player of the match'],
   };
 
@@ -47,15 +73,23 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
   const parseQuery = (queryText) => {
     const lowerQuery = queryText.toLowerCase().trim();
 
+    // Check if query contains a team first (for vs team queries)
+    const detectedTeamName = detectTeam(lowerQuery);
+
     // Detect analysis type first
     let analysisType = 'stats'; // default
     let confidence = 0;
 
-    for (const [type, words] of Object.entries(keywords)) {
-      const matches = words.filter(word => lowerQuery.includes(word));
-      if (matches.length > confidence) {
-        confidence = matches.length;
-        analysisType = type;
+    // If team detected and query has "vs", it's a vsteam query
+    if (detectedTeamName && (lowerQuery.includes('vs') || lowerQuery.includes('versus') || lowerQuery.includes('against'))) {
+      analysisType = 'vsteam';
+    } else {
+      for (const [type, words] of Object.entries(keywords)) {
+        const matches = words.filter(word => lowerQuery.includes(word));
+        if (matches.length > confidence) {
+          confidence = matches.length;
+          analysisType = type;
+        }
       }
     }
 
@@ -148,6 +182,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
       player: detectedPlayer,
       analysisType,
       secondPlayer,
+      team: detectedTeamName,
       matchScore,
       secondPlayerScore,
       ballThreshold,
@@ -177,6 +212,17 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
         } else {
           setError("I couldn't find a player name in your query. Please try again with a valid player name.");
         }
+        setLoading(false);
+        return;
+      }
+
+      // For vs team queries, auto-execute if team detected
+      if (parsed.analysisType === 'vsteam' && parsed.team) {
+        setParsedQuery(parsed);
+        onPlayerSelect(parsed.player);
+        onTabChange(parsed.analysisType);
+        // Team will be selected within the BatsmanVsTeam component itself
+
         setLoading(false);
         return;
       }

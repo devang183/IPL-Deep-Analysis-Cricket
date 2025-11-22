@@ -17,7 +17,8 @@ function RedditFeed() {
   const fetchRedditPosts = async () => {
     try {
       setError(null);
-      const response = await fetch('https://www.reddit.com/r/IPL/hot/.json?limit=25');
+      // Use backend proxy to avoid CORS issues
+      const response = await fetch('/api/reddit/ipl');
       const data = await response.json();
 
       // Transform Reddit API response to match our component's expected format
