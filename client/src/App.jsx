@@ -25,7 +25,6 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [initialTeam, setInitialTeam] = useState('');
   const contentRef = useRef(null);
   const tabsContainerRef = useRef(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -303,7 +302,6 @@ function App() {
               onPlayerSelect={setSelectedPlayer}
               onTabChange={setActiveTab}
               onBowlerSelect={setInitialBowler}
-              onTeamSelect={setInitialTeam}
             />
           )}
 
@@ -382,7 +380,7 @@ function App() {
 
           {activeTab === 'vsteam' && selectedPlayer && (
             <div className="card">
-              <BatsmanVsTeam player={selectedPlayer} initialTeam={initialTeam} />
+              <BatsmanVsTeam player={selectedPlayer} />
             </div>
           )}
 
