@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -25,7 +25,11 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialTeam, setInitialTeam] = useState('');
   const contentRef = useRef(null);
+  const tabsContainerRef = useRef(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
   console.log('App render - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'user:', user);
 
@@ -126,25 +130,79 @@ function App() {
   // Filter tabs based on user role
   const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
 
+  // Check scroll position and update arrow visibility
+  const checkScrollArrows = useCallback(() => {
+    if (tabsContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+      const maxScrollLeft = scrollWidth - clientWidth;
+
+      setShowLeftArrow(scrollLeft > 5);
+      setShowRightArrow(scrollLeft < maxScrollLeft - 5);
+    }
+  }, []);
+
+  // Scroll tabs container
+  const scrollTabs = useCallback((direction) => {
+    if (tabsContainerRef.current) {
+      const scrollAmount = 200;
+
+      tabsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Setup scroll listeners and check on mount/resize
+  useEffect(() => {
+    checkScrollArrows();
+    const scrollContainer = tabsContainerRef.current;
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', checkScrollArrows, { passive: true });
+      window.addEventListener('resize', checkScrollArrows, { passive: true });
+
+      return () => {
+        scrollContainer.removeEventListener('scroll', checkScrollArrows);
+        window.removeEventListener('resize', checkScrollArrows);
+      };
+    }
+  }, [checkScrollArrows]);
+
+  // Scroll active tab into view when tab changes
+  useEffect(() => {
+    if (tabsContainerRef.current && activeTab) {
+      const activeTabElement = document.getElementById(`tab-${activeTab}`);
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+  }, [activeTab]);
+
   return (
-    <div className="min-h-screen py-8 px-4 relative">
+    <div className="min-h-screen py-3 md:py-6 lg:py-8 px-3 md:px-4 relative">
       <SpaceBackground />
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Header with User Info and Logout */}
-        <div className="mb-12 animate-fade-in-down">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Activity className="w-12 h-12 text-primary-600 animate-bounce-subtle" />
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+        {/* Mobile-First Header */}
+        <div className="mb-4 md:mb-8 lg:mb-12 animate-fade-in-down">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 mb-3 md:mb-6">
+            {/* Logo and Title - Mobile Optimized */}
+            <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-center sm:justify-start">
+              <Activity className="w-7 h-7 md:w-10 md:h-10 lg:w-12 lg:h-12 text-primary-600 animate-bounce-subtle flex-shrink-0" />
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent leading-tight text-center sm:text-left">
                 IPL Cricket Analytics
               </h1>
             </div>
 
-            {/* User Info and Logout */}
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
+            {/* User Info and Logout - Mobile Optimized */}
+            <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto justify-center sm:justify-end">
+              <div className="text-center sm:text-right hidden md:block">
                 <div className="flex items-center gap-2 justify-end">
-                  <p className="text-sm text-slate-600">Welcome back,</p>
+                  <p className="text-xs md:text-sm text-slate-600">Welcome back,</p>
                   {user?.isAdmin && (
                     <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
                       <Shield className="w-3 h-3" />
@@ -152,27 +210,50 @@ function App() {
                     </span>
                   )}
                 </div>
-                <p className="font-semibold text-slate-800">{user?.name}</p>
+                <p className="text-sm font-semibold text-slate-800">{user?.name}</p>
               </div>
               <button
                 onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all hover:scale-105 active:scale-95"
+                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 rounded-lg transition-all text-sm md:text-base font-medium touch-manipulation min-h-[44px]"
                 aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Logout</span>
               </button>
             </div>
           </div>
 
-          <p className="text-slate-600 text-lg text-center">
+          <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg text-center px-2">
             Analyze ball-by-ball IPL data from 2008 to 2025
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-slide-in-right">
-          <div className="flex gap-4 overflow-x-auto" role="tablist" aria-label="Analysis options">
+        {/* Mobile-First Horizontal Scrollable Tabs */}
+        <div className="relative mb-4 md:mb-6 lg:mb-8 animate-slide-in-right">
+          {/* Left Arrow - Touch Optimized */}
+          {showLeftArrow && (
+            <button
+              onClick={() => scrollTabs('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-slate-900/95 to-transparent backdrop-blur-sm p-2 md:p-2.5 rounded-r-lg hover:from-slate-800/95 active:from-slate-700/95 transition-all shadow-lg touch-manipulation"
+              aria-label="Scroll tabs left"
+            >
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-white" />
+            </button>
+          )}
+
+          {/* Tabs Container - Mobile First */}
+          <div
+            ref={tabsContainerRef}
+            className="flex gap-2 md:gap-3 overflow-x-auto scrollbar-hide px-9 md:px-10 lg:px-0"
+            role="tablist"
+            aria-label="Analysis options"
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x proximity'
+            }}
+          >
             {tabs.map((tab, index) => {
               const Icon = tab.icon;
               return (
@@ -185,22 +266,36 @@ function App() {
                   tabIndex={activeTab === tab.id ? 0 : -1}
                   onClick={() => setActiveTab(tab.id)}
                   onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 ${
+                  style={{
+                    animationDelay: `${index * 0.1}s`,
+                    scrollSnapAlign: 'center'
+                  }}
+                  className={`flex items-center gap-1.5 md:gap-2 px-3 sm:px-4 md:px-5 lg:px-6 py-2.5 md:py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up active:scale-95 flex-shrink-0 text-xs sm:text-sm md:text-base touch-manipulation min-h-[44px] ${
                     activeTab === tab.id
-                      ? 'text-white border-2 border-primary-500 shadow-lg shadow-primary-500/50 animate-pulse-glow'
-                      : 'text-white/70 border border-white/20 hover:text-white hover:border-white/40'
+                      ? 'text-white border-2 border-primary-500 shadow-lg shadow-primary-500/50 scale-105'
+                      : 'text-white/70 border border-white/20 hover:text-white hover:border-white/40 hover:scale-105'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
-                  {tab.name}
+                  <Icon className={`w-4 h-4 md:w-5 md:h-5 flex-shrink-0 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
+                  <span className="font-semibold">{tab.name}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* Right Arrow - Touch Optimized */}
+          {showRightArrow && (
+            <button
+              onClick={() => scrollTabs('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-l from-slate-900/95 to-transparent backdrop-blur-sm p-2 md:p-2.5 rounded-l-lg hover:from-slate-800/95 active:from-slate-700/95 transition-all shadow-lg touch-manipulation"
+              aria-label="Scroll tabs right"
+            >
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-white" />
+            </button>
+          )}
         </div>
 
-        {/* Content */}
+        {/* Content - Mobile Optimized */}
         <div ref={contentRef} className="animate-scale-in" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
           {activeTab === 'smart' && (
             <SmartSearch
@@ -208,23 +303,24 @@ function App() {
               onPlayerSelect={setSelectedPlayer}
               onTabChange={setActiveTab}
               onBowlerSelect={setInitialBowler}
+              onTeamSelect={setInitialTeam}
             />
           )}
 
           {activeTab !== 'smart' && activeTab !== 'stats' && activeTab !== 'bowler' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (
-            <div className="card text-center py-16">
-              <Activity className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-slate-700 mb-2">
+            <div className="card text-center py-12 md:py-16">
+              <Activity className="w-12 h-12 md:w-16 md:h-16 text-slate-300 mx-auto mb-3 md:mb-4" />
+              <h3 className="text-base md:text-lg lg:text-xl font-semibold text-slate-700 mb-2 px-2">
                 Select a player to view {tabs.find(t => t.id === activeTab)?.name}
               </h3>
-              <p className="text-slate-500 mb-4">
+              <p className="text-sm md:text-base text-slate-500 mb-4 px-4">
                 Use the Smart Search tab to ask questions in natural language
               </p>
               <button
                 onClick={() => setActiveTab('smart')}
-                className="btn-primary inline-flex items-center gap-2"
+                className="btn-primary inline-flex items-center gap-2 text-sm md:text-base touch-manipulation min-h-[44px]"
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                 Go to Smart Search
               </button>
             </div>
@@ -286,7 +382,7 @@ function App() {
 
           {activeTab === 'vsteam' && selectedPlayer && (
             <div className="card">
-              <BatsmanVsTeam player={selectedPlayer} />
+              <BatsmanVsTeam player={selectedPlayer} initialTeam={initialTeam} />
             </div>
           )}
 

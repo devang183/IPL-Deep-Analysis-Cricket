@@ -20,20 +20,26 @@
 }
 
 @layer components {
+  /* Mobile-First Card Design */
   .card {
-    @apply rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-2xl;
+    @apply rounded-lg md:rounded-xl shadow-lg p-3 sm:p-4 md:p-5 lg:p-6 transition-all duration-300 hover:shadow-2xl;
     background: transparent;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
   }
 
+  /* Mobile-First Buttons - Touch Optimized */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+    @apply bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-semibold py-2.5 md:py-2 px-4 md:px-6 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+    min-height: 44px;
+    touch-action: manipulation;
   }
 
   .btn-secondary {
-    @apply bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-6 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95;
+    @apply bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-800 font-semibold py-2.5 md:py-2 px-4 md:px-6 rounded-lg transition-all duration-200 active:scale-95;
+    min-height: 44px;
+    touch-action: manipulation;
   }
 
   .input-field {
@@ -319,5 +325,78 @@
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: #3b82f6 rgba(191, 219, 254, 0.3);
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch-optimized interactions */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile-optimized text sizing */
+  @media (max-width: 640px) {
+    html {
+      font-size: 16px; /* Prevent zoom on input focus */
+    }
+  }
+
+  /* Performance optimizations */
+  .will-change-scroll {
+    will-change: scroll-position;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  /* Accessibility improvements - Focus visible */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .card {
+      border: 2px solid rgba(255, 255, 255, 0.4);
+    }
+
+    button {
+      border: 2px solid currentColor;
+    }
+  }
+
+  /* Dark mode support improvements */
+  @media (prefers-color-scheme: dark) {
+    .input-field {
+      background-color: rgba(15, 23, 42, 0.5);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
   }
 }

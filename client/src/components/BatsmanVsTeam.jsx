@@ -3,7 +3,7 @@ import { Target, Loader2, AlertCircle, TrendingUp, Shield, Activity, Zap, BarCha
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
 
-function BatsmanVsTeam({ player }) {
+function BatsmanVsTeam({ player, initialTeam }) {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +21,18 @@ function BatsmanVsTeam({ player }) {
     fetchTeams();
     fetchPlayerImage();
   }, [player]);
+
+  // Auto-select team when initialTeam is provided
+  useEffect(() => {
+    if (initialTeam && teams.length > 0 && !selectedTeam) {
+      // Check if the initialTeam exists in the teams list
+      const teamExists = teams.some(team => team === initialTeam);
+      if (teamExists) {
+        handleTeamSelect(initialTeam);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTeam, teams]);
 
   // Reset highlighted index when search term changes
   useEffect(() => {
