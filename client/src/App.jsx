@@ -130,50 +130,48 @@ function App() {
   // Filter tabs based on user role
   const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
 
-  // Scroll tabs container
-  const scrollTabs = (direction) => {
-    if (tabsContainerRef.current) {
-      const scrollAmount = 200;
-      const newScrollLeft = direction === 'left'
-        ? tabsContainerRef.current.scrollLeft - scrollAmount
-        : tabsContainerRef.current.scrollLeft + scrollAmount;
-
-      tabsContainerRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  // Check scroll position and update arrow visibility (with callback to prevent infinite loops)
-  const handleScroll = useCallback(() => {
+  // Check scroll position and update arrow visibility
+  const checkScrollArrows = useCallback(() => {
     if (tabsContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
-      const shouldShowLeft = scrollLeft > 0;
-      const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 10;
+      const maxScrollLeft = scrollWidth - clientWidth;
 
-      setShowLeftArrow(prev => prev !== shouldShowLeft ? shouldShowLeft : prev);
-      setShowRightArrow(prev => prev !== shouldShowRight ? shouldShowRight : prev);
+      setShowLeftArrow(scrollLeft > 5);
+      setShowRightArrow(scrollLeft < maxScrollLeft - 5);
     }
   }, []);
 
-  // Check scroll position on mount and resize
-  useEffect(() => {
-    // Check position after a short delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      handleScroll();
-    }, 100);
+  // Scroll tabs container
+  const scrollTabs = useCallback((direction) => {
+    if (tabsContainerRef.current) {
+      const scrollAmount = 200;
 
-    window.addEventListener('resize', handleScroll);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', handleScroll);
-    };
-  }, [handleScroll]);
+      tabsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Setup scroll listeners and check on mount/resize
+  useEffect(() => {
+    checkScrollArrows();
+    const scrollContainer = tabsContainerRef.current;
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', checkScrollArrows, { passive: true });
+      window.addEventListener('resize', checkScrollArrows, { passive: true });
+
+      return () => {
+        scrollContainer.removeEventListener('scroll', checkScrollArrows);
+        window.removeEventListener('resize', checkScrollArrows);
+      };
+    }
+  }, [checkScrollArrows]);
 
   // Scroll active tab into view when tab changes
   useEffect(() => {
-    if (tabsContainerRef.current) {
+    if (tabsContainerRef.current && activeTab) {
       const activeTabElement = document.getElementById(`tab-${activeTab}`);
       if (activeTabElement) {
         activeTabElement.scrollIntoView({
@@ -182,12 +180,8 @@ function App() {
           inline: 'center'
         });
       }
-      // Check scroll position after scrolling
-      setTimeout(() => {
-        handleScroll();
-      }, 300);
     }
-  }, [activeTab, handleScroll]);
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen py-8 px-4 relative">
