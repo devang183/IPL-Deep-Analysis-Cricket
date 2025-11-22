@@ -40,10 +40,10 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
   ] : [
     { text: "Virat Kohli batting stats", icon: BarChart3 },
     { text: "How does MS Dhoni get dismissed?", icon: Target },
-    { text: "Rohit Sharma vs Chennai Super Kings", icon: Users },
+    { text: "Rohit Sharma MOTM", icon: Users },
     { text: "AB de Villiers vs Jasprit Bumrah", icon: Users },
     { text: "Virat Kohli man of the match awards", icon: Trophy },
-    { text: "David Warner vs bowling styles", icon: TrendingUp },
+    { text: "David Warner vs R Ashwin", icon: TrendingUp },
   ];
 
   // Function to detect team from query

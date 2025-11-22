@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -27,6 +27,9 @@ function App() {
   const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
+  const tabsContainerRef = useRef(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
   console.log('App render - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'user:', user);
 
@@ -127,6 +130,51 @@ function App() {
   // Filter tabs based on user role
   const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
 
+  // Check scroll position and update arrow visibility
+  const checkScrollPosition = () => {
+    if (tabsContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  // Scroll tabs container
+  const scrollTabs = (direction) => {
+    if (tabsContainerRef.current) {
+      const scrollAmount = 200;
+      const newScrollLeft = direction === 'left'
+        ? tabsContainerRef.current.scrollLeft - scrollAmount
+        : tabsContainerRef.current.scrollLeft + scrollAmount;
+
+      tabsContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Check scroll position on mount and when tabs change
+  useEffect(() => {
+    checkScrollPosition();
+    window.addEventListener('resize', checkScrollPosition);
+    return () => window.removeEventListener('resize', checkScrollPosition);
+  }, [tabs]);
+
+  // Scroll active tab into view
+  useEffect(() => {
+    if (tabsContainerRef.current) {
+      const activeTabElement = document.getElementById(`tab-${activeTab}`);
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen py-8 px-4 relative">
       <SpaceBackground />
@@ -171,9 +219,32 @@ function App() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-slide-in-right">
-          <div className="flex gap-4 overflow-x-auto" role="tablist" aria-label="Analysis options">
+        {/* Tabs with Navigation Arrows */}
+        <div className="relative mb-8 animate-slide-in-right">
+          {/* Left Arrow */}
+          {showLeftArrow && (
+            <button
+              onClick={() => scrollTabs('left')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-slate-900/90 to-transparent backdrop-blur-sm p-2 rounded-r-lg hover:from-slate-800/90 transition-all shadow-lg"
+              aria-label="Scroll tabs left"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+          )}
+
+          {/* Tabs Container */}
+          <div
+            ref={tabsContainerRef}
+            className="flex gap-3 overflow-x-auto scrollbar-hide px-8 md:px-0"
+            role="tablist"
+            aria-label="Analysis options"
+            onScroll={checkScrollPosition}
+            style={{
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
             {tabs.map((tab, index) => {
               const Icon = tab.icon;
               return (
@@ -187,18 +258,29 @@ function App() {
                   onClick={() => setActiveTab(tab.id)}
                   onKeyDown={(e) => handleTabKeyDown(e, tab.id)}
                   style={{ animationDelay: `${index * 0.1}s` }}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 ${
+                  className={`flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-lg font-semibold transition-all whitespace-nowrap animate-fade-in-up hover:scale-105 active:scale-95 flex-shrink-0 ${
                     activeTab === tab.id
                       ? 'text-white border-2 border-primary-500 shadow-lg shadow-primary-500/50 animate-pulse-glow'
                       : 'text-white/70 border border-white/20 hover:text-white hover:border-white/40'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
-                  {tab.name}
+                  <Icon className={`w-4 h-4 md:w-5 md:h-5 ${activeTab === tab.id ? 'animate-wiggle' : ''}`} />
+                  <span className="text-sm md:text-base">{tab.name}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* Right Arrow */}
+          {showRightArrow && (
+            <button
+              onClick={() => scrollTabs('right')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-l from-slate-900/90 to-transparent backdrop-blur-sm p-2 rounded-l-lg hover:from-slate-800/90 transition-all shadow-lg"
+              aria-label="Scroll tabs right"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+          )}
         </div>
 
         {/* Content */}
