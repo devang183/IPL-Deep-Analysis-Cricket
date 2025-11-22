@@ -20,6 +20,7 @@ function BatsmanVsTeam({ player }) {
   useEffect(() => {
     fetchTeams();
     fetchPlayerImage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player]);
 
   // Reset highlighted index when search term changes
