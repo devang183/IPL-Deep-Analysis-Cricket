@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
@@ -145,36 +145,31 @@ function App() {
     }
   };
 
-  // Check scroll position and update arrow visibility
-  const checkScrollPosition = () => {
+  // Check scroll position and update arrow visibility (with callback to prevent infinite loops)
+  const handleScroll = useCallback(() => {
     if (tabsContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
       const shouldShowLeft = scrollLeft > 0;
       const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 10;
 
-      setShowLeftArrow(shouldShowLeft);
-      setShowRightArrow(shouldShowRight);
+      setShowLeftArrow(prev => prev !== shouldShowLeft ? shouldShowLeft : prev);
+      setShowRightArrow(prev => prev !== shouldShowRight ? shouldShowRight : prev);
     }
-  };
+  }, []);
 
   // Check scroll position on mount and resize
   useEffect(() => {
-    const handleResize = () => {
-      checkScrollPosition();
-    };
-
     // Check position after a short delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      checkScrollPosition();
+      handleScroll();
     }, 100);
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleScroll);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handleScroll);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handleScroll]);
 
   // Scroll active tab into view when tab changes
   useEffect(() => {
@@ -189,11 +184,10 @@ function App() {
       }
       // Check scroll position after scrolling
       setTimeout(() => {
-        checkScrollPosition();
+        handleScroll();
       }, 300);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, handleScroll]);
 
   return (
     <div className="min-h-screen py-8 px-4 relative">
@@ -258,7 +252,7 @@ function App() {
             className="flex gap-3 overflow-x-auto scrollbar-hide px-8 md:px-0"
             role="tablist"
             aria-label="Analysis options"
-            onScroll={checkScrollPosition}
+            onScroll={handleScroll}
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
