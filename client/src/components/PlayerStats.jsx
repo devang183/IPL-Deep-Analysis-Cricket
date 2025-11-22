@@ -52,7 +52,7 @@ function PlayerStats({ player }) {
   const COLORS = ['#0ea5e9', '#06b6d4', '#8b5cf6', '#ec4899'];
 
   if (loading) {
-    return <PersonalizedLoading userName={user?.username || 'honey'} context="batting statistics" />;
+    return <PersonalizedLoading userName={user?.username || 'there'} context="batting statistics" />;
   }
 
   if (error) {

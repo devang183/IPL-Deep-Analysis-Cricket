@@ -56,7 +56,7 @@ function BowlerStats({ player }) {
   };
 
   if (loading) {
-    return <PersonalizedLoading userName={user?.username || 'honey'} context="bowling statistics" />;
+    return <PersonalizedLoading userName={user?.username || 'there'} context="bowling statistics" />;
   }
 
   if (error) {
