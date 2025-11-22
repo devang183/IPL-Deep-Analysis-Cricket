@@ -130,15 +130,6 @@ function App() {
   // Filter tabs based on user role
   const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
 
-  // Check scroll position and update arrow visibility
-  const checkScrollPosition = () => {
-    if (tabsContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
-      setShowLeftArrow(scrollLeft > 0);
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
   // Scroll tabs container
   const scrollTabs = (direction) => {
     if (tabsContainerRef.current) {
@@ -154,14 +145,38 @@ function App() {
     }
   };
 
-  // Check scroll position on mount and when tabs change
-  useEffect(() => {
-    checkScrollPosition();
-    window.addEventListener('resize', checkScrollPosition);
-    return () => window.removeEventListener('resize', checkScrollPosition);
-  }, [tabs]);
+  // Check scroll position and update arrow visibility
+  const checkScrollPosition = () => {
+    if (tabsContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
+      const shouldShowLeft = scrollLeft > 0;
+      const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 10;
 
-  // Scroll active tab into view
+      setShowLeftArrow(shouldShowLeft);
+      setShowRightArrow(shouldShowRight);
+    }
+  };
+
+  // Check scroll position on mount and resize
+  useEffect(() => {
+    const handleResize = () => {
+      checkScrollPosition();
+    };
+
+    // Check position after a short delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      checkScrollPosition();
+    }, 100);
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Scroll active tab into view when tab changes
   useEffect(() => {
     if (tabsContainerRef.current) {
       const activeTabElement = document.getElementById(`tab-${activeTab}`);
@@ -172,7 +187,12 @@ function App() {
           inline: 'center'
         });
       }
+      // Check scroll position after scrolling
+      setTimeout(() => {
+        checkScrollPosition();
+      }, 300);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   return (
