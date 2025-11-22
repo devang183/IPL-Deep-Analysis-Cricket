@@ -30,6 +30,24 @@ function App() {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
 
+  // Define all tabs
+  const allTabs = [
+    { id: 'smart', name: 'Smart Search', icon: Sparkles },
+    { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
+    { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
+    { id: 'stats', name: 'Batting Stats', icon: BarChart3 },
+    { id: 'bowler', name: 'Bowling Stats', icon: Target },
+    { id: 'matchup', name: 'Vs Bowler', icon: Users },
+    { id: 'vsteam', name: 'Vs Team', icon: Shield },
+    { id: 'vsbowlingstyle', name: 'Vs Bowling Style', icon: Activity },
+    { id: 'motm', name: 'MOTM', icon: Trophy },
+    { id: 'community', name: 'Community', icon: MessageSquare },
+    { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
+  ];
+
+  // Filter tabs based on user role
+  const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
+
   console.log('App render - isAuthenticated:', isAuthenticated, 'authLoading:', authLoading, 'user:', user);
 
   const fetchPlayers = async () => {
@@ -111,26 +129,19 @@ function App() {
     }, 0);
   };
 
-  // Define all tabs
-  const allTabs = [
-    { id: 'smart', name: 'Smart Search', icon: Sparkles },
-    { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
-    { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
-    { id: 'stats', name: 'Batting Stats', icon: BarChart3 },
-    { id: 'bowler', name: 'Bowling Stats', icon: Target },
-    { id: 'matchup', name: 'Vs Bowler', icon: Users },
-    { id: 'vsteam', name: 'Vs Team', icon: Shield },
-    { id: 'vsbowlingstyle', name: 'Vs Bowling Style', icon: Activity },
-    { id: 'motm', name: 'MOTM', icon: Trophy },
-    { id: 'community', name: 'Community', icon: MessageSquare },
-    { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
-  ];
-
-  // Filter tabs based on user role
-  const tabs = allTabs.filter(tab => !tab.adminOnly || user?.isAdmin);
+  // Scroll tabs container
+  const scrollTabs = (direction) => {
+    if (tabsContainerRef.current) {
+      const scrollAmount = 200;
+      tabsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Check scroll position and update arrow visibility
-  const checkScrollArrows = useCallback(() => {
+  const checkScrollArrows = () => {
     if (tabsContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
       const maxScrollLeft = scrollWidth - clientWidth;
@@ -138,35 +149,31 @@ function App() {
       setShowLeftArrow(scrollLeft > 5);
       setShowRightArrow(scrollLeft < maxScrollLeft - 5);
     }
-  }, []);
-
-  // Scroll tabs container
-  const scrollTabs = useCallback((direction) => {
-    if (tabsContainerRef.current) {
-      const scrollAmount = 200;
-
-      tabsContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  }, []);
+  };
 
   // Setup scroll listeners and check on mount/resize
   useEffect(() => {
-    checkScrollArrows();
-    const scrollContainer = tabsContainerRef.current;
+    const handleScroll = () => checkScrollArrows();
+    const handleResize = () => checkScrollArrows();
 
+    // Initial check
+    const timer = setTimeout(() => checkScrollArrows(), 100);
+
+    const scrollContainer = tabsContainerRef.current;
     if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', checkScrollArrows, { passive: true });
-      window.addEventListener('resize', checkScrollArrows, { passive: true });
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleResize, { passive: true });
 
       return () => {
-        scrollContainer.removeEventListener('scroll', checkScrollArrows);
-        window.removeEventListener('resize', checkScrollArrows);
+        clearTimeout(timer);
+        scrollContainer.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('resize', handleResize);
       };
     }
-  }, [checkScrollArrows]);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Scroll active tab into view when tab changes
   useEffect(() => {
