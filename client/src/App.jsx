@@ -21,6 +21,7 @@ function App() {
   const { isAuthenticated, user, logout, loading: authLoading } = useAuth();
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [initialBowler, setInitialBowler] = useState('');
+  const [initialTeam, setInitialTeam] = useState('');
   const [activeTab, setActiveTab] = useState('smart');
   const [players, setPlayers] = useState([]);
   const [bowlers, setBowlers] = useState([]);
@@ -208,6 +209,7 @@ function App() {
               onPlayerSelect={setSelectedPlayer}
               onTabChange={setActiveTab}
               onBowlerSelect={setInitialBowler}
+              onTeamSelect={setInitialTeam}
             />
           )}
 
@@ -286,7 +288,7 @@ function App() {
 
           {activeTab === 'vsteam' && selectedPlayer && (
             <div className="card">
-              <BatsmanVsTeam player={selectedPlayer} />
+              <BatsmanVsTeam player={selectedPlayer} initialTeam={initialTeam} />
             </div>
           )}
 
