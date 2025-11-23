@@ -8,33 +8,63 @@ const BowlersModal = ({ isOpen, onClose, bowlers, styleName }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-slate-800">
-              Bowlers - {styleName}
-            </h3>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      {/* Blurred backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+      {/* Modal content */}
+      <div
+        className="relative bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl md:text-2xl font-bold text-white">
+                  {styleName} Bowlers
+                </h3>
+                <p className="text-sm text-white/80 mt-1">
+                  {bowlers.length} bowler{bowlers.length !== 1 ? 's' : ''} in this category
+                </p>
+              </div>
+            </div>
             <button
               onClick={onClose}
-              className="text-slate-500 hover:text-slate-700"
-              aria-label="Close"
+              className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-all active:scale-95"
+              aria-label="Close modal"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 text-white" />
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        </div>
+
+        {/* Scrollable content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)] custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {bowlers.map((bowler, index) => (
-              <div 
+              <div
                 key={index}
-                className="bg-slate-50 hover:bg-slate-100 rounded-lg p-3 text-sm font-medium text-slate-700"
+                className="bg-gradient-to-br from-slate-50 to-slate-100 hover:from-primary-50 hover:to-primary-100 border border-slate-200 hover:border-primary-300 rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:scale-105 cursor-pointer group"
+                style={{ animationDelay: `${index * 0.02}s` }}
               >
-                {bowler}
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-primary-100 group-hover:bg-primary-200 rounded-full flex items-center justify-center transition-colors">
+                    <Shield className="w-4 h-4 text-primary-600" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-800 group-hover:text-primary-700 transition-colors">
+                    {bowler}
+                  </span>
+                </div>
               </div>
             ))}
-          </div>
-          <div className="mt-4 text-sm text-slate-500">
-            Total: {bowlers.length} bowlers
           </div>
         </div>
       </div>
