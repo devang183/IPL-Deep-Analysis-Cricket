@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Sparkles, Loader2, TrendingUp, Target, BarChart3, Users, Trophy, Lightbulb, AlertCircle } from 'lucide-react';
 import PhaseAnalysis from './PhaseAnalysis';
 import DismissalAnalysis from './DismissalAnalysis';
@@ -8,12 +8,24 @@ import BatsmanVsBowler from './BatsmanVsBowler';
 import MOTMAnalysis from './MOTMAnalysis';
 import { findBestPlayerMatch, findPlayerSuggestions, checkCommonNameMapping } from '../utils/nameMatching';
 
-function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mode = 'batting', showExamples = true }) {
+function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mode = 'batting', showExamples = true, exampleQuery = '' }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [parsedQuery, setParsedQuery] = useState(null);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+
+  // Handle example query from parent
+  useEffect(() => {
+    if (exampleQuery) {
+      setQuery(exampleQuery);
+      // Auto-submit the example query
+      const form = document.getElementById('smart-search-form');
+      if (form) {
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    }
+  }, [exampleQuery]);
 
   // Example queries to show users - different based on mode
   const exampleQueries = mode === 'bowling' ? [
@@ -293,7 +305,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
 
       {/* Search Bar */}
       <div className="card animate-scale-in">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="smart-search-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6" style={{ color: '#94a3b8' }} />
             <input

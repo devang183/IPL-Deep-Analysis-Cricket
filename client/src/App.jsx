@@ -12,6 +12,7 @@ import MOTMAnalysis from './components/MOTMAnalysis';
 import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
+import ExampleQueries from './components/ExampleQueries';
 import AuthPage from './components/AuthPage';
 import SpaceBackground from './components/SpaceBackground';
 import { useAuth } from './context/AuthContext';
@@ -25,6 +26,7 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exampleQuery, setExampleQuery] = useState('');
   const contentRef = useRef(null);
 
   // Define all tabs
@@ -127,9 +129,24 @@ function App() {
   };
 
 
+  // Handle example query click
+  const handleExampleQueryClick = (queryText) => {
+    setExampleQuery(queryText);
+    setActiveTab('smart');
+  };
+
   return (
     <div className="min-h-screen py-3 md:py-6 lg:py-8 px-3 md:px-4 relative">
       <SpaceBackground />
+
+      {/* Example Queries - Fixed Position Top Right */}
+      {activeTab === 'smart' && (
+        <ExampleQueries
+          onQueryClick={handleExampleQueryClick}
+          mode="batting"
+        />
+      )}
+
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Mobile-First Header */}
         <div className="mb-4 md:mb-8 lg:mb-12 animate-fade-in-down">
@@ -224,6 +241,8 @@ function App() {
               onPlayerSelect={setSelectedPlayer}
               onTabChange={setActiveTab}
               onBowlerSelect={setInitialBowler}
+              exampleQuery={exampleQuery}
+              showExamples={false}
             />
           )}
 
