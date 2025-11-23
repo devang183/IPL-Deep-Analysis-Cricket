@@ -22,19 +22,19 @@ function ExampleQueries({ onQueryClick, mode = 'batting', isOpen, onOpenChange, 
   ];
 
   return (
-    <div className={`fixed top-20 md:top-24 right-3 md:right-6 z-50 transition-all duration-300 ${isBlurred ? 'opacity-30 pointer-events-none blur-sm' : ''}`}>
+    <div className={`fixed top-16 md:top-20 right-2 md:right-4 z-50 transition-all duration-300 ${isBlurred ? 'opacity-30 pointer-events-none blur-sm' : ''}`}>
       {/* Toggle Button */}
       {!isOpen ? (
         <button
           onClick={() => onOpenChange(true)}
-          className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group animate-pulse-slow"
+          className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group animate-pulse-slow"
           aria-label="Show example queries"
         >
-          <Lightbulb className="w-4 h-4 md:w-5 md:h-5 group-hover:animate-wiggle" />
+          <Lightbulb className="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:animate-wiggle" />
         </button>
       ) : (
         /* Expandable Panel */
-        <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 overflow-hidden animate-slide-in-right">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-white/20 overflow-hidden animate-slide-in-right w-72 md:w-80">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <div className="flex items-center gap-2">
