@@ -29,8 +29,8 @@ const BowlersHoverCard = ({ bowlers, styleName, onClose }) => {
           </button>
         </div>
 
-        {/* Bowlers List - Simple */}
-        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-3">
+        {/* Bowlers List - Shows 5 bowlers, rest scrollable */}
+        <div className="max-h-[200px] overflow-y-auto custom-scrollbar p-3">
           <ul className="space-y-1">
             {bowlers.map((bowler, index) => (
               <li
