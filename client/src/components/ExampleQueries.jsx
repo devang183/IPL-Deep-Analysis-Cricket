@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Lightbulb, X, TrendingUp, Target, BarChart3, Users, Trophy, ChevronDown } from 'lucide-react';
 
-function ExampleQueries({ onQueryClick, mode = 'batting' }) {
-  const [isOpen, setIsOpen] = useState(false);
+function ExampleQueries({ onQueryClick, mode = 'batting', isOpen, onOpenChange, isBlurred }) {
 
   // Example queries based on mode
   const exampleQueries = mode === 'bowling' ? [
@@ -24,11 +22,11 @@ function ExampleQueries({ onQueryClick, mode = 'batting' }) {
   ];
 
   return (
-    <div className="fixed top-20 md:top-24 right-3 md:right-6 z-50">
+    <div className={`fixed top-20 md:top-24 right-3 md:right-6 z-50 transition-all duration-300 ${isBlurred ? 'opacity-30 pointer-events-none blur-sm' : ''}`}>
       {/* Toggle Button */}
       {!isOpen ? (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => onOpenChange(true)}
           className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group animate-pulse-slow"
           aria-label="Show example queries"
         >
@@ -46,7 +44,7 @@ function ExampleQueries({ onQueryClick, mode = 'batting' }) {
               <h3 className="font-bold text-white text-sm md:text-base">Try These Examples</h3>
             </div>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => onOpenChange(false)}
               className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
               aria-label="Close example queries"
             >
@@ -64,7 +62,7 @@ function ExampleQueries({ onQueryClick, mode = 'batting' }) {
                     key={index}
                     onClick={() => {
                       onQueryClick(example.text);
-                      setIsOpen(false);
+                      onOpenChange(false);
                     }}
                     className="w-full flex items-start gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 group text-left border border-white/5 hover:border-white/20"
                     style={{ animationDelay: `${index * 0.05}s` }}

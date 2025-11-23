@@ -28,6 +28,8 @@ function App() {
   const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exampleQuery, setExampleQuery] = useState('');
+  const [isExamplesOpen, setIsExamplesOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const contentRef = useRef(null);
 
   // Define all tabs
@@ -143,14 +145,29 @@ function App() {
     <div className="min-h-screen py-3 md:py-6 lg:py-8 px-3 md:px-4 relative">
       <SpaceBackground />
 
-      {/* Example Queries - Fixed Position Top Right */}
+      {/* Example Queries and Help - Fixed Position Top Right */}
       {activeTab === 'smart' && (
         <>
           <ExampleQueries
             onQueryClick={handleExampleQueryClick}
             mode="batting"
+            isOpen={isExamplesOpen}
+            setIsOpen={setIsExamplesOpen}
+            onOpenChange={(open) => {
+              setIsExamplesOpen(open);
+              if (open) setIsHelpOpen(false); // Close help when examples open
+            }}
+            isBlurred={isHelpOpen}
           />
-          <HelpGuide />
+          <HelpGuide
+            isOpen={isHelpOpen}
+            setIsOpen={setIsHelpOpen}
+            onOpenChange={(open) => {
+              setIsHelpOpen(open);
+              if (open) setIsExamplesOpen(false); // Close examples when help opens
+            }}
+            isBlurred={isExamplesOpen}
+          />
         </>
       )}
 

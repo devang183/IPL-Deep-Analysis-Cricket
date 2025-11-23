@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { HelpCircle, X, Sparkles, TrendingUp, Target, BarChart3, Users, Trophy, Shield, Activity, MessageSquare } from 'lucide-react';
 
-function HelpGuide() {
-  const [isOpen, setIsOpen] = useState(false);
+function HelpGuide({ isOpen, onOpenChange, isBlurred }) {
 
   const helpSections = [
     {
@@ -51,11 +49,11 @@ function HelpGuide() {
   ];
 
   return (
-    <div className="fixed top-20 md:top-24 right-16 md:right-20 z-50">
+    <div className={`fixed top-20 md:top-24 right-16 md:right-20 z-50 transition-all duration-300 ${isBlurred ? 'opacity-30 pointer-events-none blur-sm' : ''}`}>
       {/* Toggle Button */}
       {!isOpen ? (
         <button
-          onClick={() => setIsOpen(true)}
+          onClick={() => onOpenChange(true)}
           className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group"
           aria-label="Show help guide"
         >
@@ -71,7 +69,7 @@ function HelpGuide() {
               <h3 className="font-bold text-white text-sm md:text-base">Help & Guide</h3>
             </div>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => onOpenChange(false)}
               className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
               aria-label="Close help guide"
             >
