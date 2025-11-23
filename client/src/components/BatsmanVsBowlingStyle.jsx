@@ -7,14 +7,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const BowlersHoverCard = ({ bowlers, styleName, onClose }) => {
   return (
     <>
-      {/* Backdrop with blur */}
+      {/* Invisible backdrop for click-to-close */}
       <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]"
+        className="fixed inset-0 z-[9998]"
         onClick={onClose}
       />
 
-      {/* Content Card - positioned to stay within viewport */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg rounded-lg p-4 w-[90vw] max-w-md z-[9999] border border-slate-300">
+      {/* Content Card with backdrop blur - positioned to stay within viewport */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md shadow-lg rounded-lg p-4 w-[90vw] max-w-md z-[9999] border border-slate-300">
         {/* Header with Close Button */}
         <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
           <h4 className="font-semibold text-slate-800 text-sm">
