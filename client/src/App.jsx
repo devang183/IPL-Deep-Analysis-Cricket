@@ -80,6 +80,23 @@ function App() {
     }
   }, [isAuthenticated, authLoading]);
 
+  // Scroll active tab into view when it changes
+  useEffect(() => {
+    // Small delay to ensure tab is rendered before scrolling
+    const timeoutId = setTimeout(() => {
+      const activeTabElement = document.getElementById(`tab-${activeTab}`);
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeTab]);
+
   // Show loading while checking authentication
   if (authLoading) {
     console.log('Showing loading screen');
