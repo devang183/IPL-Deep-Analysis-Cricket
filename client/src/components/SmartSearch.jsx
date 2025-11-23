@@ -18,7 +18,9 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
   // Handle example query from parent
   useEffect(() => {
     if (exampleQuery) {
-      setQuery(exampleQuery);
+      // Strip timestamp if present (format: "query text::timestamp")
+      const cleanQuery = exampleQuery.split('::')[0];
+      setQuery(cleanQuery);
       // Auto-submit the example query
       const form = document.getElementById('smart-search-form');
       if (form) {
