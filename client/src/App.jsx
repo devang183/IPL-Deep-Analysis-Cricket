@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -26,9 +26,6 @@ function App() {
   const [bowlers, setBowlers] = useState([]);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef(null);
-  const tabsContainerRef = useRef(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(false);
 
   // Define all tabs
   const allTabs = [
@@ -129,65 +126,6 @@ function App() {
     }, 0);
   };
 
-  // Scroll tabs container
-  const scrollTabs = (direction) => {
-    if (tabsContainerRef.current) {
-      const scrollAmount = 200;
-      tabsContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  // Check scroll position and update arrow visibility
-  const checkScrollArrows = () => {
-    if (tabsContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = tabsContainerRef.current;
-      const maxScrollLeft = scrollWidth - clientWidth;
-
-      setShowLeftArrow(scrollLeft > 5);
-      setShowRightArrow(scrollLeft < maxScrollLeft - 5);
-    }
-  };
-
-  // Setup scroll listeners and check on mount/resize
-  useEffect(() => {
-    const handleScroll = () => checkScrollArrows();
-    const handleResize = () => checkScrollArrows();
-
-    // Initial check
-    const timer = setTimeout(() => checkScrollArrows(), 100);
-
-    const scrollContainer = tabsContainerRef.current;
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-      window.addEventListener('resize', handleResize, { passive: true });
-
-      return () => {
-        clearTimeout(timer);
-        scrollContainer.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('resize', handleResize);
-      };
-    }
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Scroll active tab into view when tab changes
-  useEffect(() => {
-    if (tabsContainerRef.current && activeTab) {
-      const activeTabElement = document.getElementById(`tab-${activeTab}`);
-      if (activeTabElement) {
-        activeTabElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
-      }
-    }
-  }, [activeTab]);
 
   return (
     <div className="min-h-screen py-3 md:py-6 lg:py-8 px-3 md:px-4 relative">
@@ -235,22 +173,10 @@ function App() {
         </div>
 
         {/* Mobile-First Horizontal Scrollable Tabs */}
-        <div className="relative mb-4 md:mb-6 lg:mb-8 animate-slide-in-right">
-          {/* Left Arrow - Touch Optimized */}
-          {showLeftArrow && (
-            <button
-              onClick={() => scrollTabs('left')}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-r from-slate-900/95 to-transparent backdrop-blur-sm p-2 md:p-2.5 rounded-r-lg hover:from-slate-800/95 active:from-slate-700/95 transition-all shadow-lg touch-manipulation"
-              aria-label="Scroll tabs left"
-            >
-              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </button>
-          )}
-
-          {/* Tabs Container - Mobile First */}
+        <div className="mb-4 md:mb-6 lg:mb-8 animate-slide-in-right">
+          {/* Tabs Container - Swipe to Scroll */}
           <div
-            ref={tabsContainerRef}
-            className="flex gap-2 md:gap-3 overflow-x-auto scrollbar-hide px-9 md:px-10 lg:px-0"
+            className="flex gap-2 md:gap-3 overflow-x-auto scrollbar-hide"
             role="tablist"
             aria-label="Analysis options"
             style={{
@@ -288,17 +214,6 @@ function App() {
               );
             })}
           </div>
-
-          {/* Right Arrow - Touch Optimized */}
-          {showRightArrow && (
-            <button
-              onClick={() => scrollTabs('right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-gradient-to-l from-slate-900/95 to-transparent backdrop-blur-sm p-2 md:p-2.5 rounded-l-lg hover:from-slate-800/95 active:from-slate-700/95 transition-all shadow-lg touch-manipulation"
-              aria-label="Scroll tabs right"
-            >
-              <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </button>
-          )}
         </div>
 
         {/* Content - Mobile Optimized */}
