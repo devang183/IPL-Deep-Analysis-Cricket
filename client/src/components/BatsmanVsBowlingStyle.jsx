@@ -4,43 +4,46 @@ import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
 
 // Hover card component to display bowlers list
-const BowlersHoverCard = ({ bowlers, styleName }) => {
+const BowlersHoverCard = ({ bowlers, styleName, onClose }) => {
   return (
-    <div className="absolute left-0 top-full mt-2 bg-white shadow-2xl rounded-xl p-4 w-full md:w-96 z-50 border-2 border-primary-200 animate-fade-in">
-      {/* Header */}
-      <div className="mb-3 pb-3 border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-            <Target className="w-4 h-4 text-primary-600" />
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-800 text-sm">
-              {styleName} Bowlers
-            </h4>
-            <p className="text-xs text-slate-500">
-              {bowlers.length} bowler{bowlers.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+    <>
+      {/* Backdrop with blur */}
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]"
+        onClick={onClose}
+      />
+
+      {/* Content Card - positioned to stay within viewport */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg rounded-lg p-4 w-[90vw] max-w-md z-[9999] border border-slate-300">
+        {/* Header with Close Button */}
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
+          <h4 className="font-semibold text-slate-800 text-sm">
+            {styleName} Bowlers ({bowlers.length})
+          </h4>
+          <button
+            onClick={onClose}
+            className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4 text-slate-600" />
+          </button>
+        </div>
+
+        {/* Bowlers List - Simple */}
+        <div className="max-h-[60vh] overflow-y-auto">
+          <ul className="space-y-1">
+            {bowlers.map((bowler, index) => (
+              <li
+                key={index}
+                className="text-sm text-slate-700 py-1 px-2 hover:bg-slate-50 rounded"
+              >
+                {bowler}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-
-      {/* Bowlers Grid */}
-      <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar">
-        {bowlers.map((bowler, index) => (
-          <div
-            key={index}
-            className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-2 hover:border-primary-300 hover:shadow-sm transition-all"
-          >
-            <div className="flex items-center gap-2">
-              <Shield className="w-3 h-3 text-primary-600 flex-shrink-0" />
-              <span className="text-xs font-medium text-slate-700 truncate">
-                {bowler}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    </>
   );
 };
 
@@ -299,21 +302,20 @@ function BatsmanVsBowlingStyle({ player }) {
                   Faced {stat.bowlersFaced} different bowler{stat.bowlersFaced !== 1 ? 's' : ''} of this style
                 </div>
                 {stat.bowlers && stat.bowlers.length > 0 ? (
-                  <div className="relative group">
+                  <div className="relative">
                     <button
                       onMouseEnter={() => setHoveredStyle(stat.bowlingStyle)}
-                      onMouseLeave={() => setHoveredStyle(null)}
-                      onClick={() => setHoveredStyle(hoveredStyle === stat.bowlingStyle ? null : stat.bowlingStyle)}
                       className="text-xs font-medium text-primary-600 hover:text-primary-800 hover:underline cursor-pointer"
                     >
                       View Bowlers ({stat.bowlers.length})
                     </button>
 
-                    {/* Hover Card - Shows on hover (desktop) or click (mobile) */}
+                    {/* Bowlers Card - Opens on hover, closes on click */}
                     {hoveredStyle === stat.bowlingStyle && (
                       <BowlersHoverCard
                         bowlers={stat.bowlers}
                         styleName={formatBowlingStyle(stat.bowlingStyle)}
+                        onClose={() => setHoveredStyle(null)}
                       />
                     )}
                   </div>
