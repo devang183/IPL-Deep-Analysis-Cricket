@@ -1,4 +1,4 @@
-import { Lightbulb, X, TrendingUp, Target, BarChart3, Users, Trophy, ChevronDown } from 'lucide-react';
+import { Lightbulb, X, TrendingUp, Target, BarChart3, Users, Trophy } from 'lucide-react';
 
 function ExampleQueries({ onQueryClick, mode = 'batting', isOpen, onOpenChange, isBlurred }) {
 
@@ -27,12 +27,10 @@ function ExampleQueries({ onQueryClick, mode = 'batting', isOpen, onOpenChange, 
       {!isOpen ? (
         <button
           onClick={() => onOpenChange(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group animate-pulse-slow"
+          className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group animate-pulse-slow"
           aria-label="Show example queries"
         >
-          <Lightbulb className="w-5 h-5 group-hover:animate-wiggle" />
-          {/* <span className="font-semibold text-sm hidden sm:inline">Try Examples</span> */}
-          <ChevronDown className="w-4 h-4 sm:hidden" />
+          <Lightbulb className="w-4 h-4 md:w-5 md:h-5 group-hover:animate-wiggle" />
         </button>
       ) : (
         /* Expandable Panel */

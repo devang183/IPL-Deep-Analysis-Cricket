@@ -10,7 +10,7 @@ function HelpGuide({ isOpen, onOpenChange, isBlurred }) {
         'Include the player\'s full name or last name',
         'Mention what you want to see (stats, dismissals, phase, matchup, awards)',
         'For matchups, use "vs" or "against" followed by bowler name',
-        'Be specific: "powerplay", "death overs", "caught", "bowled", etc.',
+        //'Be specific: "powerplay", "death overs", "caught", "bowled", etc.',
       ]
     },
     {
@@ -54,10 +54,10 @@ function HelpGuide({ isOpen, onOpenChange, isBlurred }) {
       {!isOpen ? (
         <button
           onClick={() => onOpenChange(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group"
+          className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 group"
           aria-label="Show help guide"
         >
-          <HelpCircle className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+          <HelpCircle className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-12 transition-transform" />
         </button>
       ) : (
         /* Expandable Panel */

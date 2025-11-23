@@ -1708,20 +1708,26 @@ app.get('/api/batsman-vs-bowling-style/:batsmanName', async (req, res) => {
     // Get unique bowlers
     const bowlers = [...new Set(batsmanBalls.map(b => b.bowler))];
 
-    // Fetch bowling styles for all bowlers
+    // Fetch bowling styles for all bowlers in a single query - PERFORMANCE OPTIMIZED
     const bowlerStyles = {};
-    for (const bowler of bowlers) {
-      const playerInfo = await playersCollection.findOne({
-        $or: [
-          { fullname: { $regex: new RegExp(`^${bowler}$`, 'i') } },
-          { fullname: { $regex: new RegExp(bowler, 'i') } }
-        ]
-      });
 
-      if (playerInfo && playerInfo.bowlingstyle) {
-        bowlerStyles[bowler] = playerInfo.bowlingstyle;
+    // Fetch all player info in one query using $in operator
+    const allPlayerInfo = await playersCollection.find({
+      fullname: { $in: bowlers }
+    }).toArray();
+
+    // Create a map of bowler name to bowling style
+    const playerMap = {};
+    allPlayerInfo.forEach(player => {
+      if (player.fullname && player.bowlingstyle) {
+        playerMap[player.fullname] = player.bowlingstyle;
       }
-    }
+    });
+
+    // Assign bowling styles to each bowler
+    bowlers.forEach(bowler => {
+      bowlerStyles[bowler] = playerMap[bowler] || 'Unknown';
+    });
 
     // Group balls by bowling style
     const styleStats = {};
