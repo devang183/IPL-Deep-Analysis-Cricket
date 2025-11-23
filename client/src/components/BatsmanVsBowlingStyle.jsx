@@ -9,16 +9,18 @@ const BowlersModal = ({ isOpen, onClose, bowlers, styleName }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
       onClick={onClose}
     >
       {/* Blurred backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
-      {/* Modal content */}
+      {/* Modal content - centered in viewport */}
       <div
         className="relative bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl animate-scale-in"
         onClick={(e) => e.stopPropagation()}
+        style={{ margin: 'auto' }}
       >
         {/* Header with gradient */}
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-6">
