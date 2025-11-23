@@ -133,7 +133,6 @@ function App() {
   const handleExampleQueryClick = (queryText) => {
     // Reset to smart tab and clear any previous results
     setActiveTab('smart');
-    setParsedQuery(null);
     setSelectedPlayer('');
     // Set the example query with a unique timestamp to trigger re-processing
     setExampleQuery(`${queryText}::${Date.now()}`);
