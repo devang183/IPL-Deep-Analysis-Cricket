@@ -296,9 +296,6 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
           <Sparkles className="w-8 h-8 text-primary-600 animate-bounce-subtle" />
           <h2 className="text-3xl font-bold text-slate-800">Smart Search</h2>
         </div>
-        <p className="text-slate-600 max-w-2xl mx-auto">
-          Ask questions in natural language and get instant cricket analytics
-        </p>
       </div>
 
       {/* Search Bar */}

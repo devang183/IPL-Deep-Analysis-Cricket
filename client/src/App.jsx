@@ -13,6 +13,7 @@ import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
 import ExampleQueries from './components/ExampleQueries';
+import HelpGuide from './components/HelpGuide';
 import AuthPage from './components/AuthPage';
 import SpaceBackground from './components/SpaceBackground';
 import { useAuth } from './context/AuthContext';
@@ -144,10 +145,13 @@ function App() {
 
       {/* Example Queries - Fixed Position Top Right */}
       {activeTab === 'smart' && (
-        <ExampleQueries
-          onQueryClick={handleExampleQueryClick}
-          mode="batting"
-        />
+        <>
+          <ExampleQueries
+            onQueryClick={handleExampleQueryClick}
+            mode="batting"
+          />
+          <HelpGuide />
+        </>
       )}
 
       <div className="max-w-7xl mx-auto relative z-10">

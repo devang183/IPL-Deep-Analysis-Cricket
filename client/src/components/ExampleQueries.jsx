@@ -33,7 +33,7 @@ function ExampleQueries({ onQueryClick, mode = 'batting' }) {
           aria-label="Show example queries"
         >
           <Lightbulb className="w-5 h-5 group-hover:animate-wiggle" />
-          <span className="font-semibold text-sm hidden sm:inline">Try Examples</span>
+          {/* <span className="font-semibold text-sm hidden sm:inline">Try Examples</span> */}
           <ChevronDown className="w-4 h-4 sm:hidden" />
         </button>
       ) : (
@@ -54,8 +54,8 @@ function ExampleQueries({ onQueryClick, mode = 'batting' }) {
             </button>
           </div>
 
-          {/* Scrollable Content */}
-          <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-3">
+          {/* Scrollable Content - Shows 3 queries then scrolls */}
+          <div className="max-h-[240px] overflow-y-auto custom-scrollbar p-3">
             <div className="space-y-2">
               {exampleQueries.map((example, index) => {
                 const Icon = example.icon;
