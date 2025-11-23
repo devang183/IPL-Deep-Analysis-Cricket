@@ -21,11 +21,7 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
       // Strip timestamp if present (format: "query text::timestamp")
       const cleanQuery = exampleQuery.split('::')[0];
       setQuery(cleanQuery);
-      // Auto-submit the example query
-      const form = document.getElementById('smart-search-form');
-      if (form) {
-        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-      }
+      // Don't auto-submit - let user click the search button
     }
   }, [exampleQuery]);
 
