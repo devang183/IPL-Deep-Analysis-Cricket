@@ -51,8 +51,10 @@ function MOTMAnalysis({ player }) {
 
   const fetchPlayerImage = async () => {
     try {
-      const response = await axios.get(`/api/player-image/${player}`);
-      setPlayerImage(response.data.imageUrl);
+      const response = await axios.get(`/api/player/${encodeURIComponent(player)}/image`);
+      if (response.data.image_path) {
+        setPlayerImage(`/images/${response.data.image_path}`);
+      }
     } catch (err) {
       console.log('Player image not found');
       setPlayerImage(null);
