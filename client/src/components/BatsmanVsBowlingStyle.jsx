@@ -13,29 +13,29 @@ const BowlersHoverCard = ({ bowlers, styleName, onClose }) => {
         onClick={onClose}
       />
 
-      {/* Content Card with backdrop blur - positioned to stay within viewport */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-md shadow-lg rounded-lg p-4 w-[90vw] max-w-md z-[9999] border border-slate-300">
+      {/* Content Card - positioned to stay within viewport */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl border border-white/20 overflow-hidden w-72 md:w-80 z-[9999]">
         {/* Header with Close Button */}
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-          <h4 className="font-semibold text-slate-800 text-sm">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <h4 className="font-semibold text-white text-sm">
             {styleName} Bowlers ({bowlers.length})
           </h4>
           <button
             onClick={onClose}
-            className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 rounded transition-colors"
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
             aria-label="Close"
           >
-            <X className="w-4 h-4 text-slate-600" />
+            <X className="w-5 h-5 text-white/70 hover:text-white" />
           </button>
         </div>
 
         {/* Bowlers List - Simple */}
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar p-3">
           <ul className="space-y-1">
             {bowlers.map((bowler, index) => (
               <li
                 key={index}
-                className="text-sm text-slate-700 py-1 px-2 hover:bg-slate-50 rounded"
+                className="text-sm text-white/90 py-1 px-2 hover:bg-white/10 rounded"
               >
                 {bowler}
               </li>
