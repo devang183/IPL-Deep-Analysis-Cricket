@@ -13,9 +13,11 @@ function MOTMAnalysis({ player }) {
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [expandedVenues, setExpandedVenues] = useState({});
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [playerImage, setPlayerImage] = useState(null);
 
   useEffect(() => {
     fetchMOTMData();
+    fetchPlayerImage();
   }, [player]);
 
   // Reset filter when player changes
@@ -44,6 +46,16 @@ function MOTMAnalysis({ player }) {
       setError(err.response?.data?.error || 'Failed to fetch MOTM statistics');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPlayerImage = async () => {
+    try {
+      const response = await axios.get(`/api/player-image/${player}`);
+      setPlayerImage(response.data.imageUrl);
+    } catch (err) {
+      console.log('Player image not found');
+      setPlayerImage(null);
     }
   };
 
@@ -141,11 +153,52 @@ function MOTMAnalysis({ player }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 animate-fade-in-down">
-        <div className="flex items-center gap-2">
-          <Trophy className="w-6 h-6 text-yellow-600 animate-bounce-subtle" />
-          <h2 className="text-2xl font-bold text-slate-800">Man of the Match Awards</h2>
+      {/* Player Header with Image */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-500 p-1 animate-fade-in-down">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 md:p-8">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            {/* Player Image */}
+            <div className="relative flex-shrink-0">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 p-1 animate-pulse-slow">
+                <div className="w-full h-full rounded-full bg-slate-800 overflow-hidden flex items-center justify-center">
+                  {playerImage ? (
+                    <img
+                      src={playerImage}
+                      alt={player}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`${playerImage ? 'hidden' : 'flex'} w-full h-full items-center justify-center bg-gradient-to-br from-yellow-600 to-orange-600`}>
+                    <Trophy className="w-12 h-12 md:w-16 md:h-16 text-white" />
+                  </div>
+                </div>
+              </div>
+              {/* Glow effect */}
+              <div className="absolute inset-0 rounded-full bg-yellow-400 opacity-20 blur-xl animate-pulse"></div>
+            </div>
+
+            {/* Player Info */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                <Trophy className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 animate-bounce-subtle" />
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
+                  {player}
+                </h2>
+              </div>
+              <p className="text-yellow-200 text-sm md:text-base font-medium mb-1">Man of the Match Awards</p>
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-3">
+                <div className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-yellow-400" />
+                  <span className="text-white font-bold text-lg">{data.totalMotm}</span>
+                  <span className="text-yellow-200 text-sm">Awards</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
