@@ -12,6 +12,7 @@ function MOTMAnalysis({ player }) {
   const [error, setError] = useState(null);
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [expandedVenues, setExpandedVenues] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   useEffect(() => {
     fetchMOTMData();
@@ -21,6 +22,16 @@ function MOTMAnalysis({ player }) {
   useEffect(() => {
     setSelectedVenue(null);
   }, [player]);
+
+  // Handle window resize for responsive chart
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchMOTMData = async () => {
     setLoading(true);
@@ -260,15 +271,15 @@ function MOTMAnalysis({ player }) {
             <Trophy className="w-5 h-5 text-yellow-600" />
             Top Venues Distribution
           </h4>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={isMobile ? 400 : 300}>
             <PieChart>
               <Pie
                 data={data.venueDistribution.slice(0, 8)}
                 cx="50%"
-                cy="50%"
+                cy={isMobile ? "40%" : "50%"}
                 labelLine={false}
                 label={({ venue, percentage }) => `${percentage}%`}
-                outerRadius={80}
+                outerRadius={isMobile ? 60 : 80}
                 fill="#8884d8"
                 dataKey="count"
                 onClick={(entry) => {
@@ -311,11 +322,11 @@ function MOTMAnalysis({ player }) {
                 }}
               />
               <Legend
-                layout="vertical"
-                align="right"
-                verticalAlign="middle"
+                layout={isMobile ? "horizontal" : "vertical"}
+                align={isMobile ? "center" : "right"}
+                verticalAlign={isMobile ? "bottom" : "middle"}
                 formatter={(value, entry) => `${entry.payload.venue}`}
-                wrapperStyle={{ fontSize: '12px', cursor: 'pointer' }}
+                wrapperStyle={{ fontSize: isMobile ? '10px' : '12px', cursor: 'pointer' }}
                 onClick={(entry) => {
                   if (entry && entry.payload && entry.payload.venue) {
                     handleVenueClick(entry.payload.venue);

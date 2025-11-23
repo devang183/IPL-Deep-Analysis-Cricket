@@ -208,9 +208,9 @@ function App() {
             </div>
           </div>
 
-          <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg text-center px-2">
+          {/* <p className="text-slate-600 text-xs sm:text-sm md:text-base lg:text-lg text-center px-2">
             Analyze ball-by-ball IPL data from 2008 to 2025
-          </p>
+          </p> */}
         </div>
 
         {/* Mobile-First Horizontal Scrollable Tabs */}
