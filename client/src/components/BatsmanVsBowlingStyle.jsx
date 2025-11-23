@@ -3,72 +3,42 @@ import { Target, Loader2, AlertCircle, TrendingUp, Activity, Zap, BarChart3, Awa
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
 
-// Modal component to display bowlers list
-const BowlersModal = ({ isOpen, onClose, bowlers, styleName }) => {
-  if (!isOpen) return null;
-
+// Hover card component to display bowlers list
+const BowlersHoverCard = ({ bowlers, styleName }) => {
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in"
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
-      onClick={onClose}
-    >
-      {/* Blurred backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div className="absolute left-0 top-full mt-2 bg-white shadow-2xl rounded-xl p-4 w-full md:w-96 z-50 border-2 border-primary-200 animate-fade-in">
+      {/* Header */}
+      <div className="mb-3 pb-3 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+            <Target className="w-4 h-4 text-primary-600" />
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-800 text-sm">
+              {styleName} Bowlers
+            </h4>
+            <p className="text-xs text-slate-500">
+              {bowlers.length} bowler{bowlers.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+        </div>
+      </div>
 
-      {/* Modal content - centered in viewport */}
-      <div
-        className="relative bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl animate-scale-in"
-        onClick={(e) => e.stopPropagation()}
-        style={{ margin: 'auto' }}
-      >
-        {/* Header with gradient */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <Target className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl md:text-2xl font-bold text-white">
-                  {styleName} Bowlers
-                </h3>
-                <p className="text-sm text-white/80 mt-1">
-                  {bowlers.length} bowler{bowlers.length !== 1 ? 's' : ''} in this category
-                </p>
-              </div>
+      {/* Bowlers Grid */}
+      <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar">
+        {bowlers.map((bowler, index) => (
+          <div
+            key={index}
+            className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg p-2 hover:border-primary-300 hover:shadow-sm transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <Shield className="w-3 h-3 text-primary-600 flex-shrink-0" />
+              <span className="text-xs font-medium text-slate-700 truncate">
+                {bowler}
+              </span>
             </div>
-            <button
-              onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-all active:scale-95"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5 text-white" />
-            </button>
           </div>
-        </div>
-
-        {/* Scrollable content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)] custom-scrollbar">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {bowlers.map((bowler, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-slate-50 to-slate-100 hover:from-primary-50 hover:to-primary-100 border border-slate-200 hover:border-primary-300 rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:scale-105 cursor-pointer group"
-                style={{ animationDelay: `${index * 0.02}s` }}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-primary-100 group-hover:bg-primary-200 rounded-full flex items-center justify-center transition-colors">
-                    <Shield className="w-4 h-4 text-primary-600" />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-800 group-hover:text-primary-700 transition-colors">
-                    {bowler}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -79,7 +49,7 @@ function BatsmanVsBowlingStyle({ player }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playerImage, setPlayerImage] = useState(null);
-  const [showBowlers, setShowBowlers] = useState({ isOpen: false, bowlers: [], styleName: '' });
+  const [hoveredStyle, setHoveredStyle] = useState(null);
 
   useEffect(() => {
     fetchStats();
@@ -329,23 +299,24 @@ function BatsmanVsBowlingStyle({ player }) {
                   Faced {stat.bowlersFaced} different bowler{stat.bowlersFaced !== 1 ? 's' : ''} of this style
                 </div>
                 {stat.bowlers && stat.bowlers.length > 0 ? (
-                  <button
-                    onClick={() => {
-                      console.log('View Bowlers clicked:', {
-                        style: stat.bowlingStyle,
-                        bowlers: stat.bowlers,
-                        bowlersLength: stat.bowlers.length
-                      });
-                      setShowBowlers({
-                        isOpen: true,
-                        bowlers: stat.bowlers,
-                        styleName: formatBowlingStyle(stat.bowlingStyle)
-                      });
-                    }}
-                    className="text-xs font-medium text-primary-600 hover:text-primary-800 hover:underline"
-                  >
-                    View Bowlers ({stat.bowlers.length})
-                  </button>
+                  <div className="relative group">
+                    <button
+                      onMouseEnter={() => setHoveredStyle(stat.bowlingStyle)}
+                      onMouseLeave={() => setHoveredStyle(null)}
+                      onClick={() => setHoveredStyle(hoveredStyle === stat.bowlingStyle ? null : stat.bowlingStyle)}
+                      className="text-xs font-medium text-primary-600 hover:text-primary-800 hover:underline cursor-pointer"
+                    >
+                      View Bowlers ({stat.bowlers.length})
+                    </button>
+
+                    {/* Hover Card - Shows on hover (desktop) or click (mobile) */}
+                    {hoveredStyle === stat.bowlingStyle && (
+                      <BowlersHoverCard
+                        bowlers={stat.bowlers}
+                        styleName={formatBowlingStyle(stat.bowlingStyle)}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <span className="text-xs text-slate-400">No bowlers data</span>
                 )}
@@ -461,14 +432,6 @@ function BatsmanVsBowlingStyle({ player }) {
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* Bowlers Modal */}
-      <BowlersModal
-        isOpen={showBowlers.isOpen}
-        onClose={() => setShowBowlers({ isOpen: false, bowlers: [], styleName: '' })}
-        bowlers={showBowlers.bowlers}
-        styleName={showBowlers.styleName}
-      />
     </div>
   );
 }
