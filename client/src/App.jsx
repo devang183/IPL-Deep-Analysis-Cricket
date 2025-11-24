@@ -374,9 +374,9 @@ function App() {
             </div>
           )}
 
-          {activeTab === 'vsbatsman' && (
+          {activeTab === 'vsbatsman' && selectedPlayer && (
             <div className="card">
-              <BatsmanVsBatsman />
+              <BatsmanVsBatsman player={selectedPlayer} />
             </div>
           )}
 
