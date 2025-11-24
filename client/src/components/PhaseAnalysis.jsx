@@ -50,7 +50,7 @@ function PhaseAnalysis({ player }) {
 
       {/* Explanation Box */}
       <div className="bg-blue-500/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-blue-300/50">
-        <p className="text-sm text-slate-900">
+        <p className="text-sm text-slate-400">
           <span className="font-semibold text-blue-800">Query Format:</span> If a batsman has played <span className="font-semibold text-blue-700">a</span> balls by over <span className="font-semibold text-blue-700">b</span>, what happens in the next <span className="font-semibold text-blue-700">c</span> overs (minimum <span className="font-semibold text-blue-700">d</span> balls)?
         </p>
       </div>
