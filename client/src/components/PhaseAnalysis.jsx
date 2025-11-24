@@ -49,9 +49,9 @@ function PhaseAnalysis({ player }) {
       </div>
 
       {/* Explanation Box */}
-      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 mb-6 border border-blue-200">
-        <p className="text-sm text-slate-700">
-          <span className="font-semibold text-blue-700">Query Format:</span> If a batsman has played <span className="font-semibold text-blue-600">a</span> balls by over <span className="font-semibold text-blue-600">b</span>, what happens in the next <span className="font-semibold text-blue-600">c</span> overs (minimum <span className="font-semibold text-blue-600">d</span> balls)?
+      <div className="bg-blue-500/10 backdrop-blur-sm rounded-lg p-4 mb-6 border border-blue-300/50">
+        <p className="text-sm text-slate-900">
+          <span className="font-semibold text-blue-800">Query Format:</span> If a batsman has played <span className="font-semibold text-blue-700">a</span> balls by over <span className="font-semibold text-blue-700">b</span>, what happens in the next <span className="font-semibold text-blue-700">c</span> overs (minimum <span className="font-semibold text-blue-700">d</span> balls)?
         </p>
       </div>
 
