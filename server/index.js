@@ -422,9 +422,14 @@ app.get('/api/debug/:player', async (req, res) => {
 // Compare two batsmen
 app.post('/api/compare/batsmen', async (req, res) => {
   try {
+    console.log('Received compare batsmen request');
+    console.log('Request body:', req.body);
     const { batsman1, batsman2 } = req.body;
+    console.log('batsman1:', batsman1);
+    console.log('batsman2:', batsman2);
 
     if (!batsman1 || !batsman2) {
+      console.log('Missing batsman names');
       return res.status(400).json({ error: 'Both batsmen names are required' });
     }
 

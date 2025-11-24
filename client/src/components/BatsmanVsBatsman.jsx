@@ -43,6 +43,10 @@ function BatsmanVsBatsman() {
   const suggestions2 = getFilteredPlayers(searchTerm2);
 
   const handleCompare = async () => {
+    console.log('handleCompare called');
+    console.log('batsman1:', batsman1);
+    console.log('batsman2:', batsman2);
+
     if (!batsman1 || !batsman2) {
       setError('Please select both batsmen to compare');
       return;
@@ -57,12 +61,16 @@ function BatsmanVsBatsman() {
     setError(null);
 
     try {
+      console.log('Sending request to /api/compare/batsmen with:', { batsman1, batsman2 });
       const response = await axios.post('/api/compare/batsmen', {
         batsman1,
         batsman2,
       });
+      console.log('Response received:', response.data);
       setComparison(response.data);
     } catch (err) {
+      console.error('Error details:', err);
+      console.error('Error response:', err.response);
       setError(err.response?.data?.error || 'Failed to compare batsmen');
     } finally {
       setLoading(false);
