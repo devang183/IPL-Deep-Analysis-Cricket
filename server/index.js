@@ -398,6 +398,138 @@ app.get('/api/debug/:player', async (req, res) => {
   }
 });
 
+// Compare two batsmen
+app.post('/api/compare/batsmen', async (req, res) => {
+  try {
+    const { batsman1, batsman2 } = req.body;
+
+    if (!batsman1 || !batsman2) {
+      return res.status(400).json({ error: 'Both batsmen names are required' });
+    }
+
+    // Aggregate stats for both batsmen
+    const getBatsmanStats = async (player) => {
+      const stats = await collection.aggregate([
+        { $match: { batter: player, valid_ball: 1 } },
+        {
+          $group: {
+            _id: null,
+            totalRuns: { $sum: '$runs_batter' },
+            ballsFaced: { $sum: 1 },
+            fours: {
+              $sum: { $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0] }
+            },
+            sixes: {
+              $sum: { $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0] }
+            },
+            dismissals: {
+              $sum: { $cond: [{ $eq: ['$striker_out', true] }, 1, 0] }
+            },
+            matches: { $addToSet: '$match_id' },
+            innings: { $addToSet: { match_id: '$match_id', innings: '$innings' } }
+          }
+        }
+      ]).toArray();
+
+      if (!stats || stats.length === 0) {
+        return null;
+      }
+
+      const data = stats[0];
+      const totalRuns = data.totalRuns || 0;
+      const ballsFaced = data.ballsFaced || 0;
+      const dismissals = data.dismissals || 0;
+      const fours = data.fours || 0;
+      const sixes = data.sixes || 0;
+      const matches = data.matches?.length || 0;
+      const innings = data.innings?.length || 0;
+
+      // Get highest score
+      const highestScoreData = await collection.aggregate([
+        { $match: { batter: player, valid_ball: 1 } },
+        {
+          $group: {
+            _id: { match_id: '$match_id', innings: '$innings' },
+            runs: { $sum: '$runs_batter' },
+            out: { $max: '$striker_out' }
+          }
+        },
+        { $sort: { runs: -1 } },
+        { $limit: 1 }
+      ]).toArray();
+
+      const highestScore = highestScoreData[0]?.runs || 0;
+      const highestScoreOut = highestScoreData[0]?.out;
+
+      // Count fifties and hundreds
+      const milestones = await collection.aggregate([
+        { $match: { batter: player, valid_ball: 1 } },
+        {
+          $group: {
+            _id: { match_id: '$match_id', innings: '$innings' },
+            runs: { $sum: '$runs_batter' }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            fifties: {
+              $sum: { $cond: [{ $and: [{ $gte: ['$runs', 50] }, { $lt: ['$runs', 100] }] }, 1, 0] }
+            },
+            hundreds: {
+              $sum: { $cond: [{ $gte: ['$runs', 100] }, 1, 0] }
+            }
+          }
+        }
+      ]).toArray();
+
+      const fifties = milestones[0]?.fifties || 0;
+      const hundreds = milestones[0]?.hundreds || 0;
+
+      const strikeRate = ballsFaced > 0 ? ((totalRuns / ballsFaced) * 100).toFixed(2) : 0;
+      const average = dismissals > 0 ? (totalRuns / dismissals).toFixed(2) : totalRuns.toFixed(2);
+      const boundaryPercentage = ballsFaced > 0 ? (((fours + sixes) / ballsFaced) * 100).toFixed(1) : 0;
+
+      return {
+        totalRuns,
+        ballsFaced,
+        strikeRate: parseFloat(strikeRate),
+        average: parseFloat(average),
+        fours,
+        sixes,
+        dismissals,
+        matches,
+        innings,
+        highestScore: highestScoreOut === false ? `${highestScore}*` : highestScore,
+        fifties,
+        hundreds,
+        boundaryPercentage: parseFloat(boundaryPercentage)
+      };
+    };
+
+    const [batsman1Stats, batsman2Stats] = await Promise.all([
+      getBatsmanStats(batsman1),
+      getBatsmanStats(batsman2)
+    ]);
+
+    if (!batsman1Stats) {
+      return res.status(404).json({ error: `No data found for ${batsman1}` });
+    }
+
+    if (!batsman2Stats) {
+      return res.status(404).json({ error: `No data found for ${batsman2}` });
+    }
+
+    res.json({
+      batsman1: batsman1Stats,
+      batsman2: batsman2Stats
+    });
+  } catch (error) {
+    console.error('Error comparing batsmen:', error);
+    res.status(500).json({ error: 'Failed to compare batsmen' });
+  }
+});
+
 // Start server
 connectDB().then(() => {
   app.listen(PORT, () => {

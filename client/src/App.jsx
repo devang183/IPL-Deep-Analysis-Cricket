@@ -8,6 +8,7 @@ import BowlerStats from './components/BowlerStats';
 import BatsmanVsBowler from './components/BatsmanVsBowler';
 import BatsmanVsTeam from './components/BatsmanVsTeam';
 import BatsmanVsBowlingStyle from './components/BatsmanVsBowlingStyle';
+import BatsmanVsBatsman from './components/BatsmanVsBatsman';
 import MOTMAnalysis from './components/MOTMAnalysis';
 import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
@@ -42,6 +43,7 @@ function App() {
     { id: 'matchup', name: 'Vs Bowler', icon: Users },
     { id: 'vsteam', name: 'Vs Team', icon: Shield },
     { id: 'vsbowlingstyle', name: 'Vs Bowling Style', icon: Activity },
+    { id: 'vsbatsman', name: 'Batsman vs Batsman', icon: Users },
     { id: 'motm', name: 'MOTM', icon: Trophy },
     { id: 'community', name: 'Community', icon: MessageSquare },
     { id: 'admin', name: 'Admin', icon: Shield, adminOnly: true },
@@ -369,6 +371,12 @@ function App() {
           {activeTab === 'vsbowlingstyle' && selectedPlayer && (
             <div className="card">
               <BatsmanVsBowlingStyle player={selectedPlayer} />
+            </div>
+          )}
+
+          {activeTab === 'vsbatsman' && (
+            <div className="card">
+              <BatsmanVsBatsman />
             </div>
           )}
 
