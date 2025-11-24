@@ -6,27 +6,41 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 function BatsmanVsBatsman() {
   const [batsman1, setBatsman1] = useState('');
   const [batsman2, setBatsman2] = useState('');
+  const [searchTerm1, setSearchTerm1] = useState('');
+  const [searchTerm2, setSearchTerm2] = useState('');
   const [comparison, setComparison] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [suggestions1, setSuggestions1] = useState([]);
-  const [suggestions2, setSuggestions2] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [playersLoading, setPlayersLoading] = useState(true);
   const [showSuggestions1, setShowSuggestions1] = useState(false);
   const [showSuggestions2, setShowSuggestions2] = useState(false);
 
-  // Fetch player suggestions
-  const fetchSuggestions = async (query, setSuggestions) => {
-    if (query.length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    try {
-      const response = await axios.get(`/api/players/search?q=${encodeURIComponent(query)}`);
-      setSuggestions(response.data.slice(0, 8));
-    } catch (err) {
-      console.error('Error fetching suggestions:', err);
-    }
+  // Fetch all players on component mount
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        const response = await axios.get('/api/players');
+        setAllPlayers(response.data.players || []);
+      } catch (err) {
+        console.error('Error fetching players:', err);
+      } finally {
+        setPlayersLoading(false);
+      }
+    };
+    fetchPlayers();
+  }, []);
+
+  // Filter players based on search term
+  const getFilteredPlayers = (searchTerm) => {
+    if (!searchTerm || searchTerm.length < 2) return [];
+    return allPlayers
+      .filter(player => player.toLowerCase().includes(searchTerm.toLowerCase()))
+      .slice(0, 10);
   };
+
+  const suggestions1 = getFilteredPlayers(searchTerm1);
+  const suggestions2 = getFilteredPlayers(searchTerm2);
 
   const handleCompare = async () => {
     if (!batsman1 || !batsman2) {
@@ -84,15 +98,16 @@ function BatsmanVsBatsman() {
               <label className="label">First Batsman</label>
               <input
                 type="text"
-                value={batsman1}
+                value={searchTerm1 || batsman1}
                 onChange={(e) => {
-                  setBatsman1(e.target.value);
-                  fetchSuggestions(e.target.value, setSuggestions1);
+                  setSearchTerm1(e.target.value);
+                  setBatsman1('');
                   setShowSuggestions1(true);
                 }}
                 onFocus={() => setShowSuggestions1(true)}
                 className="input-field"
                 placeholder="Enter batsman name..."
+                disabled={playersLoading}
               />
               {showSuggestions1 && suggestions1.length > 0 && (
                 <>
@@ -103,8 +118,8 @@ function BatsmanVsBatsman() {
                         key={index}
                         onClick={() => {
                           setBatsman1(player);
+                          setSearchTerm1('');
                           setShowSuggestions1(false);
-                          setSuggestions1([]);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
                       >
@@ -121,15 +136,16 @@ function BatsmanVsBatsman() {
               <label className="label">Second Batsman</label>
               <input
                 type="text"
-                value={batsman2}
+                value={searchTerm2 || batsman2}
                 onChange={(e) => {
-                  setBatsman2(e.target.value);
-                  fetchSuggestions(e.target.value, setSuggestions2);
+                  setSearchTerm2(e.target.value);
+                  setBatsman2('');
                   setShowSuggestions2(true);
                 }}
                 onFocus={() => setShowSuggestions2(true)}
                 className="input-field"
                 placeholder="Enter batsman name..."
+                disabled={playersLoading}
               />
               {showSuggestions2 && suggestions2.length > 0 && (
                 <>
@@ -140,8 +156,8 @@ function BatsmanVsBatsman() {
                         key={index}
                         onClick={() => {
                           setBatsman2(player);
+                          setSearchTerm2('');
                           setShowSuggestions2(false);
-                          setSuggestions2([]);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
                       >
