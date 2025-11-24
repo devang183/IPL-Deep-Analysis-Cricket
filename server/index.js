@@ -52,6 +52,27 @@ app.get('/api/players', async (req, res) => {
   }
 });
 
+// Search players by query
+app.get('/api/players/search', async (req, res) => {
+  try {
+    const query = req.query.q || '';
+    if (query.length < 2) {
+      return res.json([]);
+    }
+
+    const batsmen = await collection.distinct('batter');
+    const players = batsmen
+      .filter(p => p && p.trim() !== '' && p.toLowerCase().includes(query.toLowerCase()))
+      .sort()
+      .slice(0, 10); // Limit to 10 results
+
+    res.json(players);
+  } catch (error) {
+    console.error('Error searching players:', error);
+    res.status(500).json({ error: 'Failed to search players' });
+  }
+});
+
 // Get player overall statistics
 app.get('/api/stats/:player', async (req, res) => {
   try {
