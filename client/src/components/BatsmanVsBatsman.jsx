@@ -245,7 +245,8 @@ function BatsmanVsBatsman({ player }) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={handleInputFocus}
-            className="input-field text-white placeholder:text-white/60"
+            className="input-field !text-white placeholder:!text-white/60"
+            style={{ color: 'white' }}
             disabled={loadingBatsmen}
             aria-label="Search for a batsman"
             aria-autocomplete="list"
@@ -284,9 +285,9 @@ function BatsmanVsBatsman({ player }) {
                   aria-selected={selectedBatsman === batsman}
                   onClick={() => handleSelectBatsman(batsman)}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`w-full text-left px-4 py-2 transition-all hover:scale-[1.02] hover:bg-primary-50 text-white ${
-                    selectedBatsman === batsman ? 'bg-primary-100 font-semibold' : ''
-                  } ${highlightedIndex === index ? 'bg-primary-50' : ''}`}
+                  className={`w-full text-left px-4 py-2 transition-all hover:scale-[1.02] hover:bg-primary-50 hover:text-slate-900 text-white ${
+                    selectedBatsman === batsman ? 'bg-primary-100 font-semibold text-slate-900' : ''
+                  } ${highlightedIndex === index ? 'bg-primary-50 text-slate-900' : ''}`}
                 >
                   {batsman}
                 </button>
