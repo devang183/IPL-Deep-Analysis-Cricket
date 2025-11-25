@@ -526,16 +526,34 @@ function BatsmanVsBatsman({ player }) {
                 {!hiddenPlayers.includes(selectedBatsman) && (
                   <Radar name={selectedBatsman} dataKey={selectedBatsman} stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
                 )}
-                <Legend
-                  onClick={(e) => handleLegendClick(e.value)}
-                  wrapperStyle={{ cursor: 'pointer' }}
-                />
                 <Tooltip
                   formatter={(value) => `${value.toFixed(1)}%`}
                   labelFormatter={(label) => label}
                 />
               </RadarChart>
             </ResponsiveContainer>
+
+            {/* Custom Legend with Strike-through */}
+            <div className="flex justify-center gap-6 mt-4">
+              <button
+                onClick={() => handleLegendClick(player)}
+                className={`flex items-center gap-2 cursor-pointer transition-opacity ${hiddenPlayers.includes(player) ? 'opacity-50' : 'opacity-100'}`}
+              >
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className={`text-sm font-medium ${hiddenPlayers.includes(player) ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                  {player}
+                </span>
+              </button>
+              <button
+                onClick={() => handleLegendClick(selectedBatsman)}
+                className={`flex items-center gap-2 cursor-pointer transition-opacity ${hiddenPlayers.includes(selectedBatsman) ? 'opacity-50' : 'opacity-100'}`}
+              >
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className={`text-sm font-medium ${hiddenPlayers.includes(selectedBatsman) ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                  {selectedBatsman}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Bar Chart Comparison */}
