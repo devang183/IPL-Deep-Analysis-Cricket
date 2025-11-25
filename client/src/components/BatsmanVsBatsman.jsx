@@ -562,23 +562,83 @@ function BatsmanVsBatsman({ player }) {
               <BarChart3 className="w-5 h-5" />
               Key Stats Comparison
             </h4>
-            <ResponsiveContainer width="100%" height={300}>
+            <div className="mb-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-xs text-slate-600">
+                <strong>Note:</strong> Total Runs uses the left Y-axis, while other metrics use the right Y-axis for better visualization.
+              </p>
+            </div>
+            <ResponsiveContainer width="100%" height={400}>
               <BarChart data={[
-                { stat: 'Total Runs', [player]: comparison.batsman1.totalRuns, [selectedBatsman]: comparison.batsman2.totalRuns },
-                { stat: 'Strike Rate', [player]: comparison.batsman1.strikeRate, [selectedBatsman]: comparison.batsman2.strikeRate },
-                { stat: 'Average', [player]: comparison.batsman1.average, [selectedBatsman]: comparison.batsman2.average },
-                { stat: 'Fours', [player]: comparison.batsman1.fours, [selectedBatsman]: comparison.batsman2.fours },
-                { stat: 'Sixes', [player]: comparison.batsman1.sixes, [selectedBatsman]: comparison.batsman2.sixes },
-                { stat: 'Fifties', [player]: comparison.batsman1.fifties, [selectedBatsman]: comparison.batsman2.fifties },
-                { stat: 'Hundreds', [player]: comparison.batsman1.hundreds, [selectedBatsman]: comparison.batsman2.hundreds }
+                {
+                  stat: 'Total Runs',
+                  [`${player}_runs`]: comparison.batsman1.totalRuns,
+                  [`${selectedBatsman}_runs`]: comparison.batsman2.totalRuns,
+                  [`${player}_other`]: null,
+                  [`${selectedBatsman}_other`]: null
+                },
+                {
+                  stat: 'Strike Rate',
+                  [`${player}_runs`]: null,
+                  [`${selectedBatsman}_runs`]: null,
+                  [`${player}_other`]: comparison.batsman1.strikeRate,
+                  [`${selectedBatsman}_other`]: comparison.batsman2.strikeRate
+                },
+                {
+                  stat: 'Average',
+                  [`${player}_runs`]: null,
+                  [`${selectedBatsman}_runs`]: null,
+                  [`${player}_other`]: comparison.batsman1.average,
+                  [`${selectedBatsman}_other`]: comparison.batsman2.average
+                },
+                {
+                  stat: 'Fours',
+                  [`${player}_runs`]: null,
+                  [`${selectedBatsman}_runs`]: null,
+                  [`${player}_other`]: comparison.batsman1.fours,
+                  [`${selectedBatsman}_other`]: comparison.batsman2.fours
+                },
+                {
+                  stat: 'Sixes',
+                  [`${player}_runs`]: null,
+                  [`${selectedBatsman}_runs`]: null,
+                  [`${player}_other`]: comparison.batsman1.sixes,
+                  [`${selectedBatsman}_other`]: comparison.batsman2.sixes
+                },
+                {
+                  stat: 'Fifties',
+                  [`${player}_runs`]: null,
+                  [`${selectedBatsman}_runs`]: null,
+                  [`${player}_other`]: comparison.batsman1.fifties,
+                  [`${selectedBatsman}_other`]: comparison.batsman2.fifties
+                },
+                {
+                  stat: 'Hundreds',
+                  [`${player}_runs`]: null,
+                  [`${selectedBatsman}_runs`]: null,
+                  [`${player}_other`]: comparison.batsman1.hundreds,
+                  [`${selectedBatsman}_other`]: comparison.batsman2.hundreds
+                }
               ]}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stat" />
-                <YAxis />
+                <XAxis dataKey="stat" angle={-15} textAnchor="end" height={70} />
+                <YAxis
+                  yAxisId="left"
+                  orientation="left"
+                  label={{ value: 'Total Runs', angle: -90, position: 'insideLeft' }}
+                  stroke="#8884d8"
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  label={{ value: 'Other Metrics', angle: 90, position: 'insideRight' }}
+                  stroke="#82ca9d"
+                />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey={player} fill="#10b981" />
-                <Bar dataKey={selectedBatsman} fill="#3b82f6" />
+                <Bar yAxisId="left" dataKey={`${player}_runs`} name={`${player} (Runs)`} fill="#10b981" />
+                <Bar yAxisId="left" dataKey={`${selectedBatsman}_runs`} name={`${selectedBatsman} (Runs)`} fill="#3b82f6" />
+                <Bar yAxisId="right" dataKey={`${player}_other`} name={`${player} (Other)`} fill="#10b981" fillOpacity={0.7} />
+                <Bar yAxisId="right" dataKey={`${selectedBatsman}_other`} name={`${selectedBatsman} (Other)`} fill="#3b82f6" fillOpacity={0.7} />
               </BarChart>
             </ResponsiveContainer>
           </div>
