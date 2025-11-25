@@ -1962,6 +1962,7 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
     // Find innings where player played at least ballsPlayedBefore balls by oversPlayedBefore
     const pipeline = [
       { $match: { batter: player, valid_ball: 1 } },
+      { $sort: { match_id: 1, innings: 1, ball: 1 } }, // Sort by ball number to maintain sequence
       {
         $group: {
           _id: { matchId: '$match_id', inning: '$innings' },
@@ -1985,7 +1986,9 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
         $project: {
           matchId: '$_id.matchId',
           inning: '$_id.inning',
-          balls: 1,
+          allBalls: '$balls',
+          totalBalls: { $size: '$balls' },
+          // Count balls before the phase based on match overs
           ballsBeforePhase: {
             $size: {
               $filter: {
@@ -1994,49 +1997,19 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
                 cond: { $lt: ['$$ball.over', startOver] }
               }
             }
-          },
-          ballsInPhase: {
-            $filter: {
-              input: '$balls',
-              as: 'ball',
-              cond: {
-                $and: [
-                  { $gte: ['$$ball.over', startOver] },
-                  { $lt: ['$$ball.over', endOver] }
-                ]
-              }
-            }
-          },
-          allBalls: '$balls'
+          }
         }
       },
       {
         $match: {
           ballsBeforePhase: { $gte: ballsPlayedBefore }
         }
-      },
-      {
-        $project: {
-          matchId: 1,
-          inning: 1,
-          ballsInPhaseCount: { $size: '$ballsInPhase' },
-          ballsInPhase: 1,
-          allBalls: 1
-        }
-      },
-      {
-        $match: {
-          ballsInPhaseCount: { $gte: Math.min(ballsInNextPhase, 1) }
-        }
       }
     ];
 
     const results = await collection.aggregate(pipeline).toArray();
 
-    // Filter to get only innings with at least ballsInNextPhase balls in the phase
-    const matchingInnings = results.filter(r => r.ballsInPhaseCount >= ballsInNextPhase);
-
-    if (matchingInnings.length === 0) {
+    if (results.length === 0) {
       return res.json({
         innings: [],
         count: 0,
@@ -2044,9 +2017,35 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
       });
     }
 
-    // Process each innings to build progression data
-    const inningsData = matchingInnings.map((innings, index) => {
-      const ballsInPhase = innings.ballsInPhase;
+    // Process each innings to build progression data using sequential ball count
+    const inningsData = [];
+
+    for (const innings of results) {
+      const allBalls = innings.allBalls;
+
+      // Count how many balls the player faced before the phase started
+      let ballsFacedBeforePhase = 0;
+      for (const ball of allBalls) {
+        if (ball.over < startOver) {
+          ballsFacedBeforePhase++;
+        } else {
+          break;
+        }
+      }
+
+      // Only include innings where player faced at least ballsPlayedBefore balls before the phase
+      if (ballsFacedBeforePhase < ballsPlayedBefore) {
+        continue;
+      }
+
+      // Get balls in the phase (from ballsPlayedBefore+1 onwards for ballsInNextPhase balls)
+      const ballsInPhase = allBalls.slice(ballsPlayedBefore, ballsPlayedBefore + ballsInNextPhase);
+
+      // Skip if we don't have enough balls in the phase
+      if (ballsInPhase.length < ballsInNextPhase) {
+        continue;
+      }
+
       const firstBall = ballsInPhase[0];
 
       // Build progression array with cumulative runs
@@ -2068,8 +2067,8 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
       // Get match info
       const matchInfo = `${firstBall.batting_team} vs ${firstBall.bowling_team}, ${firstBall.venue}, ${firstBall.season}`;
 
-      return {
-        inningsNumber: index + 1,
+      inningsData.push({
+        inningsNumber: inningsData.length + 1,
         matchInfo,
         matchId: innings.matchId,
         inning: innings.inning,
@@ -2077,8 +2076,8 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
         ballsFaced,
         strikeRate: parseFloat(strikeRate),
         progression
-      };
-    });
+      });
+    }
 
     res.json({
       player,
