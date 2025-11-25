@@ -13,12 +13,19 @@ function BatsmanVsBatsman({ player }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loadingBatsmen, setLoadingBatsmen] = useState(true);
+  const [playerImage1, setPlayerImage1] = useState(null);
+  const [playerImage2, setPlayerImage2] = useState(null);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
     fetchBatsmen();
   }, []);
+
+  // Fetch player images when player or selectedBatsman changes
+  useEffect(() => {
+    fetchPlayerImages();
+  }, [player, selectedBatsman]);
 
   // Fetch stats when batsman is selected
   useEffect(() => {
@@ -66,6 +73,38 @@ function BatsmanVsBatsman({ player }) {
       console.error('Error fetching batsmen:', err);
     } finally {
       setLoadingBatsmen(false);
+    }
+  };
+
+  const fetchPlayerImages = async () => {
+    // Fetch batsman 1 image
+    try {
+      const batsman1Response = await axios.get(`/api/player/${player}/image`);
+      if (batsman1Response.data.image_path) {
+        setPlayerImage1(batsman1Response.data.image_path);
+      } else {
+        setPlayerImage1(null);
+      }
+    } catch (err) {
+      console.log('Batsman 1 image not found');
+      setPlayerImage1(null);
+    }
+
+    // Fetch batsman 2 image if selected
+    if (selectedBatsman) {
+      try {
+        const batsman2Response = await axios.get(`/api/player/${selectedBatsman}/image`);
+        if (batsman2Response.data.image_path) {
+          setPlayerImage2(batsman2Response.data.image_path);
+        } else {
+          setPlayerImage2(null);
+        }
+      } catch (err) {
+        console.log('Batsman 2 image not found');
+        setPlayerImage2(null);
+      }
+    } else {
+      setPlayerImage2(null);
     }
   };
 
@@ -323,85 +362,109 @@ function BatsmanVsBatsman({ player }) {
           {/* Detailed Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Batsman 1 */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
-              <h3 className="text-xl font-bold text-green-900 mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                {player}
-              </h3>
+            <div className="bg-green-500/20 backdrop-blur-sm rounded-xl p-6 border-2 border-green-400/50">
+              <div className="flex items-center gap-4 mb-4">
+                {playerImage1 ? (
+                  <img
+                    src={playerImage1}
+                    alt={player}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-green-600/30 flex items-center justify-center border-2 border-white shadow-lg">
+                    <Shield className="w-8 h-8 text-white" />
+                  </div>
+                )}
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  {player}
+                </h3>
+              </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Matches:</span>
-                  <span className="font-semibold">{comparison.batsman1.matches}</span>
+                  <span className="text-white/80">Matches:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.matches}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Innings:</span>
-                  <span className="font-semibold">{comparison.batsman1.innings}</span>
+                  <span className="text-white/80">Innings:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.innings}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Balls Faced:</span>
-                  <span className="font-semibold">{comparison.batsman1.ballsFaced}</span>
+                  <span className="text-white/80">Balls Faced:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.ballsFaced}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Fours:</span>
-                  <span className="font-semibold">{comparison.batsman1.fours}</span>
+                  <span className="text-white/80">Fours:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.fours}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Highest Score:</span>
-                  <span className="font-semibold">{comparison.batsman1.highestScore}</span>
+                  <span className="text-white/80">Highest Score:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.highestScore}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Fifties:</span>
-                  <span className="font-semibold">{comparison.batsman1.fifties}</span>
+                  <span className="text-white/80">Fifties:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.fifties}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Hundreds:</span>
-                  <span className="font-semibold">{comparison.batsman1.hundreds}</span>
+                  <span className="text-white/80">Hundreds:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.hundreds}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Boundary %:</span>
-                  <span className="font-semibold">{comparison.batsman1.boundaryPercentage}%</span>
+                  <span className="text-white/80">Boundary %:</span>
+                  <span className="font-semibold text-white">{comparison.batsman1.boundaryPercentage}%</span>
                 </div>
               </div>
             </div>
 
             {/* Batsman 2 */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
-              <h3 className="text-xl font-bold text-blue-900 mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                {selectedBatsman}
-              </h3>
+            <div className="bg-blue-500/20 backdrop-blur-sm rounded-xl p-6 border-2 border-blue-400/50">
+              <div className="flex items-center gap-4 mb-4">
+                {playerImage2 ? (
+                  <img
+                    src={playerImage2}
+                    alt={selectedBatsman}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-blue-600/30 flex items-center justify-center border-2 border-white shadow-lg">
+                    <Shield className="w-8 h-8 text-white" />
+                  </div>
+                )}
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  {selectedBatsman}
+                </h3>
+              </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Matches:</span>
-                  <span className="font-semibold">{comparison.batsman2.matches}</span>
+                  <span className="text-white/80">Matches:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.matches}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Innings:</span>
-                  <span className="font-semibold">{comparison.batsman2.innings}</span>
+                  <span className="text-white/80">Innings:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.innings}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Balls Faced:</span>
-                  <span className="font-semibold">{comparison.batsman2.ballsFaced}</span>
+                  <span className="text-white/80">Balls Faced:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.ballsFaced}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Fours:</span>
-                  <span className="font-semibold">{comparison.batsman2.fours}</span>
+                  <span className="text-white/80">Fours:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.fours}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Highest Score:</span>
-                  <span className="font-semibold">{comparison.batsman2.highestScore}</span>
+                  <span className="text-white/80">Highest Score:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.highestScore}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Fifties:</span>
-                  <span className="font-semibold">{comparison.batsman2.fifties}</span>
+                  <span className="text-white/80">Fifties:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.fifties}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Hundreds:</span>
-                  <span className="font-semibold">{comparison.batsman2.hundreds}</span>
+                  <span className="text-white/80">Hundreds:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.hundreds}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Boundary %:</span>
-                  <span className="font-semibold">{comparison.batsman2.boundaryPercentage}%</span>
+                  <span className="text-white/80">Boundary %:</span>
+                  <span className="font-semibold text-white">{comparison.batsman2.boundaryPercentage}%</span>
                 </div>
               </div>
             </div>
