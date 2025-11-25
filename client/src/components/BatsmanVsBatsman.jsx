@@ -469,36 +469,52 @@ function BatsmanVsBatsman({ player }) {
               <Activity className="w-5 h-5" />
               Performance Comparison
             </h4>
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-slate-700">
+                📏 <strong>How to read this chart:</strong> Values are shown as percentages relative to the best performer in each category among the selected players. The player with the highest value in each metric gets 100%, while the other is scaled proportionally. Hover over any point to see the relative percentage.
+              </p>
+            </div>
             <ResponsiveContainer width="100%" height={400}>
-              <RadarChart data={[
-                {
-                  metric: 'Strike Rate',
-                  [player]: Math.min(comparison.batsman1.strikeRate, 200),
-                  [selectedBatsman]: Math.min(comparison.batsman2.strikeRate, 200)
-                },
-                {
-                  metric: 'Average',
-                  [player]: Math.min(comparison.batsman1.average, 60),
-                  [selectedBatsman]: Math.min(comparison.batsman2.average, 60)
-                },
-                {
-                  metric: 'Boundary %',
-                  [player]: comparison.batsman1.boundaryPercentage * 2,
-                  [selectedBatsman]: comparison.batsman2.boundaryPercentage * 2
-                },
-                {
-                  metric: 'Experience',
-                  [player]: Math.min(comparison.batsman1.innings, 200),
-                  [selectedBatsman]: Math.min(comparison.batsman2.innings, 200)
-                }
-              ]}>
+              <RadarChart data={(() => {
+                // Normalize each metric to 0-100 scale based on max value between both players
+                const maxStrikeRate = Math.max(comparison.batsman1.strikeRate, comparison.batsman2.strikeRate);
+                const maxAverage = Math.max(comparison.batsman1.average, comparison.batsman2.average);
+                const maxBoundary = Math.max(comparison.batsman1.boundaryPercentage, comparison.batsman2.boundaryPercentage);
+                const maxMatches = Math.max(comparison.batsman1.matches, comparison.batsman2.matches);
+
+                return [
+                  {
+                    metric: `Strike Rate\n(${comparison.batsman1.strikeRate.toFixed(1)} vs ${comparison.batsman2.strikeRate.toFixed(1)})`,
+                    [player]: (comparison.batsman1.strikeRate / maxStrikeRate) * 100,
+                    [selectedBatsman]: (comparison.batsman2.strikeRate / maxStrikeRate) * 100
+                  },
+                  {
+                    metric: `Average\n(${comparison.batsman1.average.toFixed(1)} vs ${comparison.batsman2.average.toFixed(1)})`,
+                    [player]: (comparison.batsman1.average / maxAverage) * 100,
+                    [selectedBatsman]: (comparison.batsman2.average / maxAverage) * 100
+                  },
+                  {
+                    metric: `Boundary %\n(${comparison.batsman1.boundaryPercentage.toFixed(1)} vs ${comparison.batsman2.boundaryPercentage.toFixed(1)})`,
+                    [player]: (comparison.batsman1.boundaryPercentage / maxBoundary) * 100,
+                    [selectedBatsman]: (comparison.batsman2.boundaryPercentage / maxBoundary) * 100
+                  },
+                  {
+                    metric: `Matches\n(${comparison.batsman1.matches} vs ${comparison.batsman2.matches})`,
+                    [player]: (comparison.batsman1.matches / maxMatches) * 100,
+                    [selectedBatsman]: (comparison.batsman2.matches / maxMatches) * 100
+                  }
+                ];
+              })()}>
                 <PolarGrid />
-                <PolarAngleAxis dataKey="metric" />
-                <PolarRadiusAxis />
+                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} />
                 <Radar name={player} dataKey={player} stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
                 <Radar name={selectedBatsman} dataKey={selectedBatsman} stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
                 <Legend />
-                <Tooltip />
+                <Tooltip
+                  formatter={(value) => `${value.toFixed(1)}%`}
+                  labelFormatter={(label) => label}
+                />
               </RadarChart>
             </ResponsiveContainer>
           </div>
