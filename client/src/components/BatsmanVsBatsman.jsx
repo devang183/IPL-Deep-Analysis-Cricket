@@ -547,39 +547,39 @@ function BatsmanVsBatsman({ player }) {
           </div>
 
           {/* Key Insights */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200">
-            <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center gap-2">
+          <div className="bg-purple-500/20 backdrop-blur-sm rounded-xl p-6 border-2 border-purple-400/50">
+            <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Award className="w-5 h-5" />
               Key Insights
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white/70 rounded-lg p-4">
-                <div className="text-sm text-slate-600 mb-1">More Aggressive</div>
-                <div className="text-lg font-bold text-purple-900">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <div className="text-sm text-white/80 mb-1">More Aggressive</div>
+                <div className="text-lg font-bold text-slate-300">
                   {comparison.batsman1.strikeRate > comparison.batsman2.strikeRate ? player : selectedBatsman}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">Higher strike rate</div>
+                <div className="text-xs text-white/70 mt-1">Higher strike rate</div>
               </div>
-              <div className="bg-white/70 rounded-lg p-4">
-                <div className="text-sm text-slate-600 mb-1">More Consistent</div>
-                <div className="text-lg font-bold text-purple-900">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <div className="text-sm text-white/80 mb-1">More Consistent</div>
+                <div className="text-lg font-bold text-slate-300">
                   {comparison.batsman1.average > comparison.batsman2.average ? player : selectedBatsman}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">Higher average</div>
+                <div className="text-xs text-white/70 mt-1">Higher average</div>
               </div>
-              <div className="bg-white/70 rounded-lg p-4">
-                <div className="text-sm text-slate-600 mb-1">More Boundaries</div>
-                <div className="text-lg font-bold text-purple-900">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <div className="text-sm text-white/80 mb-1">More Boundaries</div>
+                <div className="text-lg font-bold text-slate-300">
                   {comparison.batsman1.boundaryPercentage > comparison.batsman2.boundaryPercentage ? player : selectedBatsman}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">Higher boundary percentage</div>
+                <div className="text-xs text-white/70 mt-1">Higher boundary percentage</div>
               </div>
-              <div className="bg-white/70 rounded-lg p-4">
-                <div className="text-sm text-slate-600 mb-1">More Experience</div>
-                <div className="text-lg font-bold text-purple-900">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <div className="text-sm text-white/80 mb-1">More Experience</div>
+                <div className="text-lg font-bold text-slate-300">
                   {comparison.batsman1.matches > comparison.batsman2.matches ? player : selectedBatsman}
                 </div>
-                <div className="text-xs text-slate-500 mt-1">More matches played</div>
+                <div className="text-xs text-white/70 mt-1">More matches played</div>
               </div>
             </div>
           </div>
