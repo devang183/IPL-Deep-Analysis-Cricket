@@ -15,6 +15,7 @@ function BatsmanVsBatsman({ player }) {
   const [loadingBatsmen, setLoadingBatsmen] = useState(true);
   const [playerImage1, setPlayerImage1] = useState(null);
   const [playerImage2, setPlayerImage2] = useState(null);
+  const [hiddenPlayers, setHiddenPlayers] = useState([]);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -212,6 +213,17 @@ function BatsmanVsBatsman({ player }) {
     if (value1 > value2) return 'batsman1';
     if (value2 > value1) return 'batsman2';
     return 'tie';
+  };
+
+  // Handle legend click to toggle player visibility
+  const handleLegendClick = (dataKey) => {
+    setHiddenPlayers((prev) => {
+      if (prev.includes(dataKey)) {
+        return prev.filter((p) => p !== dataKey);
+      } else {
+        return [...prev, dataKey];
+      }
+    });
   };
 
   if (!player) {
@@ -508,9 +520,16 @@ function BatsmanVsBatsman({ player }) {
                 <PolarGrid />
                 <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                <Radar name={player} dataKey={player} stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
-                <Radar name={selectedBatsman} dataKey={selectedBatsman} stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-                <Legend />
+                {!hiddenPlayers.includes(player) && (
+                  <Radar name={player} dataKey={player} stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                )}
+                {!hiddenPlayers.includes(selectedBatsman) && (
+                  <Radar name={selectedBatsman} dataKey={selectedBatsman} stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+                )}
+                <Legend
+                  onClick={(e) => handleLegendClick(e.value)}
+                  wrapperStyle={{ cursor: 'pointer' }}
+                />
                 <Tooltip
                   formatter={(value) => `${value.toFixed(1)}%`}
                   labelFormatter={(label) => label}
