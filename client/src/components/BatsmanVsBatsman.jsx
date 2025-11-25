@@ -245,7 +245,7 @@ function BatsmanVsBatsman({ player }) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={handleInputFocus}
-            className="input-field"
+            className="input-field text-white placeholder:text-white/60"
             disabled={loadingBatsmen}
             aria-label="Search for a batsman"
             aria-autocomplete="list"
@@ -284,7 +284,7 @@ function BatsmanVsBatsman({ player }) {
                   aria-selected={selectedBatsman === batsman}
                   onClick={() => handleSelectBatsman(batsman)}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`w-full text-left px-4 py-2 transition-all hover:scale-[1.02] hover:bg-primary-50 ${
+                  className={`w-full text-left px-4 py-2 transition-all hover:scale-[1.02] hover:bg-primary-50 text-white ${
                     selectedBatsman === batsman ? 'bg-primary-100 font-semibold' : ''
                   } ${highlightedIndex === index ? 'bg-primary-50' : ''}`}
                 >
@@ -338,24 +338,24 @@ function BatsmanVsBatsman({ player }) {
           {/* Quick Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className={`p-4 rounded-xl border-2 ${getWinner(comparison.batsman1.totalRuns, comparison.batsman2.totalRuns) === 'batsman1' ? 'bg-green-50 border-green-200' : getWinner(comparison.batsman1.totalRuns, comparison.batsman2.totalRuns) === 'batsman2' ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
-              <div className="text-sm text-slate-600 mb-1">Total Runs</div>
-              <div className="text-2xl font-bold">{comparison.batsman1.totalRuns}</div>
-              <div className="text-xs text-slate-500 mt-1">vs {comparison.batsman2.totalRuns}</div>
+              <div className="text-sm text-white mb-1">Total Runs</div>
+              <div className="text-2xl font-bold text-white">{comparison.batsman1.totalRuns}</div>
+              <div className="text-xs text-white/80 mt-1">vs {comparison.batsman2.totalRuns}</div>
             </div>
             <div className={`p-4 rounded-xl border-2 ${getWinner(comparison.batsman1.strikeRate, comparison.batsman2.strikeRate) === 'batsman1' ? 'bg-green-50 border-green-200' : getWinner(comparison.batsman1.strikeRate, comparison.batsman2.strikeRate) === 'batsman2' ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
-              <div className="text-sm text-slate-600 mb-1">Strike Rate</div>
-              <div className="text-2xl font-bold">{comparison.batsman1.strikeRate}</div>
-              <div className="text-xs text-slate-500 mt-1">vs {comparison.batsman2.strikeRate}</div>
+              <div className="text-sm text-white mb-1">Strike Rate</div>
+              <div className="text-2xl font-bold text-white">{comparison.batsman1.strikeRate}</div>
+              <div className="text-xs text-white/80 mt-1">vs {comparison.batsman2.strikeRate}</div>
             </div>
             <div className={`p-4 rounded-xl border-2 ${getWinner(comparison.batsman1.average, comparison.batsman2.average) === 'batsman1' ? 'bg-green-50 border-green-200' : getWinner(comparison.batsman1.average, comparison.batsman2.average) === 'batsman2' ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
-              <div className="text-sm text-slate-600 mb-1">Average</div>
-              <div className="text-2xl font-bold">{comparison.batsman1.average}</div>
-              <div className="text-xs text-slate-500 mt-1">vs {comparison.batsman2.average}</div>
+              <div className="text-sm text-white mb-1">Average</div>
+              <div className="text-2xl font-bold text-white">{comparison.batsman1.average}</div>
+              <div className="text-xs text-white/80 mt-1">vs {comparison.batsman2.average}</div>
             </div>
             <div className={`p-4 rounded-xl border-2 ${getWinner(comparison.batsman1.sixes, comparison.batsman2.sixes) === 'batsman1' ? 'bg-green-50 border-green-200' : getWinner(comparison.batsman1.sixes, comparison.batsman2.sixes) === 'batsman2' ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
-              <div className="text-sm text-slate-600 mb-1">Sixes</div>
-              <div className="text-2xl font-bold">{comparison.batsman1.sixes}</div>
-              <div className="text-xs text-slate-500 mt-1">vs {comparison.batsman2.sixes}</div>
+              <div className="text-sm text-white mb-1">Sixes</div>
+              <div className="text-2xl font-bold text-white">{comparison.batsman1.sixes}</div>
+              <div className="text-xs text-white/80 mt-1">vs {comparison.batsman2.sixes}</div>
             </div>
           </div>
 
@@ -383,10 +383,6 @@ function BatsmanVsBatsman({ player }) {
                 <div className="flex justify-between">
                   <span className="text-white/80">Matches:</span>
                   <span className="font-semibold text-white">{comparison.batsman1.matches}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/80">Innings:</span>
-                  <span className="font-semibold text-white">{comparison.batsman1.innings}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white/80">Balls Faced:</span>
@@ -437,10 +433,6 @@ function BatsmanVsBatsman({ player }) {
                 <div className="flex justify-between">
                   <span className="text-white/80">Matches:</span>
                   <span className="font-semibold text-white">{comparison.batsman2.matches}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/80">Innings:</span>
-                  <span className="font-semibold text-white">{comparison.batsman2.innings}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white/80">Balls Faced:</span>
