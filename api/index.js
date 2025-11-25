@@ -1949,6 +1949,148 @@ app.get('/api/reddit/ipl', async (_req, res) => {
   }
 });
 
+// Get innings progression for phase analysis modal
+app.post('/api/analyze/innings-progression', async (req, res) => {
+  try {
+    const { collection } = await connectToDatabase();
+    const { player, ballsPlayedBefore, oversPlayedBefore, nextOvers, ballsInNextPhase } = req.body;
+
+    // Calculate over range for next phase
+    const startOver = oversPlayedBefore;
+    const endOver = oversPlayedBefore + nextOvers;
+
+    // Find innings where player played at least ballsPlayedBefore balls by oversPlayedBefore
+    const pipeline = [
+      { $match: { batter: player, valid_ball: 1 } },
+      {
+        $group: {
+          _id: { matchId: '$match_id', inning: '$innings' },
+          balls: {
+            $push: {
+              ballNum: '$ball',
+              over: '$over',
+              runs: '$runs_batter',
+              isOut: '$striker_out',
+              match_id: '$match_id',
+              innings: '$innings',
+              batting_team: '$batting_team',
+              bowling_team: '$bowling_team',
+              venue: '$venue',
+              season: '$season'
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          matchId: '$_id.matchId',
+          inning: '$_id.inning',
+          balls: 1,
+          ballsBeforePhase: {
+            $size: {
+              $filter: {
+                input: '$balls',
+                as: 'ball',
+                cond: { $lt: ['$$ball.over', startOver] }
+              }
+            }
+          },
+          ballsInPhase: {
+            $filter: {
+              input: '$balls',
+              as: 'ball',
+              cond: {
+                $and: [
+                  { $gte: ['$$ball.over', startOver] },
+                  { $lt: ['$$ball.over', endOver] }
+                ]
+              }
+            }
+          },
+          allBalls: '$balls'
+        }
+      },
+      {
+        $match: {
+          ballsBeforePhase: { $gte: ballsPlayedBefore }
+        }
+      },
+      {
+        $project: {
+          matchId: 1,
+          inning: 1,
+          ballsInPhaseCount: { $size: '$ballsInPhase' },
+          ballsInPhase: 1,
+          allBalls: 1
+        }
+      },
+      {
+        $match: {
+          ballsInPhaseCount: { $gte: Math.min(ballsInNextPhase, 1) }
+        }
+      }
+    ];
+
+    const results = await collection.aggregate(pipeline).toArray();
+
+    // Filter to get only innings with at least ballsInNextPhase balls in the phase
+    const matchingInnings = results.filter(r => r.ballsInPhaseCount >= ballsInNextPhase);
+
+    if (matchingInnings.length === 0) {
+      return res.json({
+        innings: [],
+        count: 0,
+        message: 'No matching innings found'
+      });
+    }
+
+    // Process each innings to build progression data
+    const inningsData = matchingInnings.map((innings, index) => {
+      const ballsInPhase = innings.ballsInPhase;
+      const firstBall = ballsInPhase[0];
+
+      // Build progression array with cumulative runs
+      let cumulativeRuns = 0;
+      const progression = ballsInPhase.map((ball, i) => {
+        cumulativeRuns += ball.runs;
+        return {
+          ballNumber: ballsPlayedBefore + i + 1, // Ball number for batsman (starting from ballsPlayedBefore + 1)
+          runsScored: ball.runs,
+          cumulativeRuns: cumulativeRuns
+        };
+      });
+
+      // Calculate total runs and balls faced in this phase
+      const totalRuns = progression[progression.length - 1]?.cumulativeRuns || 0;
+      const ballsFaced = progression.length;
+      const strikeRate = ballsFaced > 0 ? ((totalRuns / ballsFaced) * 100).toFixed(2) : 0;
+
+      // Get match info
+      const matchInfo = `${firstBall.batting_team} vs ${firstBall.bowling_team}, ${firstBall.venue}, ${firstBall.season}`;
+
+      return {
+        inningsNumber: index + 1,
+        matchInfo,
+        matchId: innings.matchId,
+        inning: innings.inning,
+        totalRuns,
+        ballsFaced,
+        strikeRate: parseFloat(strikeRate),
+        progression
+      };
+    });
+
+    res.json({
+      player,
+      innings: inningsData,
+      count: inningsData.length
+    });
+  } catch (error) {
+    console.error('Error fetching innings progression:', error);
+    res.status(500).json({ error: 'Failed to fetch innings progression data' });
+  }
+});
+
 // Compare two batsmen
 app.post('/api/compare/batsmen', async (req, res) => {
   try {

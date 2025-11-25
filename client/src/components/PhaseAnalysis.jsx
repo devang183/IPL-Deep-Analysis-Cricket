@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { TrendingUp, Loader2, AlertCircle } from 'lucide-react';
+import { TrendingUp, Loader2, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 function PhaseAnalysis({ player }) {
   const [formData, setFormData] = useState({
@@ -13,6 +13,10 @@ function PhaseAnalysis({ player }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showInningsModal, setShowInningsModal] = useState(false);
+  const [inningsData, setInningsData] = useState([]);
+  const [loadingInnings, setLoadingInnings] = useState(false);
+  const [selectedInning, setSelectedInning] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +41,23 @@ function PhaseAnalysis({ player }) {
       ...formData,
       [e.target.name]: parseInt(e.target.value) || 0,
     });
+  };
+
+  const handleInningsCardClick = async () => {
+    setShowInningsModal(true);
+    setLoadingInnings(true);
+
+    try {
+      const response = await axios.post('/api/analyze/innings-progression', {
+        player,
+        ...formData,
+      });
+      setInningsData(response.data.innings || []);
+    } catch (err) {
+      console.error('Failed to fetch innings data:', err);
+    } finally {
+      setLoadingInnings(false);
+    }
   };
 
   const COLORS = ['#0ea5e9', '#06b6d4', '#8b5cf6', '#ec4899'];
@@ -189,12 +210,16 @@ function PhaseAnalysis({ player }) {
                 </div>
                 <div className="text-sm text-orange-100 mt-2 font-semibold">Dismissal Rate</div>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 shadow-xl border-2 border-purple-400 transform hover:scale-105 transition-transform duration-300">
+              <button
+                onClick={handleInningsCardClick}
+                className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 shadow-xl border-2 border-purple-400 transform hover:scale-105 transition-transform duration-300 cursor-pointer hover:shadow-2xl w-full text-left"
+              >
                 <div className="text-4xl font-extrabold text-white">
                   {result.matchingInnings}
                 </div>
                 <div className="text-sm text-purple-100 mt-2 font-semibold">Innings Analyzed</div>
-              </div>
+                <div className="text-xs text-purple-200 mt-1">Click to view details</div>
+              </button>
             </div>
           </div>
 
@@ -252,6 +277,119 @@ function PhaseAnalysis({ player }) {
           <p className="text-yellow-700">
             No innings match the specified criteria. Try adjusting the parameters.
           </p>
+        </div>
+      )}
+
+      {/* Innings Modal */}
+      {showInningsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowInningsModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6 flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-white">Innings Progression Analysis</h3>
+                <p className="text-purple-100 text-sm mt-1">{player} - {inningsData.length} innings found</p>
+              </div>
+              <button
+                onClick={() => setShowInningsModal(false)}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {loadingInnings ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+                  <p className="text-slate-600">Loading innings data...</p>
+                </div>
+              ) : inningsData.length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-600">No innings data available</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-slate-700">
+                      <strong>How to use:</strong> Hover over any innings number to see the run progression chart from ball 16 onwards.
+                    </p>
+                  </div>
+
+                  {/* Innings Grid */}
+                  <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-6">
+                    {inningsData.map((innings, index) => (
+                      <button
+                        key={index}
+                        onMouseEnter={() => setSelectedInning(innings)}
+                        onClick={() => setSelectedInning(innings)}
+                        className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                          selectedInning === innings
+                            ? 'bg-purple-100 border-purple-500 shadow-lg'
+                            : 'bg-slate-50 border-slate-200 hover:bg-purple-50 hover:border-purple-300'
+                        }`}
+                      >
+                        <div className="text-xs text-slate-600 mb-1">Innings</div>
+                        <div className="text-lg font-bold text-slate-800">{index + 1}</div>
+                        <div className="text-xs text-slate-500 mt-1">{innings.totalRuns}r</div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Line Chart */}
+                  {selectedInning && (
+                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                      <h4 className="text-lg font-semibold text-slate-800 mb-4">
+                        Innings {inningsData.indexOf(selectedInning) + 1} - Run Progression
+                      </h4>
+                      <div className="mb-4 text-sm text-slate-600">
+                        <strong>Match:</strong> {selectedInning.matchInfo || 'N/A'} |
+                        <strong className="ml-2">Final Score:</strong> {selectedInning.totalRuns} runs off {selectedInning.ballsFaced} balls |
+                        <strong className="ml-2">Strike Rate:</strong> {selectedInning.strikeRate}
+                      </div>
+                      <ResponsiveContainer width="100%" height={400}>
+                        <LineChart data={selectedInning.progression}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="ballNumber"
+                            label={{ value: 'Ball Number (for batsman)', position: 'insideBottom', offset: -5 }}
+                          />
+                          <YAxis
+                            label={{ value: 'Cumulative Runs', angle: -90, position: 'insideLeft' }}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+                                    <p className="font-semibold">Ball {data.ballNumber}</p>
+                                    <p className="text-sm text-slate-600">Cumulative: {data.cumulativeRuns} runs</p>
+                                    <p className="text-sm text-slate-600">This ball: {data.runsScored} runs</p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="cumulativeRuns"
+                            stroke="#9333ea"
+                            strokeWidth={3}
+                            dot={{ fill: '#9333ea', r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
