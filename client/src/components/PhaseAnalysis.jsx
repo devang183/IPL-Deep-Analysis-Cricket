@@ -319,26 +319,26 @@ function PhaseAnalysis({ player }) {
               ) : (
                 <div>
                   {/* Quick Stats Summary */}
-                  <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="mb-6 p-4 bg-white/30 backdrop-blur-md rounded-lg border border-purple-300/50 shadow-sm">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <div>
-                        <p className="text-sm text-slate-600 mb-1">Total Innings</p>
+                        <p className="text-sm text-slate-700 font-semibold mb-1">Total Innings</p>
                         <p className="text-2xl font-bold text-purple-700">{inningsData.length}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600 mb-1">Average Runs</p>
+                        <p className="text-sm text-slate-700 font-semibold mb-1">Average Runs</p>
                         <p className="text-2xl font-bold text-blue-700">
                           {(inningsData.reduce((sum, inn) => sum + inn.totalRuns, 0) / inningsData.length).toFixed(1)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600 mb-1">Best Score</p>
+                        <p className="text-sm text-slate-700 font-semibold mb-1">Best Score</p>
                         <p className="text-2xl font-bold text-green-700">
                           {Math.max(...inningsData.map(inn => inn.totalRuns))}r
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600 mb-1">Avg Strike Rate</p>
+                        <p className="text-sm text-slate-700 font-semibold mb-1">Avg Strike Rate</p>
                         <p className="text-2xl font-bold text-orange-700">
                           {(inningsData.reduce((sum, inn) => sum + inn.strikeRate, 0) / inningsData.length).toFixed(1)}
                         </p>
@@ -381,33 +381,50 @@ function PhaseAnalysis({ player }) {
                             onClick={() => setSelectedInning(innings)}
                             className={`flex-shrink-0 w-44 p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
                               isSelected
-                                ? 'bg-purple-100 border-purple-500 shadow-xl ring-2 ring-purple-300'
+                                ? 'bg-purple-600 border-purple-700 shadow-xl ring-2 ring-purple-400'
                                 : `${srColor} hover:border-purple-400`
                             }`}
                             style={{ scrollSnapAlign: 'start' }}
                           >
                             {/* Date Badge */}
-                            <div className="text-xs text-slate-500 mb-2 font-medium">{formattedDate}</div>
+                            <div className={`text-xs mb-2 font-medium ${isSelected ? 'text-purple-200' : 'text-slate-500'}`}>
+                              {formattedDate}
+                            </div>
 
                             {/* Innings Number */}
                             <div className="text-center mb-3">
-                              <div className="text-xs text-slate-600 mb-1">Innings</div>
-                              <div className="text-3xl font-bold text-slate-800">#{index + 1}</div>
+                              <div className={`text-xs mb-1 ${isSelected ? 'text-purple-200' : 'text-slate-600'}`}>
+                                Innings
+                              </div>
+                              <div className={`text-3xl font-bold ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                                #{index + 1}
+                              </div>
                             </div>
 
                             {/* Stats */}
                             <div className="space-y-2 text-left">
                               <div className="flex justify-between items-center">
-                                <span className="text-xs text-slate-600">Runs</span>
-                                <span className="text-sm font-bold text-purple-700">{innings.totalRuns}</span>
+                                <span className={`text-xs ${isSelected ? 'text-purple-200' : 'text-slate-600'}`}>
+                                  Runs
+                                </span>
+                                <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-purple-700'}`}>
+                                  {innings.totalRuns}
+                                </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-xs text-slate-600">Balls</span>
-                                <span className="text-sm font-semibold text-slate-700">{innings.ballsFaced}</span>
+                                <span className={`text-xs ${isSelected ? 'text-purple-200' : 'text-slate-600'}`}>
+                                  Balls
+                                </span>
+                                <span className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-700'}`}>
+                                  {innings.ballsFaced}
+                                </span>
                               </div>
                               <div className="flex justify-between items-center">
-                                <span className="text-xs text-slate-600">SR</span>
+                                <span className={`text-xs ${isSelected ? 'text-purple-200' : 'text-slate-600'}`}>
+                                  SR
+                                </span>
                                 <span className={`text-sm font-bold ${
+                                  isSelected ? 'text-white' :
                                   innings.strikeRate >= 150 ? 'text-green-600' :
                                   innings.strikeRate >= 100 ? 'text-yellow-600' :
                                   'text-red-600'
@@ -418,11 +435,11 @@ function PhaseAnalysis({ player }) {
                             </div>
 
                             {/* Match Info Preview */}
-                            <div className="mt-3 pt-3 border-t border-slate-200">
-                              <p className="text-xs text-slate-600 truncate">
+                            <div className={`mt-3 pt-3 ${isSelected ? 'border-purple-400' : 'border-slate-200'} border-t`}>
+                              <p className={`text-xs truncate ${isSelected ? 'text-purple-100' : 'text-slate-600'}`}>
                                 {innings.matchInfo.split(',')[0]}
                               </p>
-                              <p className="text-xs text-slate-500 truncate">
+                              <p className={`text-xs truncate ${isSelected ? 'text-purple-200' : 'text-slate-500'}`}>
                                 {innings.matchInfo.split(',').slice(1, 2).join(',')}
                               </p>
                             </div>
@@ -443,8 +460,53 @@ function PhaseAnalysis({ player }) {
                         <strong>Final Score:</strong> {selectedInning.totalRuns} runs off {selectedInning.ballsFaced} balls |
                         <strong className="ml-2">Strike Rate:</strong> {selectedInning.strikeRate}
                       </div>
+
+                      {/* Legend */}
+                      <div className="mb-4 flex items-center gap-4 flex-wrap text-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-0.5 bg-purple-600"></div>
+                          <span className="text-slate-600">Regular (0-3 runs)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-1 bg-gradient-to-r from-yellow-400 to-yellow-500 shadow-md shadow-yellow-300"></div>
+                          <span className="text-slate-600 font-semibold">Boundary (4 runs)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-1 bg-gradient-to-r from-green-400 to-green-500 shadow-md shadow-green-300"></div>
+                          <span className="text-slate-600 font-semibold">Six (6 runs)</span>
+                        </div>
+                      </div>
+
                       <ResponsiveContainer width="100%" height={400}>
                         <LineChart data={selectedInning.progression}>
+                          <defs>
+                            {/* Gradient for boundaries (4s) */}
+                            <linearGradient id="boundaryGradient" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
+                              <stop offset="100%" stopColor="#f59e0b" stopOpacity={1} />
+                            </linearGradient>
+                            {/* Gradient for sixes */}
+                            <linearGradient id="sixGradient" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#4ade80" stopOpacity={1} />
+                              <stop offset="100%" stopColor="#22c55e" stopOpacity={1} />
+                            </linearGradient>
+                            {/* Glow filter for boundaries */}
+                            <filter id="boundaryGlow">
+                              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                              <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                              </feMerge>
+                            </filter>
+                            {/* Glow filter for sixes */}
+                            <filter id="sixGlow">
+                              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                              <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                              </feMerge>
+                            </filter>
+                          </defs>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis
                             dataKey="ballNumber"
@@ -457,11 +519,25 @@ function PhaseAnalysis({ player }) {
                             content={({ active, payload }) => {
                               if (active && payload && payload.length) {
                                 const data = payload[0].payload;
+                                const isBoundary = data.runsScored === 4;
+                                const isSix = data.runsScored === 6;
                                 return (
-                                  <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-lg">
+                                  <div className={`p-3 border-2 rounded-lg shadow-lg ${
+                                    isSix ? 'bg-green-50 border-green-400' :
+                                    isBoundary ? 'bg-yellow-50 border-yellow-400' :
+                                    'bg-white border-slate-200'
+                                  }`}>
                                     <p className="font-semibold">Ball {data.ballNumber}</p>
                                     <p className="text-sm text-slate-600">Cumulative: {data.cumulativeRuns} runs</p>
-                                    <p className="text-sm text-slate-600">This ball: {data.runsScored} runs</p>
+                                    <p className={`text-sm font-bold ${
+                                      isSix ? 'text-green-600' :
+                                      isBoundary ? 'text-yellow-600' :
+                                      'text-slate-600'
+                                    }`}>
+                                      This ball: {data.runsScored} runs
+                                      {isSix && ' ⚡'}
+                                      {isBoundary && ' 🔥'}
+                                    </p>
                                   </div>
                                 );
                               }
@@ -473,8 +549,45 @@ function PhaseAnalysis({ player }) {
                             dataKey="cumulativeRuns"
                             stroke="#9333ea"
                             strokeWidth={3}
-                            dot={{ fill: '#9333ea', r: 4 }}
+                            dot={(props) => {
+                              const { cx, cy, payload } = props;
+                              const isBoundary = payload.runsScored === 4;
+                              const isSix = payload.runsScored === 6;
+
+                              if (isSix) {
+                                return (
+                                  <g>
+                                    <circle
+                                      cx={cx}
+                                      cy={cy}
+                                      r={8}
+                                      fill="url(#sixGradient)"
+                                      filter="url(#sixGlow)"
+                                      stroke="#16a34a"
+                                      strokeWidth={2}
+                                    />
+                                  </g>
+                                );
+                              } else if (isBoundary) {
+                                return (
+                                  <g>
+                                    <circle
+                                      cx={cx}
+                                      cy={cy}
+                                      r={7}
+                                      fill="url(#boundaryGradient)"
+                                      filter="url(#boundaryGlow)"
+                                      stroke="#d97706"
+                                      strokeWidth={2}
+                                    />
+                                  </g>
+                                );
+                              }
+                              return <circle cx={cx} cy={cy} r={4} fill="#9333ea" />;
+                            }}
                             activeDot={{ r: 6 }}
+                            isAnimationActive={true}
+                            animationDuration={800}
                           />
                         </LineChart>
                       </ResponsiveContainer>
