@@ -1962,7 +1962,7 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
     // Find innings matching the SAME criteria as phase-performance endpoint
     const pipeline = [
       { $match: { batter: player, valid_ball: 1 } },
-      { $sort: { match_id: 1, innings: 1, ball: 1 } }, // Sort by ball number to maintain sequence
+      { $sort: { match_id: 1, innings: 1, over: 1, ball: 1 } }, // Sort by over first, then ball number
       {
         $group: {
           _id: { matchId: '$match_id', inning: '$innings' },
