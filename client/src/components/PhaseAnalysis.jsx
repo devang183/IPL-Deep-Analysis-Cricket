@@ -318,41 +318,129 @@ function PhaseAnalysis({ player }) {
                 </div>
               ) : (
                 <div>
-                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  {/* Quick Stats Summary */}
+                  <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Total Innings</p>
+                        <p className="text-2xl font-bold text-purple-700">{inningsData.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Average Runs</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {(inningsData.reduce((sum, inn) => sum + inn.totalRuns, 0) / inningsData.length).toFixed(1)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Best Score</p>
+                        <p className="text-2xl font-bold text-green-700">
+                          {Math.max(...inningsData.map(inn => inn.totalRuns))}r
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-600 mb-1">Avg Strike Rate</p>
+                        <p className="text-2xl font-bold text-orange-700">
+                          {(inningsData.reduce((sum, inn) => sum + inn.strikeRate, 0) / inningsData.length).toFixed(1)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-sm text-slate-700">
-                      <strong>How to use:</strong> Hover over any innings number to see the run progression chart from ball 16 onwards.
+                      <strong>How to use:</strong> Click on any innings card to view its run progression chart. Scroll horizontally to see all innings.
                     </p>
                   </div>
 
-                  {/* Innings Grid */}
-                  <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-6">
-                    {inningsData.map((innings, index) => (
-                      <button
-                        key={index}
-                        onMouseEnter={() => setSelectedInning(innings)}
-                        onClick={() => setSelectedInning(innings)}
-                        className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
-                          selectedInning === innings
-                            ? 'bg-purple-100 border-purple-500 shadow-lg'
-                            : 'bg-slate-50 border-slate-200 hover:bg-purple-50 hover:border-purple-300'
-                        }`}
-                      >
-                        <div className="text-xs text-slate-600 mb-1">Innings</div>
-                        <div className="text-lg font-bold text-slate-800">{index + 1}</div>
-                        <div className="text-xs text-slate-500 mt-1">{innings.totalRuns}r</div>
-                      </button>
-                    ))}
+                  {/* Horizontal Scrollable Innings Cards */}
+                  <div className="mb-6">
+                    <h4 className="text-md font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <span>Select an Innings</span>
+                      <span className="text-xs text-slate-500 font-normal">(Sorted by date - newest first)</span>
+                    </h4>
+                    <div
+                      className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-slate-100"
+                      style={{
+                        WebkitOverflowScrolling: 'touch',
+                        scrollSnapType: 'x proximity'
+                      }}
+                    >
+                      {inningsData.map((innings, index) => {
+                        const date = new Date(innings.date);
+                        const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        const isSelected = selectedInning === innings;
+
+                        // Performance tier colors
+                        const srColor = innings.strikeRate >= 150 ? 'border-green-400 bg-green-50' :
+                                       innings.strikeRate >= 100 ? 'border-yellow-400 bg-yellow-50' :
+                                       'border-red-400 bg-red-50';
+
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedInning(innings)}
+                            className={`flex-shrink-0 w-44 p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                              isSelected
+                                ? 'bg-purple-100 border-purple-500 shadow-xl ring-2 ring-purple-300'
+                                : `${srColor} hover:border-purple-400`
+                            }`}
+                            style={{ scrollSnapAlign: 'start' }}
+                          >
+                            {/* Date Badge */}
+                            <div className="text-xs text-slate-500 mb-2 font-medium">{formattedDate}</div>
+
+                            {/* Innings Number */}
+                            <div className="text-center mb-3">
+                              <div className="text-xs text-slate-600 mb-1">Innings</div>
+                              <div className="text-3xl font-bold text-slate-800">#{index + 1}</div>
+                            </div>
+
+                            {/* Stats */}
+                            <div className="space-y-2 text-left">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-slate-600">Runs</span>
+                                <span className="text-sm font-bold text-purple-700">{innings.totalRuns}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-slate-600">Balls</span>
+                                <span className="text-sm font-semibold text-slate-700">{innings.ballsFaced}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-slate-600">SR</span>
+                                <span className={`text-sm font-bold ${
+                                  innings.strikeRate >= 150 ? 'text-green-600' :
+                                  innings.strikeRate >= 100 ? 'text-yellow-600' :
+                                  'text-red-600'
+                                }`}>
+                                  {innings.strikeRate}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Match Info Preview */}
+                            <div className="mt-3 pt-3 border-t border-slate-200">
+                              <p className="text-xs text-slate-600 truncate">
+                                {innings.matchInfo.split(',')[0]}
+                              </p>
+                              <p className="text-xs text-slate-500 truncate">
+                                {innings.matchInfo.split(',').slice(1, 2).join(',')}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Line Chart */}
                   {selectedInning && (
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 animate-fade-in">
                       <h4 className="text-lg font-semibold text-slate-800 mb-4">
-                        Innings {inningsData.indexOf(selectedInning) + 1} - Run Progression
+                        Innings #{inningsData.indexOf(selectedInning) + 1} - Run Progression
                       </h4>
                       <div className="mb-4 text-sm text-slate-600">
-                        <strong>Match:</strong> {selectedInning.matchInfo || 'N/A'} |
-                        <strong className="ml-2">Final Score:</strong> {selectedInning.totalRuns} runs off {selectedInning.ballsFaced} balls |
+                        <strong>Match:</strong> {selectedInning.matchInfo || 'N/A'} <br />
+                        <strong>Final Score:</strong> {selectedInning.totalRuns} runs off {selectedInning.ballsFaced} balls |
                         <strong className="ml-2">Strike Rate:</strong> {selectedInning.strikeRate}
                       </div>
                       <ResponsiveContainer width="100%" height={400}>
