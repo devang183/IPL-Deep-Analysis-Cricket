@@ -394,11 +394,13 @@ app.get('/api/schema', async (req, res) => {
 // Get innings progression for phase analysis modal
 app.post('/api/analyze/innings-progression', async (req, res) => {
   try {
-    const { player, ballsPlayedBefore, ballsInNextPhase } = req.body;
+    const { player, ballsPlayedBefore, oversPlayedBefore, nextOvers, ballsInNextPhase } = req.body;
 
-    // Find innings where player faced enough balls total
-    // We use oversPlayedBefore only for compatibility with phase-performance,
-    // but we track by actual ball count, not match overs
+    // Calculate over range for next phase (to match phase-performance filtering)
+    const startOver = oversPlayedBefore;
+    const endOver = oversPlayedBefore + nextOvers;
+
+    // Find innings matching the SAME criteria as phase-performance endpoint
     const pipeline = [
       { $match: { batter: player, valid_ball: 1 } },
       { $sort: { match_id: 1, innings: 1, ball: 1 } }, // Sort by ball number to maintain sequence
@@ -426,13 +428,50 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
           matchId: '$_id.matchId',
           inning: '$_id.inning',
           allBalls: '$balls',
-          totalBalls: { $size: '$balls' }
+          totalBalls: { $size: '$balls' },
+          // Count balls faced before the phase started (before startOver)
+          ballsBeforePhase: {
+            $size: {
+              $filter: {
+                input: '$balls',
+                as: 'ball',
+                cond: { $lt: ['$$ball.over', startOver] }
+              }
+            }
+          },
+          // Get balls in the phase (between startOver and endOver)
+          ballsInPhase: {
+            $filter: {
+              input: '$balls',
+              as: 'ball',
+              cond: {
+                $and: [
+                  { $gte: ['$$ball.over', startOver] },
+                  { $lt: ['$$ball.over', endOver] }
+                ]
+              }
+            }
+          }
         }
       },
       {
         $match: {
-          // Player must have faced at least (ballsPlayedBefore + ballsInNextPhase) balls total
-          totalBalls: { $gte: ballsPlayedBefore + ballsInNextPhase }
+          // Must have faced at least ballsPlayedBefore balls before the phase
+          ballsBeforePhase: { $gte: ballsPlayedBefore }
+        }
+      },
+      {
+        $project: {
+          matchId: 1,
+          inning: 1,
+          allBalls: 1,
+          ballsInPhaseCount: { $size: '$ballsInPhase' }
+        }
+      },
+      {
+        $match: {
+          // Must have faced at least ballsInNextPhase balls in the phase
+          ballsInPhaseCount: { $gte: ballsInNextPhase }
         }
       }
     ];
@@ -453,17 +492,19 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
     for (const innings of results) {
       const allBalls = innings.allBalls;
 
-      // The innings.ballsBeforePhase already verified this innings has enough balls before the phase
-      // Now we need to get the next ballsInNextPhase balls starting from the (ballsPlayedBefore+1)th ball
-
-      // Skip if player didn't face enough total balls
-      if (allBalls.length < ballsPlayedBefore + ballsInNextPhase) {
-        continue;
+      // Count how many balls the player ACTUALLY faced before the phase started (before startOver)
+      let actualBallsBeforePhase = 0;
+      for (const ball of allBalls) {
+        if (ball.over < startOver) {
+          actualBallsBeforePhase++;
+        } else {
+          break; // Balls are sorted, so we can break here
+        }
       }
 
-      // Get balls in the phase (from ballsPlayedBefore index onwards for ballsInNextPhase balls)
-      // Example: if ballsPlayedBefore=15, we want balls at index 15,16,17... (the 16th, 17th, 18th ball the player faced)
-      const ballsInPhase = allBalls.slice(ballsPlayedBefore, ballsPlayedBefore + ballsInNextPhase);
+      // Get the next ballsInNextPhase balls starting from where the phase begins
+      // Example: if player faced 18 balls before over 7, we get balls at index 18, 19, 20... (the 19th, 20th, 21st ball)
+      const ballsInPhase = allBalls.slice(actualBallsBeforePhase, actualBallsBeforePhase + ballsInNextPhase);
 
       // Skip if we don't have enough balls in the phase
       if (ballsInPhase.length < ballsInNextPhase) {
@@ -477,7 +518,7 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
       const progression = ballsInPhase.map((ball, i) => {
         cumulativeRuns += ball.runs;
         return {
-          ballNumber: ballsPlayedBefore + i + 1, // Ball number for batsman (starting from ballsPlayedBefore + 1)
+          ballNumber: actualBallsBeforePhase + i + 1, // Ball number for batsman (actual count from this innings)
           runsScored: ball.runs,
           cumulativeRuns: cumulativeRuns
         };
