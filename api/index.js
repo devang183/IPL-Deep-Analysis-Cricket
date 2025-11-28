@@ -1977,7 +1977,8 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
               batting_team: '$batting_team',
               bowling_team: '$bowling_team',
               venue: '$venue',
-              season: '$season'
+              season: '$season',
+              date: '$date'
             }
           }
         }
@@ -2099,7 +2100,8 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
         totalRuns,
         ballsFaced,
         strikeRate: parseFloat(strikeRate),
-        progression
+        progression,
+        date: firstBall.date // Include date for sorting on frontend
       });
     }
 

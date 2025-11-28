@@ -52,7 +52,13 @@ function PhaseAnalysis({ player }) {
         player,
         ...formData,
       });
-      setInningsData(response.data.innings || []);
+      // Sort innings by date (most recent first)
+      const sortedInnings = (response.data.innings || []).sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA; // Descending order (newest first)
+      });
+      setInningsData(sortedInnings);
     } catch (err) {
       console.error('Failed to fetch innings data:', err);
     } finally {
