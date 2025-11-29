@@ -89,7 +89,7 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
 
       {/* Player Grid */}
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 gap-2">
           {filteredPlayers.map((player, index) => {
             const colorClass = teamColors[index % teamColors.length];
             const hasImage = playerImages[player];
@@ -102,20 +102,21 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
                     onPlayerSelect(player);
                   }
                 }}
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/50"
+                className="group relative overflow-hidden rounded-lg bg-gradient-to-br p-[1px] hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/50"
                 style={{
-                  background: `linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.3))`
+                  background: `linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(124, 58, 237, 0.5))`
                 }}
               >
-                <div className={`relative h-40 bg-gradient-to-br ${colorClass} rounded-xl overflow-hidden`}>
+                <div className={`relative h-48 bg-gradient-to-br ${colorClass} rounded-lg overflow-hidden`}>
                   {/* Player Image or Initials */}
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                     {hasImage ? (
                       <img
                         src={playerImages[player]}
                         alt={player}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
+                        className="w-full h-full object-cover object-center"
+                        style={{ imageRendering: 'crisp-edges' }}
+                        onError={() => {
                           // Remove from playerImages if failed to load
                           setPlayerImages(prev => {
                             const newImages = { ...prev };
@@ -125,14 +126,14 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
                         }}
                       />
                     ) : (
-                      <div className="text-5xl font-bold text-white/90">
+                      <div className="text-6xl font-bold text-white">
                         {getInitials(player).toUpperCase()}
                       </div>
                     )}
                   </div>
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {/* Gradient Overlay - Only on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
                   {/* Player Name */}
                   <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
