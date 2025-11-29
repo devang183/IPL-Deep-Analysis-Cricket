@@ -25,10 +25,10 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
 
     Promise.all([
       import('./VoroforceEngine'),
-      import('./WebGLRenderer')
-    ]).then(([voroforce, webgl]) => {
+      import('./Canvas2DRenderer')
+    ]).then(([voroforce, canvas2d]) => {
       engineRef.VoroforceEngine = voroforce.VoroforceEngine;
-      rendererRef.WebGLRenderer = webgl.WebGLRenderer;
+      rendererRef.Canvas2DRenderer = canvas2d.Canvas2DRenderer;
       setModulesLoaded(true);
     }).catch(err => {
       console.error('Failed to load modules:', err);
@@ -75,13 +75,13 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
   // Initialize engine and renderer
   useEffect(() => {
     if (!canvasRef.current || nodes.length === 0 || !modulesLoaded) return;
-    if (!engineRef.VoroforceEngine || !rendererRef.WebGLRenderer) return;
+    if (!engineRef.VoroforceEngine || !rendererRef.Canvas2DRenderer) return;
 
     const canvas = canvasRef.current;
     const { width, height } = dimensions;
 
     try {
-      rendererRef.current = new rendererRef.WebGLRenderer(canvas);
+      rendererRef.current = new rendererRef.Canvas2DRenderer(canvas);
       rendererRef.current.resize(width, height);
 
       engineRef.current = new engineRef.VoroforceEngine(width, height, nodes);
@@ -89,8 +89,8 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
 
       setMode('explore');
     } catch (error) {
-      console.error('Failed to initialize WebGL:', error);
-      setError('WebGL not supported on this device');
+      console.error('Failed to initialize Canvas 2D:', error);
+      setError('Canvas 2D not supported on this device');
     }
 
     return () => {
@@ -158,13 +158,18 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const pixelRatio = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1;
 
+    // Find clicked card using rectangular bounds
     const clickedNode = engineRef.current.nodes.find(node => {
-      const dx = node.x - x;
-      const dy = node.y - y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance < (node.baseRadius || node.radius) * pixelRatio + 20;
+      const cardWidth = node.cardWidth || 120;
+      const cardHeight = node.cardHeight || 60;
+
+      const left = node.x - cardWidth / 2;
+      const right = node.x + cardWidth / 2;
+      const top = node.y - cardHeight / 2;
+      const bottom = node.y + cardHeight / 2;
+
+      return x >= left && x <= right && y >= top && y <= bottom;
     });
 
     if (clickedNode) {
@@ -185,27 +190,19 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const pixelRatio = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1;
 
-    // Reset all nodes to base radius first
-    engineRef.current.nodes.forEach(node => {
-      if (node.baseRadius) {
-        node.radius = node.baseRadius;
-      }
-    });
-
-    // Find hovered node and apply zoom effect
+    // Find hovered card using rectangular bounds
     const hoveredNode = engineRef.current.nodes.find(node => {
-      const dx = node.x - x;
-      const dy = node.y - y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance < node.radius * pixelRatio + 20; // Larger hover detection area
-    });
+      const cardWidth = node.cardWidth || 120;
+      const cardHeight = node.cardHeight || 60;
 
-    // Apply smooth zoom effect to hovered node
-    if (hoveredNode && hoveredNode.baseRadius) {
-      hoveredNode.radius = hoveredNode.baseRadius * 2.5; // 2.5x zoom on hover
-    }
+      const left = node.x - cardWidth / 2;
+      const right = node.x + cardWidth / 2;
+      const top = node.y - cardHeight / 2;
+      const bottom = node.y + cardHeight / 2;
+
+      return x >= left && x <= right && y >= top && y <= bottom;
+    });
 
     setHoveredPlayer(hoveredNode || null);
   }, []);

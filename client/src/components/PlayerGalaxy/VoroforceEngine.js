@@ -8,31 +8,49 @@ export class VoroforceEngine {
     this.width = width;
     this.height = height;
     this.nodes = nodes;
-    this.alpha = 1.0; // Simulation strength
-    this.alphaDecay = 0.0228; // Cooling rate
-    this.velocityDecay = 0.4; // Friction
+    this.alpha = 0.3; // Reduced simulation strength for slower movement
+    this.alphaDecay = 0.01; // Slower cooling rate
+    this.velocityDecay = 0.8; // Higher friction for slower movement
     this.running = false;
 
-    // Force parameters - reduced center force for better spread
+    // Force parameters - minimal forces for gentle floating
     this.forceStrength = {
-      center: 0.001,  // Much weaker center force
-      collision: 0.8,
-      charge: -50,    // Stronger repulsion
-      link: 0.1
+      center: 0.0001,  // Extremely weak center force
+      collision: 0.5,  // Gentle collision
+      charge: -5,      // Minimal repulsion
+      link: 0.05
     };
+
+    // Card dimensions
+    this.cardWidth = 120;
+    this.cardHeight = 60;
 
     this.initializeNodes();
   }
 
   initializeNodes() {
+    // Calculate grid layout
+    const cols = Math.ceil(Math.sqrt(this.nodes.length * (this.width / this.height)));
+    const rows = Math.ceil(this.nodes.length / cols);
+    const cellWidth = this.width / cols;
+    const cellHeight = this.height / rows;
+
     this.nodes.forEach((node, i) => {
-      // Random initial position spread across entire screen
-      node.x = Math.random() * this.width;
-      node.y = Math.random() * this.height;
-      node.vx = (Math.random() - 0.5) * 2;  // Random initial velocity
-      node.vy = (Math.random() - 0.5) * 2;
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+
+      // Position in grid with some random offset for natural look
+      node.x = col * cellWidth + cellWidth / 2 + (Math.random() - 0.5) * 40;
+      node.y = row * cellHeight + cellHeight / 2 + (Math.random() - 0.5) * 40;
+      node.vx = (Math.random() - 0.5) * 0.5;  // Minimal initial velocity
+      node.vy = (Math.random() - 0.5) * 0.5;
       node.radius = node.radius || 5;
-      node.baseRadius = node.radius;  // Store original radius for zoom effect
+      node.baseRadius = node.radius;
+
+      // Card-specific properties
+      node.cardWidth = this.cardWidth;
+      node.cardHeight = this.cardHeight;
+      node.isCard = true;
     });
   }
 
@@ -143,7 +161,7 @@ export class VoroforceEngine {
 
   start() {
     this.running = true;
-    this.alpha = 1.0;
+    this.alpha = 0.3; // Gentle start for slower animation
   }
 
   stop() {
