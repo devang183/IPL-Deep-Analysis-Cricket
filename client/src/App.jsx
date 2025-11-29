@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, Galaxy } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, Orbit } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -37,7 +37,7 @@ function App() {
   // Define all tabs
   const allTabs = [
     { id: 'smart', name: 'Smart Search', icon: Sparkles },
-    { id: 'galaxy', name: 'Player Galaxy', icon: Galaxy },
+    { id: 'galaxy', name: 'Player Galaxy', icon: Orbit },
     { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
     { id: 'stats', name: 'Batting Stats', icon: BarChart3 },

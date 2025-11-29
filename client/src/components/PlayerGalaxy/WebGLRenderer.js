@@ -99,7 +99,7 @@ export class WebGLRenderer {
 
   render(nodes, hoveredNode, selectedNode) {
     const gl = this.gl;
-    const pixelRatio = window.devicePixelRatio || 1;
+    const pixelRatio = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1;
 
     // Set viewport
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -223,7 +223,7 @@ export class WebGLRenderer {
   }
 
   resize(width, height) {
-    const pixelRatio = window.devicePixelRatio || 1;
+    const pixelRatio = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1;
     this.canvas.width = width * pixelRatio;
     this.canvas.height = height * pixelRatio;
     this.canvas.style.width = width + 'px';
