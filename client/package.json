@@ -9,13 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.4.0",
     "axios": "^1.6.2",
     "dom-to-image-more": "^3.7.2",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.10.3"
+    "recharts": "^2.10.3",
+    "three": "^0.181.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
