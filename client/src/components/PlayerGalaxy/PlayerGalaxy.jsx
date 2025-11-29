@@ -1,368 +1,160 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Search, X, Maximize2, Minimize2, Play, Pause, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, X } from 'lucide-react';
+import axios from 'axios';
 
 function PlayerGalaxy({ players, onPlayerSelect }) {
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
-  const engineRef = useRef(null);
-  const rendererRef = useRef(null);
-  const animationFrameRef = useRef(null);
-  const [modulesLoaded, setModulesLoaded] = useState(false);
-
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  const [hoveredPlayer, setHoveredPlayer] = useState(null);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [mode, setMode] = useState('intro');
-  const [nodes, setNodes] = useState([]);
-  const [error, setError] = useState(null);
+  const [playerImages, setPlayerImages] = useState({});
 
-  // Dynamically load modules only on client side
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    Promise.all([
-      import('./VoroforceEngine'),
-      import('./Canvas2DRenderer')
-    ]).then(([voroforce, canvas2d]) => {
-      engineRef.VoroforceEngine = voroforce.VoroforceEngine;
-      rendererRef.Canvas2DRenderer = canvas2d.Canvas2DRenderer;
-      setModulesLoaded(true);
-    }).catch(err => {
-      console.error('Failed to load modules:', err);
-      setError('Failed to initialize visualization');
-    });
-  }, []);
-
-  // Initialize nodes from players
+  // Load player images
   useEffect(() => {
     if (!players || players.length === 0) return;
 
-    const maxPlayers = 500;
-    const sampledPlayers = players.length > maxPlayers
-      ? players.slice(0, maxPlayers)
-      : players;
+    // Load images for first 100 players initially
+    const playersToLoad = players.slice(0, 100);
 
-    const teamColors = {
-      'Mumbai Indians': [0.0, 0.4, 0.8, 0.9],
-      'Chennai Super Kings': [1.0, 0.8, 0.0, 0.9],
-      'Royal Challengers Bangalore': [0.8, 0.0, 0.0, 0.9],
-      'Kolkata Knight Riders': [0.4, 0.0, 0.6, 0.9],
-      'Delhi Capitals': [0.0, 0.3, 0.7, 0.9],
-      'Sunrisers Hyderabad': [1.0, 0.5, 0.0, 0.9],
-      'Rajasthan Royals': [0.8, 0.0, 0.5, 0.9],
-      'Punjab Kings': [0.7, 0.0, 0.0, 0.9],
-      'Gujarat Titans': [0.0, 0.2, 0.4, 0.9],
-      'Lucknow Super Giants': [0.2, 0.5, 0.8, 0.9],
-    };
-
-    const playerNodes = sampledPlayers.map((player, i) => ({
-      id: player,
-      name: player,
-      radius: 6 + Math.random() * 4,
-      color: Object.values(teamColors)[i % Object.keys(teamColors).length],
-      x: 0,
-      y: 0,
-      vx: 0,
-      vy: 0
-    }));
-
-    setNodes(playerNodes);
+    playersToLoad.forEach(async (player) => {
+      try {
+        const response = await axios.get(`/api/player/${player}/image`);
+        if (response.data.image_path) {
+          setPlayerImages(prev => ({
+            ...prev,
+            [player]: response.data.image_path
+          }));
+        }
+      } catch (error) {
+        // Silently fail - will show initials
+      }
+    });
   }, [players]);
 
-  // Initialize engine and renderer
-  useEffect(() => {
-    if (!canvasRef.current || nodes.length === 0 || !modulesLoaded) return;
-    if (!engineRef.VoroforceEngine || !rendererRef.Canvas2DRenderer) return;
+  const filteredPlayers = searchQuery
+    ? players.filter(player => player.toLowerCase().includes(searchQuery.toLowerCase()))
+    : players;
 
-    const canvas = canvasRef.current;
-    const { width, height } = dimensions;
-
-    try {
-      rendererRef.current = new rendererRef.Canvas2DRenderer(canvas);
-      rendererRef.current.resize(width, height);
-
-      engineRef.current = new engineRef.VoroforceEngine(width, height, nodes);
-      engineRef.current.start();
-
-      setMode('explore');
-    } catch (error) {
-      console.error('Failed to initialize Canvas 2D:', error);
-      setError('Canvas 2D not supported on this device');
+  const getInitials = (name) => {
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return parts[0][0] + parts[parts.length - 1][0];
     }
-
-    return () => {
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [nodes, dimensions, modulesLoaded]);
-
-  // Animation loop
-  useEffect(() => {
-    if (!engineRef.current || !rendererRef.current || !isPlaying) return;
-
-    const animate = () => {
-      const shouldContinue = engineRef.current.tick();
-
-      rendererRef.current.render(
-        engineRef.current.nodes,
-        hoveredPlayer,
-        selectedPlayer
-      );
-
-      if (shouldContinue || hoveredPlayer || selectedPlayer) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animate();
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [isPlaying, hoveredPlayer, selectedPlayer]);
-
-  // Handle resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (!containerRef.current) return;
-
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      setDimensions({ width, height });
-
-      if (rendererRef.current) {
-        rendererRef.current.resize(width, height);
-      }
-      if (engineRef.current) {
-        engineRef.current.updateDimensions(width, height);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Mouse interaction
-  const handleCanvasClick = useCallback((e) => {
-    if (!canvasRef.current || !engineRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Find clicked card using rectangular bounds
-    const clickedNode = engineRef.current.nodes.find(node => {
-      const cardWidth = node.cardWidth || 120;
-      const cardHeight = node.cardHeight || 60;
-
-      const left = node.x - cardWidth / 2;
-      const right = node.x + cardWidth / 2;
-      const top = node.y - cardHeight / 2;
-      const bottom = node.y + cardHeight / 2;
-
-      return x >= left && x <= right && y >= top && y <= bottom;
-    });
-
-    if (clickedNode) {
-      setSelectedPlayer(clickedNode);
-      setMode('preview');
-      if (onPlayerSelect) {
-        onPlayerSelect(clickedNode.name);
-      }
-    } else {
-      setSelectedPlayer(null);
-      setMode('explore');
-    }
-  }, [onPlayerSelect]);
-
-  const handleCanvasMouseMove = useCallback((e) => {
-    if (!canvasRef.current || !engineRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    // Find hovered card using rectangular bounds
-    const hoveredNode = engineRef.current.nodes.find(node => {
-      const cardWidth = node.cardWidth || 120;
-      const cardHeight = node.cardHeight || 60;
-
-      const left = node.x - cardWidth / 2;
-      const right = node.x + cardWidth / 2;
-      const top = node.y - cardHeight / 2;
-      const bottom = node.y + cardHeight / 2;
-
-      return x >= left && x <= right && y >= top && y <= bottom;
-    });
-
-    setHoveredPlayer(hoveredNode || null);
-  }, []);
-
-  const handleRestart = () => {
-    if (engineRef.current) {
-      engineRef.current.restart();
-      setIsPlaying(true);
-    }
+    return name.substring(0, 2);
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const filteredNodes = searchQuery
-    ? nodes.filter(node => node.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : nodes;
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-slate-950">
-        <div className="text-center p-8 bg-red-900/20 border border-red-500/50 rounded-xl">
-          <h2 className="text-2xl font-bold text-red-400 mb-2">Error</h2>
-          <p className="text-red-300">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!modulesLoaded) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-slate-950">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading Player Galaxy...</p>
-        </div>
-      </div>
-    );
-  }
+  const teamColors = [
+    'from-blue-500 to-blue-700',       // Mumbai Indians
+    'from-yellow-400 to-yellow-600',   // Chennai Super Kings
+    'from-red-500 to-red-700',         // Royal Challengers
+    'from-purple-500 to-purple-700',   // Kolkata Knight Riders
+    'from-blue-600 to-blue-800',       // Delhi Capitals
+    'from-orange-500 to-orange-700',   // Sunrisers Hyderabad
+    'from-pink-500 to-pink-700',       // Rajasthan Royals
+    'from-red-600 to-red-800',         // Punjab Kings
+    'from-teal-500 to-teal-700',       // Gujarat Titans
+    'from-cyan-500 to-cyan-700',       // Lucknow Super Giants
+  ];
 
   return (
-    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50' : 'h-screen'} bg-slate-950`}>
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Player Galaxy</h1>
-              <p className="text-slate-400 text-sm">
-                Explore {nodes.length} IPL players in an interactive force-directed universe
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 transition-all"
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5 text-white" />
-                ) : (
-                  <Play className="w-5 h-5 text-white" />
-                )}
-              </button>
-
-              <button
-                onClick={handleRestart}
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 transition-all"
-              >
-                <RotateCcw className="w-5 h-5 text-white" />
-              </button>
-
-              <button
-                onClick={toggleFullscreen}
-                className="p-3 bg-white/10 hover:bg-white/20 rounded-lg backdrop-blur-sm border border-white/20 transition-all"
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="w-5 h-5 text-white" />
-                ) : (
-                  <Maximize2 className="w-5 h-5 text-white" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search players..."
-              className="w-full pl-12 pr-12 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2"
-              >
-                <X className="w-5 h-5 text-slate-400 hover:text-white transition-colors" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div ref={containerRef} className="w-full h-full">
-        <canvas
-          ref={canvasRef}
-          onClick={handleCanvasClick}
-          onMouseMove={handleCanvasMouseMove}
-          className="cursor-pointer"
-        />
-      </div>
-
-      {hoveredPlayer && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none">
-          <div className="bg-black/80 backdrop-blur-md px-6 py-3 rounded-lg border border-white/20">
-            <p className="text-white font-semibold text-lg">{hoveredPlayer.name}</p>
-          </div>
-        </div>
-      )}
-
-      {selectedPlayer && mode === 'preview' && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent p-6">
-          <div className="max-w-2xl mx-auto bg-white/5 backdrop-blur-md rounded-xl border border-white/20 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">{selectedPlayer.name}</h2>
-              <button
-                onClick={() => {
-                  setSelectedPlayer(null);
-                  setMode('explore');
-                }}
-                className="p-2 hover:bg-white/10 rounded-lg transition-all"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-            <p className="text-slate-300">
-              Click on the player name in the app to view detailed statistics and performance analysis.
+    <div className="min-h-screen bg-slate-950 p-6">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Player Galaxy</h1>
+            <p className="text-slate-400 text-sm">
+              Browse {filteredPlayers.length} IPL players
             </p>
           </div>
         </div>
-      )}
 
-      <div className="absolute top-24 right-6 z-20 bg-black/60 backdrop-blur-sm px-4 py-3 rounded-lg border border-white/20">
-        <div className="text-white text-sm space-y-1">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-400">Players:</span>
-            <span className="font-semibold">{filteredNodes.length}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-400">Mode:</span>
-            <span className="font-semibold capitalize">{mode}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-400">FPS:</span>
-            <span className="font-semibold">60</span>
-          </div>
+        {/* Search Bar */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search players..."
+            className="w-full pl-12 pr-12 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2"
+            >
+              <X className="w-5 h-5 text-slate-400 hover:text-white transition-colors" />
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Player Grid */}
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+          {filteredPlayers.map((player, index) => {
+            const colorClass = teamColors[index % teamColors.length];
+            const hasImage = playerImages[player];
+
+            return (
+              <button
+                key={player}
+                onClick={() => {
+                  if (onPlayerSelect) {
+                    onPlayerSelect(player);
+                  }
+                }}
+                className="group relative overflow-hidden rounded-xl bg-gradient-to-br p-[2px] hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/50"
+                style={{
+                  background: `linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(124, 58, 237, 0.3))`
+                }}
+              >
+                <div className={`relative h-40 bg-gradient-to-br ${colorClass} rounded-xl overflow-hidden`}>
+                  {/* Player Image or Initials */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {hasImage ? (
+                      <img
+                        src={playerImages[player]}
+                        alt={player}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Remove from playerImages if failed to load
+                          setPlayerImages(prev => {
+                            const newImages = { ...prev };
+                            delete newImages[player];
+                            return newImages;
+                          });
+                        }}
+                      />
+                    ) : (
+                      <div className="text-5xl font-bold text-white/90">
+                        {getInitials(player).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Player Name */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    <p className="text-white text-sm font-semibold text-center leading-tight">
+                      {player.split(' ').length > 2
+                        ? `${player.split(' ')[0]} ${player.split(' ')[player.split(' ').length - 1]}`
+                        : player
+                      }
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {filteredPlayers.length === 0 && (
+          <div className="text-center py-20">
+            <div className="text-slate-400 text-lg">No players found</div>
+            <p className="text-slate-500 text-sm mt-2">Try a different search term</p>
+          </div>
+        )}
       </div>
     </div>
   );
