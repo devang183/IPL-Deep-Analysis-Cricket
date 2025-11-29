@@ -54,13 +54,13 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6">
+    <div className="min-h-screen p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Player Galaxy</h1>
-            <p className="text-slate-400 text-sm">
+            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">Player Galaxy</h1>
+            <p className="text-slate-300 text-sm drop-shadow-md">
               Browse {filteredPlayers.length} IPL players
             </p>
           </div>
@@ -68,13 +68,13 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
 
         {/* Search Bar */}
         <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-300" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search players..."
-            className="w-full pl-12 pr-12 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+            className="w-full pl-12 pr-12 py-3 bg-slate-800/40 backdrop-blur-md border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
           />
           {searchQuery && (
             <button
@@ -89,7 +89,7 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
 
       {/* Player Grid */}
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-9 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
           {filteredPlayers.map((player, index) => {
             const colorClass = teamColors[index % teamColors.length];
             const hasImage = playerImages[player];
@@ -102,20 +102,21 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
                     onPlayerSelect(player);
                   }
                 }}
-                className="group relative overflow-hidden rounded-lg bg-gradient-to-br p-[1px] hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/50"
-                style={{
-                  background: `linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(124, 58, 237, 0.5))`
-                }}
+                className="group relative overflow-hidden rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50 bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 hover:border-purple-500/50"
               >
-                <div className={`relative h-48 bg-gradient-to-br ${colorClass} rounded-lg overflow-hidden`}>
+                <div className="relative h-64">
                   {/* Player Image or Initials */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                  <div className="absolute inset-0 flex items-center justify-center">
                     {hasImage ? (
                       <img
                         src={playerImages[player]}
                         alt={player}
-                        className="w-full h-full object-cover object-center"
-                        style={{ imageRendering: 'crisp-edges' }}
+                        className="w-full h-full object-contain"
+                        style={{
+                          imageRendering: '-webkit-optimize-contrast',
+                          backfaceVisibility: 'hidden',
+                          transform: 'translateZ(0)'
+                        }}
                         onError={() => {
                           // Remove from playerImages if failed to load
                           setPlayerImages(prev => {
@@ -126,18 +127,18 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
                         }}
                       />
                     ) : (
-                      <div className="text-6xl font-bold text-white">
+                      <div className={`text-6xl font-bold bg-gradient-to-br ${colorClass} bg-clip-text text-transparent`}>
                         {getInitials(player).toUpperCase()}
                       </div>
                     )}
                   </div>
 
                   {/* Gradient Overlay - Only on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
                   {/* Player Name */}
                   <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="text-white text-sm font-semibold text-center leading-tight">
+                    <p className="text-white text-sm font-semibold text-center leading-tight drop-shadow-lg">
                       {player.split(' ').length > 2
                         ? `${player.split(' ')[0]} ${player.split(' ')[player.split(' ').length - 1]}`
                         : player
