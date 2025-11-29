@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, Loader2, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -65,6 +65,26 @@ function PhaseAnalysis({ player }) {
       setLoadingInnings(false);
     }
   };
+
+  // Auto-scroll selected innings card to center
+  useEffect(() => {
+    if (selectedInning) {
+      const index = inningsData.indexOf(selectedInning);
+      if (index !== -1) {
+        const timeoutId = setTimeout(() => {
+          const cardElement = document.getElementById(`innings-card-${index}`);
+          if (cardElement) {
+            cardElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+              inline: 'center'
+            });
+          }
+        }, 100);
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [selectedInning, inningsData]);
 
   const COLORS = ['#0ea5e9', '#06b6d4', '#8b5cf6', '#ec4899'];
 
@@ -378,6 +398,7 @@ function PhaseAnalysis({ player }) {
                         return (
                           <button
                             key={index}
+                            id={`innings-card-${index}`}
                             onClick={() => setSelectedInning(innings)}
                             className={`flex-shrink-0 w-44 p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
                               isSelected
