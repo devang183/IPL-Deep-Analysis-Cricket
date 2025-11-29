@@ -11,6 +11,53 @@ export class Canvas2DRenderer {
     if (!this.ctx) {
       throw new Error('Canvas 2D not supported');
     }
+
+    this.imageCache = new Map(); // Cache loaded images
+    this.loadingImages = new Set(); // Track images being loaded
+  }
+
+  // Load player image
+  loadPlayerImage(playerName) {
+    if (this.imageCache.has(playerName)) {
+      return this.imageCache.get(playerName);
+    }
+
+    if (this.loadingImages.has(playerName)) {
+      return null;
+    }
+
+    this.loadingImages.add(playerName);
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      this.imageCache.set(playerName, img);
+      this.loadingImages.delete(playerName);
+    };
+
+    img.onerror = () => {
+      this.imageCache.set(playerName, null); // Mark as failed
+      this.loadingImages.delete(playerName);
+    };
+
+    // Fetch image path from API
+    fetch(`/api/player/${encodeURIComponent(playerName)}/image`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.image_path) {
+          img.src = data.image_path;
+        } else {
+          this.imageCache.set(playerName, null);
+          this.loadingImages.delete(playerName);
+        }
+      })
+      .catch(() => {
+        this.imageCache.set(playerName, null);
+        this.loadingImages.delete(playerName);
+      });
+
+    return null;
   }
 
   render(nodes, hoveredNode, selectedNode) {
@@ -92,29 +139,68 @@ export class Canvas2DRenderer {
       this.roundRect(ctx, x, y, scaledWidth, scaledHeight, borderRadius);
       ctx.stroke();
 
-      // Reset shadow for text
+      // Reset shadow for image/text
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
 
-      // Draw player name
-      ctx.fillStyle = 'white';
-      ctx.font = `${(isHovered ? 11 : 9) * pixelRatio}px Inter, system-ui, -apple-system, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      // Load and draw player image
+      const playerImage = this.loadPlayerImage(node.name);
 
-      // Truncate name if too long
-      const maxWidth = scaledWidth - 10 * pixelRatio;
-      let displayName = node.name || '';
+      if (playerImage && playerImage.complete) {
+        // Draw circular player image
+        const imageSize = Math.min(scaledWidth, scaledHeight) * 0.85;
+        const imageX = x + scaledWidth / 2;
+        const imageY = y + scaledHeight / 2;
 
-      // Split name and show first name + last initial if too long
-      if (ctx.measureText(displayName).width > maxWidth) {
-        const nameParts = displayName.split(' ');
-        if (nameParts.length > 1) {
-          displayName = nameParts[0] + ' ' + nameParts[nameParts.length - 1][0] + '.';
+        // Clip to circle
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(imageX, imageY, imageSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        // Draw image
+        ctx.drawImage(
+          playerImage,
+          imageX - imageSize / 2,
+          imageY - imageSize / 2,
+          imageSize,
+          imageSize
+        );
+
+        ctx.restore();
+
+        // Draw name label below (small)
+        if (isHovered) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          ctx.font = `bold ${7 * pixelRatio}px Inter, system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+
+          // Truncate name
+          let displayName = node.name || '';
+          const nameParts = displayName.split(' ');
+          if (nameParts.length > 1) {
+            displayName = nameParts[0] + ' ' + nameParts[nameParts.length - 1][0] + '.';
+          }
+
+          ctx.fillText(displayName, x + scaledWidth / 2, y + scaledHeight - 5 * pixelRatio);
         }
-      }
+      } else {
+        // Fallback: Draw player initials if image not loaded
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${(isHovered ? 16 : 14) * pixelRatio}px Inter, system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
 
-      ctx.fillText(displayName, x + scaledWidth / 2, y + scaledHeight / 2);
+        // Get initials
+        const nameParts = (node.name || '').split(' ');
+        const initials = nameParts.length > 1
+          ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+          : nameParts[0].substring(0, 2);
+
+        ctx.fillText(initials.toUpperCase(), x + scaledWidth / 2, y + scaledHeight / 2);
+      }
 
       // Restore context
       ctx.restore();

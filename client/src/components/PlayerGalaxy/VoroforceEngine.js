@@ -119,44 +119,32 @@ export class VoroforceEngine {
 
   // Update positions
   tick() {
-    if (!this.running) return;
+    if (!this.running) return true; // Keep animation running for floating effect
 
-    // Apply forces
-    this.applyCenter();
-    this.applyCollision();
-    this.applyCharge();
-
-    // Update positions with velocity
+    // Apply gentle floating animation without forces
     this.nodes.forEach(node => {
-      node.vx *= this.velocityDecay;
-      node.vy *= this.velocityDecay;
-
-      node.x += node.vx;
-      node.y += node.vy;
-
-      // Boundary constraints with soft bounce
-      const margin = node.radius;
-      if (node.x < margin) {
-        node.x = margin;
-        node.vx *= -0.5;
-      } else if (node.x > this.width - margin) {
-        node.x = this.width - margin;
-        node.vx *= -0.5;
+      // Gentle sinusoidal floating effect
+      if (!node.floatTime) {
+        node.floatTime = Math.random() * Math.PI * 2;
+        node.floatSpeedX = 0.3 + Math.random() * 0.2;
+        node.floatSpeedY = 0.4 + Math.random() * 0.3;
+        node.floatAmplitudeX = 8 + Math.random() * 6;
+        node.floatAmplitudeY = 10 + Math.random() * 8;
+        node.originalX = node.x;
+        node.originalY = node.y;
       }
 
-      if (node.y < margin) {
-        node.y = margin;
-        node.vy *= -0.5;
-      } else if (node.y > this.height - margin) {
-        node.y = this.height - margin;
-        node.vy *= -0.5;
-      }
+      node.floatTime += 0.01;
+
+      // Apply gentle floating offset from original position
+      const offsetX = Math.sin(node.floatTime * node.floatSpeedX) * node.floatAmplitudeX;
+      const offsetY = Math.cos(node.floatTime * node.floatSpeedY) * node.floatAmplitudeY;
+
+      node.x = node.originalX + offsetX;
+      node.y = node.originalY + offsetY;
     });
 
-    // Cool down simulation
-    this.alpha += (0 - this.alpha) * this.alphaDecay;
-
-    return this.alpha > 0.001;
+    return true; // Always continue animation
   }
 
   start() {
