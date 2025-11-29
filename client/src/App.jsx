@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare } from 'lucide-react';
+import { Activity, TrendingUp, Target, BarChart3, Users, Trophy, LogOut, Shield, Sparkles, MessageSquare, Galaxy } from 'lucide-react';
 import PlayerSelector from './components/PlayerSelector';
 import PhaseAnalysis from './components/PhaseAnalysis';
 import DismissalAnalysis from './components/DismissalAnalysis';
@@ -13,6 +13,7 @@ import MOTMAnalysis from './components/MOTMAnalysis';
 import RedditFeed from './components/RedditFeed';
 import AdminDashboard from './components/AdminDashboard';
 import SmartSearch from './components/SmartSearch';
+import PlayerGalaxy from './components/PlayerGalaxy';
 import ExampleQueries from './components/ExampleQueries';
 import HelpGuide from './components/HelpGuide';
 import AuthPage from './components/AuthPage';
@@ -36,6 +37,7 @@ function App() {
   // Define all tabs
   const allTabs = [
     { id: 'smart', name: 'Smart Search', icon: Sparkles },
+    { id: 'galaxy', name: 'Player Galaxy', icon: Galaxy },
     { id: 'phase', name: 'Phase Performance', icon: TrendingUp },
     { id: 'dismissal', name: 'Dismissal Patterns', icon: Target },
     { id: 'stats', name: 'Batting Stats', icon: BarChart3 },
@@ -289,7 +291,17 @@ function App() {
             />
           )}
 
-          {activeTab !== 'smart' && activeTab !== 'stats' && activeTab !== 'bowler' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (
+          {activeTab === 'galaxy' && (
+            <PlayerGalaxy
+              players={players}
+              onPlayerSelect={(playerName) => {
+                setSelectedPlayer(playerName);
+                setActiveTab('stats');
+              }}
+            />
+          )}
+
+          {activeTab !== 'smart' && activeTab !== 'galaxy' && activeTab !== 'stats' && activeTab !== 'bowler' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (
             <div className="card text-center py-12 md:py-16">
               <Activity className="w-12 h-12 md:w-16 md:h-16 text-slate-300 mx-auto mb-3 md:mb-4" />
               <h3 className="text-base md:text-lg lg:text-xl font-semibold text-slate-700 mb-2 px-2">
