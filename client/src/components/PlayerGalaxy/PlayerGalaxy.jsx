@@ -158,13 +158,13 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const pixelRatio = window.devicePixelRatio || 1;
+    const pixelRatio = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1;
 
     const clickedNode = engineRef.current.nodes.find(node => {
       const dx = node.x - x;
       const dy = node.y - y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance < node.radius * pixelRatio;
+      return distance < (node.baseRadius || node.radius) * pixelRatio + 20;
     });
 
     if (clickedNode) {
@@ -185,14 +185,27 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
     const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const pixelRatio = window.devicePixelRatio || 1;
+    const pixelRatio = (typeof window !== 'undefined' ? window.devicePixelRatio : 1) || 1;
 
+    // Reset all nodes to base radius first
+    engineRef.current.nodes.forEach(node => {
+      if (node.baseRadius) {
+        node.radius = node.baseRadius;
+      }
+    });
+
+    // Find hovered node and apply zoom effect
     const hoveredNode = engineRef.current.nodes.find(node => {
       const dx = node.x - x;
       const dy = node.y - y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance < node.radius * pixelRatio;
+      return distance < node.radius * pixelRatio + 20; // Larger hover detection area
     });
+
+    // Apply smooth zoom effect to hovered node
+    if (hoveredNode && hoveredNode.baseRadius) {
+      hoveredNode.radius = hoveredNode.baseRadius * 2.5; // 2.5x zoom on hover
+    }
 
     setHoveredPlayer(hoveredNode || null);
   }, []);

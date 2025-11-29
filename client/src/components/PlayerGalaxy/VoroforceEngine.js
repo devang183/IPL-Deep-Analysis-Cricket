@@ -13,11 +13,11 @@ export class VoroforceEngine {
     this.velocityDecay = 0.4; // Friction
     this.running = false;
 
-    // Force parameters
+    // Force parameters - reduced center force for better spread
     this.forceStrength = {
-      center: 0.05,
-      collision: 0.7,
-      charge: -30,
+      center: 0.001,  // Much weaker center force
+      collision: 0.8,
+      charge: -50,    // Stronger repulsion
       link: 0.1
     };
 
@@ -26,15 +26,13 @@ export class VoroforceEngine {
 
   initializeNodes() {
     this.nodes.forEach((node, i) => {
-      // Random initial position in circle
-      const angle = (i / this.nodes.length) * Math.PI * 2;
-      const radius = Math.min(this.width, this.height) * 0.4;
-
-      node.x = this.width / 2 + Math.cos(angle) * radius;
-      node.y = this.height / 2 + Math.sin(angle) * radius;
-      node.vx = 0;
-      node.vy = 0;
+      // Random initial position spread across entire screen
+      node.x = Math.random() * this.width;
+      node.y = Math.random() * this.height;
+      node.vx = (Math.random() - 0.5) * 2;  // Random initial velocity
+      node.vy = (Math.random() - 0.5) * 2;
       node.radius = node.radius || 5;
+      node.baseRadius = node.radius;  // Store original radius for zoom effect
     });
   }
 
