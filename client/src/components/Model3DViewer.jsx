@@ -1,23 +1,34 @@
-import { Suspense, useRef } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, PresentationControls, Stage, Environment } from '@react-three/drei';
 import { Loader2 } from 'lucide-react';
 
 function Model({ url }) {
-  const { scene } = useGLTF(url);
-  const modelRef = useRef();
+  try {
+    const { scene } = useGLTF(url);
+    const modelRef = useRef();
 
-  // Optional: Add subtle rotation animation
-  useFrame((state) => {
-    if (modelRef.current) {
-      modelRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
-    }
-  });
+    // Optional: Add subtle rotation animation
+    useFrame((state) => {
+      if (modelRef.current) {
+        modelRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+      }
+    });
 
-  return <primitive ref={modelRef} object={scene} scale={1.5} />;
+    return <primitive ref={modelRef} object={scene} scale={1.5} />;
+  } catch (error) {
+    console.error('Error loading 3D model:', error);
+    return null;
+  }
 }
 
 function Model3DViewer({ modelPath = '/models/Virat-Kohli.glb', showControls = true }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return null; // Return null to hide the component on error
+  }
+
   return (
     <div className="w-full h-full min-h-[400px] relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
       {/* Info overlay */}
@@ -33,6 +44,13 @@ function Model3DViewer({ modelPath = '/models/Virat-Kohli.glb', showControls = t
         camera={{ position: [0, 0, 5], fov: 45 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#0f172a', 1);
+        }}
+        onError={(error) => {
+          console.error('Canvas error:', error);
+          setHasError(true);
+        }}
       >
         <Suspense fallback={null}>
           {/* Lighting */}
@@ -70,16 +88,12 @@ function Model3DViewer({ modelPath = '/models/Virat-Kohli.glb', showControls = t
       </Canvas>
 
       {/* Loading fallback overlay */}
-      <Suspense fallback={
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-            <p className="text-white/60 text-sm">Loading 3D Model...</p>
-          </div>
+      <div className="absolute inset-0 flex items-center justify-center bg-slate-900 pointer-events-none">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-white/60 text-sm">Loading 3D Model...</p>
         </div>
-      }>
-        {/* This empty Suspense ensures loading state shows */}
-      </Suspense>
+      </div>
     </div>
   );
 }

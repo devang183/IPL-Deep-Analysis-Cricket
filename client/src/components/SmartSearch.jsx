@@ -6,7 +6,6 @@ import PlayerStats from './PlayerStats';
 import BowlerStats from './BowlerStats';
 import BatsmanVsBowler from './BatsmanVsBowler';
 import MOTMAnalysis from './MOTMAnalysis';
-import Model3DViewer from './Model3DViewer';
 import { findBestPlayerMatch, findPlayerSuggestions, checkCommonNameMapping } from '../utils/nameMatching';
 
 function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mode = 'batting', showExamples = true, exampleQuery = '' }) {
@@ -291,16 +290,11 @@ function SmartSearch({ players, onPlayerSelect, onTabChange, onBowlerSelect, mod
 
   return (
     <div className="space-y-6">
-      {/* Header with 3D Model */}
-      <div className="animate-fade-in-down">
-        <div className="flex items-center justify-center gap-3 mb-6">
+      {/* Header */}
+      <div className="text-center animate-fade-in-down">
+        <div className="flex items-center justify-center gap-3 mb-4">
           <Sparkles className="w-8 h-8 text-primary-600 animate-bounce-subtle" />
           <h2 className="text-3xl font-bold text-slate-800">Smart Search</h2>
-        </div>
-
-        {/* 3D Model Viewer */}
-        <div className="w-full h-[500px] mb-6">
-          <Model3DViewer modelPath="/models/Virat-Kohli.glb" showControls={true} />
         </div>
       </div>
 
