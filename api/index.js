@@ -365,6 +365,30 @@ app.get('/api/bowlers', async (req, res) => {
   }
 });
 
+// Get player birth dates from IPLPlayersDOB collection
+app.get('/api/players/birthdays', async (req, res) => {
+  try {
+    const { db } = await connectToDatabase();
+    const dobCollection = db.collection('IPLPlayersDOB');
+
+    // Get all players with their date_of_birth
+    const players = await dobCollection.find({
+      date_of_birth: { $exists: true, $ne: '' }
+    }).toArray();
+
+    res.json({
+      players: players.map(p => ({
+        name: p.name || p.player_name || p._id,
+        date_of_birth: p.date_of_birth
+      })),
+      count: players.length
+    });
+  } catch (error) {
+    console.error('Error fetching player birthdays:', error);
+    res.status(500).json({ error: 'Failed to fetch player birthdays' });
+  }
+});
+
 // Get player overall stats (supporting both routes for compatibility)
 app.get('/api/stats/:name', async (req, res) => {
   try {
