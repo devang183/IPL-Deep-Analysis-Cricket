@@ -162,6 +162,28 @@ function BirthdaySunburst() {
     // Color scales for each layer
     const monthRangeColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']; // Blue, Green, Orange, Red
 
+    // Helper function to get color for any node
+    const getNodeColor = (node) => {
+      if (node.depth === 1) {
+        // Month range layer - use distinct colors
+        const index = node.parent.children.indexOf(node);
+        return monthRangeColors[index % monthRangeColors.length];
+      } else if (node.depth === 2) {
+        // Day layer - lighter shade of parent
+        const parentColor = getNodeColor(node.parent);
+        return d3.color(parentColor).brighter(0.5).toString();
+      } else if (node.depth === 3) {
+        // Year layer - even lighter
+        const parentColor = getNodeColor(node.parent.parent);
+        return d3.color(parentColor).brighter(1).toString();
+      } else if (node.depth === 4) {
+        // Player layer - lightest
+        const parentColor = getNodeColor(node.parent.parent.parent);
+        return d3.color(parentColor).brighter(1.5).toString();
+      }
+      return '#666';
+    };
+
     const arc = d3.arc()
       .startAngle(d => d.x0)
       .endAngle(d => d.x1)
@@ -169,30 +191,12 @@ function BirthdaySunburst() {
       .outerRadius(d => d.y1);
 
     // Draw arcs
-    const paths = svg.selectAll('path')
+    svg.selectAll('path')
       .data(hierarchy.descendants().filter(d => d.depth > 0))
       .enter()
       .append('path')
       .attr('d', arc)
-      .attr('fill', d => {
-        if (d.depth === 1) {
-          // Month range layer - use distinct colors
-          const index = d.parent.children.indexOf(d);
-          return monthRangeColors[index % monthRangeColors.length];
-        } else if (d.depth === 2) {
-          // Day layer - lighter shade of parent
-          const parentColor = d3.select(paths.nodes()[hierarchy.descendants().indexOf(d.parent) - 1]).attr('fill');
-          return d3.color(parentColor).brighter(0.5);
-        } else if (d.depth === 3) {
-          // Year layer - even lighter
-          const parentColor = d3.select(paths.nodes()[hierarchy.descendants().indexOf(d.parent.parent) - 1]).attr('fill');
-          return d3.color(parentColor).brighter(1);
-        } else {
-          // Player layer - lightest
-          const parentColor = d3.select(paths.nodes()[hierarchy.descendants().indexOf(d.parent.parent.parent) - 1]).attr('fill');
-          return d3.color(parentColor).brighter(1.5);
-        }
-      })
+      .attr('fill', d => getNodeColor(d))
       .attr('stroke', '#1e293b')
       .attr('stroke-width', 1)
       .style('cursor', 'pointer')
