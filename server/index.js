@@ -557,6 +557,29 @@ app.post('/api/analyze/innings-progression', async (req, res) => {
   }
 });
 
+// Get player birth dates from IPLPlayersDOB collection
+app.get('/api/players/birthdays', async (req, res) => {
+  try {
+    const dobCollection = db.collection('IPLPlayersDOB');
+
+    // Get all players with their date_of_birth
+    const players = await dobCollection.find({
+      date_of_birth: { $exists: true, $ne: '' }
+    }).toArray();
+
+    res.json({
+      players: players.map(p => ({
+        name: p.name || p.player_name || p._id,
+        date_of_birth: p.date_of_birth
+      })),
+      count: players.length
+    });
+  } catch (error) {
+    console.error('Error fetching player birthdays:', error);
+    res.status(500).json({ error: 'Failed to fetch player birthdays' });
+  }
+});
+
 // Debug endpoint to check raw counts
 app.get('/api/debug/:player', async (req, res) => {
   try {
