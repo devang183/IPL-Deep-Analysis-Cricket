@@ -3,6 +3,7 @@ import { Target, Loader2, AlertCircle, TrendingUp, Users, Activity, Zap, User } 
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { findBestPlayerMatch } from '../utils/nameMatching';
+import MatrixLoader from './MatrixLoader';
 
 function BatsmanVsBowler({ player, initialBowler }) {
   const [bowlers, setBowlers] = useState([]);
@@ -353,8 +354,7 @@ function BatsmanVsBowler({ player, initialBowler }) {
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-          <span className="ml-3 text-slate-600">Analyzing matchup...</span>
+          <MatrixLoader text="Analyzing matchup..." />
         </div>
       )}
 
