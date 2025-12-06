@@ -76,6 +76,12 @@ function BirthdaySunburst() {
       if (!day || !month || !year || isNaN(day) || isNaN(month) || isNaN(year)) return;
       if (month < 1 || month > 12 || day < 1 || day > 31) return;
 
+      // Handle 2-digit years (e.g., 81 -> 1981, 05 -> 2005)
+      if (year < 100) {
+        // Assume years 00-30 are 2000s, 31-99 are 1900s
+        year = year <= 30 ? 2000 + year : 1900 + year;
+      }
+
       const key = `${month}-${day}`;
       if (!data[key]) {
         data[key] = [];
