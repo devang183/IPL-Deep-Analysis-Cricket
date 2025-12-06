@@ -1,11 +1,54 @@
+import { useState, useRef } from 'react';
 import './PlayerGalaxyCard.css';
 
 function PlayerGalaxyCard({ player, metadata, onSelect }) {
   const playerMeta = metadata[player] || {};
+  const [isRevealed, setIsRevealed] = useState(false);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartX.current || !touchStartY.current) return;
+
+    const touchEndX = e.touches[0].clientX;
+    const touchEndY = e.touches[0].clientY;
+
+    const deltaX = Math.abs(touchEndX - touchStartX.current);
+    const deltaY = Math.abs(touchEndY - touchStartY.current);
+
+    // If horizontal movement is greater than vertical, it's a swipe
+    if (deltaX > deltaY && deltaX > 30) {
+      setIsRevealed(true);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartX.current = 0;
+    touchStartY.current = 0;
+  };
+
+  const handleClick = () => {
+    if (isRevealed) {
+      onSelect && onSelect(player);
+    } else {
+      setIsRevealed(true);
+    }
+  };
 
   return (
     <div className="player-card-parent">
-      <div className="player-card" onClick={() => onSelect && onSelect(player)}>
+      <div
+        className={`player-card ${isRevealed ? 'revealed' : ''}`}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="player-card-glass">
           <div className="player-card-content">
             <span className="player-name">{player}</span>

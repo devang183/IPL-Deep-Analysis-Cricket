@@ -338,35 +338,40 @@
   }
 }
 
-/* Mobile/Touch: simpler active state */
+/* Mobile/Touch: revealed state on swipe/tap */
 @media (hover: none) and (pointer: coarse) {
-  .player-card-parent:active .player-card {
-    transform: scale(0.98);
+  .player-card.revealed {
+    transform: scale(1.02);
     box-shadow: rgba(5, 71, 17, 0.2) 20px 30px 15px -30px, rgba(5, 71, 17, 0.15) 0px 15px 20px 0px;
   }
 
-  .player-card-parent:active .player-card .player-card-content .player-details {
+  .player-card.revealed .player-card-content .player-details {
     opacity: 1;
     transform: translateY(0);
   }
 
-  .player-card-parent:active .player-card .player-card-bottom .view-more {
+  .player-card.revealed .player-card-bottom .view-more {
     opacity: 1;
   }
 
-  .player-card-parent:active .player-card .player-card-logo .circle2 {
+  .player-card.revealed .player-card-logo .circle2 {
     transform: translate3d(0, 0, 30px);
   }
 
-  .player-card-parent:active .player-card .player-card-logo .circle3 {
+  .player-card.revealed .player-card-logo .circle3 {
     transform: translate3d(0, 0, 40px);
   }
 
-  .player-card-parent:active .player-card .player-card-logo .circle4 {
+  .player-card.revealed .player-card-logo .circle4 {
     transform: translate3d(0, 0, 50px);
   }
 
-  .player-card-parent:active .player-card .player-card-logo .circle5 {
+  .player-card.revealed .player-card-logo .circle5 {
     transform: translate3d(0, 0, 60px);
+  }
+
+  /* Subtle pulse on tap */
+  .player-card-parent:active .player-card:not(.revealed) {
+    transform: scale(0.98);
   }
 }
