@@ -1,17 +1,31 @@
-import { useState, useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+import { useState, useEffect } from 'react';
+import { Calendar, Cake, Users, TrendingUp, X } from 'lucide-react';
 import axios from 'axios';
-import { X, Calendar } from 'lucide-react';
 
 function BirthdaySunburst() {
   const [birthdayData, setBirthdayData] = useState(null);
-  const [selectedSegment, setSelectedSegment] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
   const [playerList, setPlayerList] = useState([]);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const svgRef = useRef(null);
-  const containerRef = useRef(null);
+  const [stats, setStats] = useState(null);
+
+  const months = [
+    { name: 'January', short: 'Jan', days: 31, color: 'from-blue-500 to-blue-600' },
+    { name: 'February', short: 'Feb', days: 29, color: 'from-purple-500 to-purple-600' },
+    { name: 'March', short: 'Mar', days: 31, color: 'from-pink-500 to-pink-600' },
+    { name: 'April', short: 'Apr', days: 30, color: 'from-red-500 to-red-600' },
+    { name: 'May', short: 'May', days: 31, color: 'from-orange-500 to-orange-600' },
+    { name: 'June', short: 'Jun', days: 30, color: 'from-yellow-500 to-yellow-600' },
+    { name: 'July', short: 'Jul', days: 31, color: 'from-lime-500 to-lime-600' },
+    { name: 'August', short: 'Aug', days: 31, color: 'from-green-500 to-green-600' },
+    { name: 'September', short: 'Sep', days: 30, color: 'from-emerald-500 to-emerald-600' },
+    { name: 'October', short: 'Oct', days: 31, color: 'from-teal-500 to-teal-600' },
+    { name: 'November', short: 'Nov', days: 30, color: 'from-cyan-500 to-cyan-600' },
+    { name: 'December', short: 'Dec', days: 31, color: 'from-indigo-500 to-indigo-600' }
+  ];
 
   // Fetch birthday data from API
   useEffect(() => {
@@ -19,10 +33,9 @@ function BirthdaySunburst() {
       try {
         setLoading(true);
         const response = await axios.get('/api/players/birthdays');
-
-        // Transform data into hierarchical structure
-        const hierarchyData = transformBirthdayData(response.data.players);
-        setBirthdayData(hierarchyData);
+        const processedData = processBirthdayData(response.data.players);
+        setBirthdayData(processedData);
+        calculateStats(processedData);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching birthday data:', err);
@@ -34,29 +47,14 @@ function BirthdaySunburst() {
     fetchBirthdays();
   }, []);
 
-  // Transform flat birthday data into hierarchical structure
-  const transformBirthdayData = (players) => {
-    const root = {
-      name: 'IPL Players',
-      children: []
-    };
+  const processBirthdayData = (players) => {
+    const data = {};
 
-    // Month ranges: [01-03], [04-06], [07-09], [10-12]
-    const monthRanges = [
-      { name: 'Jan-Mar', range: [1, 2, 3], children: [] },
-      { name: 'Apr-Jun', range: [4, 5, 6], children: [] },
-      { name: 'Jul-Sep', range: [7, 8, 9], children: [] },
-      { name: 'Oct-Dec', range: [10, 11, 12], children: [] }
-    ];
-
-    // Parse dates and group by month range -> day -> year -> players
     players.forEach(player => {
-      // Skip if date_of_birth is missing, empty, or not a string
       if (!player.date_of_birth || typeof player.date_of_birth !== 'string' || player.date_of_birth.trim() === '') {
         return;
       }
 
-      // Parse date_of_birth (assuming formats like "DD/MM/YYYY" or "YYYY-MM-DD")
       let day, month, year;
 
       if (player.date_of_birth.includes('/')) {
@@ -75,200 +73,80 @@ function BirthdaySunburst() {
         }
       }
 
-      // Validate parsed values
       if (!day || !month || !year || isNaN(day) || isNaN(month) || isNaN(year)) return;
       if (month < 1 || month > 12 || day < 1 || day > 31) return;
 
-      // Find the month range
-      const monthRange = monthRanges.find(mr => mr.range.includes(month));
-      if (!monthRange) return;
-
-      // Format as MMDD (e.g., "0310" for March 10)
-      const monthDay = `${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
-
-      // Find or create day group
-      let dayGroup = monthRange.children.find(d => d.name === monthDay);
-      if (!dayGroup) {
-        dayGroup = {
-          name: monthDay,
-          displayName: `${getMonthName(month)} ${day}`,
-          children: []
-        };
-        monthRange.children.push(dayGroup);
+      const key = `${month}-${day}`;
+      if (!data[key]) {
+        data[key] = [];
       }
-
-      // Find or create year group
-      let yearGroup = dayGroup.children.find(y => y.name === year.toString());
-      if (!yearGroup) {
-        yearGroup = {
-          name: year.toString(),
-          children: []
-        };
-        dayGroup.children.push(yearGroup);
-      }
-
-      // Add player to year group
-      yearGroup.children.push({
+      data[key].push({
         name: player.name,
-        value: 1 // Each player has value 1
+        year: year,
+        month: month,
+        day: day
       });
     });
 
-    // Sort and clean up empty groups
-    monthRanges.forEach(mr => {
-      mr.children.sort((a, b) => a.name.localeCompare(b.name));
-      mr.children.forEach(day => {
-        day.children.sort((a, b) => parseInt(b.name) - parseInt(a.name)); // Sort years descending
-      });
-    });
-
-    root.children = monthRanges.filter(mr => mr.children.length > 0);
-    return root;
+    return data;
   };
 
-  const getMonthName = (month) => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[month - 1];
-  };
+  const calculateStats = (data) => {
+    const monthCounts = Array(12).fill(0);
+    let totalPlayers = 0;
+    let mostCommonDate = null;
+    let maxCount = 0;
 
-  // Draw sunburst chart
-  useEffect(() => {
-    if (!birthdayData || !svgRef.current) return;
+    Object.entries(data).forEach(([key, players]) => {
+      const [month] = key.split('-').map(Number);
+      monthCounts[month - 1] += players.length;
+      totalPlayers += players.length;
 
-    // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove();
-
-    const width = 800;
-    const height = 800;
-    const radius = Math.min(width, height) / 2;
-
-    const svg = d3.select(svgRef.current)
-      .attr('width', width)
-      .attr('height', height)
-      .append('g')
-      .attr('transform', `translate(${width / 2},${height / 2})`);
-
-    // Create hierarchy
-    const hierarchy = d3.hierarchy(birthdayData)
-      .sum(d => d.value || 0)
-      .sort((a, b) => b.value - a.value);
-
-    // Create partition layout
-    const partition = d3.partition()
-      .size([2 * Math.PI, radius]);
-
-    partition(hierarchy);
-
-    // Color scales for each layer
-    const monthRangeColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']; // Blue, Green, Orange, Red
-
-    // Helper function to get color for any node
-    const getNodeColor = (node) => {
-      if (node.depth === 1) {
-        // Month range layer - use distinct colors
-        const index = node.parent.children.indexOf(node);
-        return monthRangeColors[index % monthRangeColors.length];
-      } else if (node.depth === 2) {
-        // Day layer - lighter shade of parent
-        const parentColor = getNodeColor(node.parent);
-        return d3.color(parentColor).brighter(0.5).toString();
-      } else if (node.depth === 3) {
-        // Year layer - even lighter
-        const parentColor = getNodeColor(node.parent.parent);
-        return d3.color(parentColor).brighter(1).toString();
-      } else if (node.depth === 4) {
-        // Player layer - lightest
-        const parentColor = getNodeColor(node.parent.parent.parent);
-        return d3.color(parentColor).brighter(1.5).toString();
+      if (players.length > maxCount) {
+        maxCount = players.length;
+        mostCommonDate = key;
       }
-      return '#666';
-    };
+    });
 
-    const arc = d3.arc()
-      .startAngle(d => d.x0)
-      .endAngle(d => d.x1)
-      .innerRadius(d => d.y0)
-      .outerRadius(d => d.y1);
+    setStats({
+      totalPlayers,
+      monthCounts,
+      mostCommonDate,
+      maxCount
+    });
+  };
 
-    // Draw arcs
-    svg.selectAll('path')
-      .data(hierarchy.descendants().filter(d => d.depth > 0))
-      .enter()
-      .append('path')
-      .attr('d', arc)
-      .attr('fill', d => getNodeColor(d))
-      .attr('stroke', '#1e293b')
-      .attr('stroke-width', 1)
-      .style('cursor', 'pointer')
-      .style('opacity', 0.9)
-      .on('mouseover', function(event, d) {
-        d3.select(this)
-          .style('opacity', 1)
-          .attr('stroke-width', 2);
-      })
-      .on('mouseout', function(event, d) {
-        d3.select(this)
-          .style('opacity', 0.9)
-          .attr('stroke-width', 1);
-      })
-      .on('click', function(event, d) {
-        handleSegmentClick(d);
-      });
+  const getPlayerCountForDate = (month, day) => {
+    const key = `${month}-${day}`;
+    return birthdayData?.[key]?.length || 0;
+  };
 
-    // Add center label
-    svg.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .style('font-size', '24px')
-      .style('font-weight', 'bold')
-      .style('fill', 'white')
-      .text('Birthdays');
+  const getIntensityClass = (count) => {
+    if (count === 0) return 'bg-slate-800/30';
+    if (count === 1) return 'bg-green-500/30';
+    if (count === 2) return 'bg-green-500/50';
+    if (count === 3) return 'bg-green-500/70';
+    if (count <= 5) return 'bg-yellow-500/70';
+    return 'bg-red-500/70';
+  };
 
-  }, [birthdayData]);
+  const handleDateClick = (month, day) => {
+    const key = `${month}-${day}`;
+    const players = birthdayData?.[key] || [];
 
-  const handleSegmentClick = (node) => {
-    console.log('Clicked:', node);
-
-    // Level 2: Day level (MMDD) - expand to show years
-    if (node.depth === 2) {
-      setSelectedSegment({
-        type: 'day',
-        data: node,
-        monthDay: node.data.name,
-        displayName: node.data.displayName
-      });
-      return;
-    }
-
-    // Level 3: Year level - show players with this birthday
-    if (node.depth === 3) {
-      const players = node.children ? node.children.map(c => c.data.name) : [];
-      const monthDay = node.parent.data.name;
-      const year = node.data.name;
-
+    if (players.length > 0) {
       setPlayerList({
-        monthDay,
-        year,
-        displayName: node.parent.data.displayName,
-        players
+        month: months[month - 1].name,
+        day,
+        players: players.sort((a, b) => b.year - a.year)
       });
       setShowPlayerModal(true);
-      return;
+      setSelectedDate({ month, day });
     }
+  };
 
-    // Level 4: Individual player - show in modal
-    if (node.depth === 4) {
-      const monthDay = node.parent.parent.data.name;
-      const year = node.parent.data.name;
-
-      setPlayerList({
-        monthDay,
-        year,
-        displayName: node.parent.parent.data.displayName,
-        players: [node.data.name]
-      });
-      setShowPlayerModal(true);
-    }
+  const handleMonthClick = (monthIndex) => {
+    setSelectedMonth(selectedMonth === monthIndex ? null : monthIndex);
   };
 
   if (loading) {
@@ -293,51 +171,168 @@ function BirthdaySunburst() {
   }
 
   return (
-    <div className="min-h-screen p-6" ref={containerRef}>
+    <div className="min-h-screen p-4 md:p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-2">
-          <Calendar className="w-8 h-8" />
-          Birthday Sunburst
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg flex items-center gap-3">
+          <Cake className="w-8 h-8 md:w-10 md:h-10" />
+          IPL Players Birthday Calendar
         </h1>
-        <p className="text-slate-300 drop-shadow-md">
-          Explore IPL player birthdays in an interactive sunburst chart
+        <p className="text-slate-300 drop-shadow-md text-sm md:text-base">
+          Discover when your favorite IPL players celebrate their birthdays
         </p>
       </div>
 
-      {/* Instructions */}
-      <div className="bg-slate-800/40 backdrop-blur-md border border-slate-600/50 rounded-lg p-4 mb-6 max-w-3xl">
-        <h3 className="text-white font-semibold mb-2">How to use:</h3>
-        <ul className="text-slate-300 text-sm space-y-1">
-          <li>• <span className="text-purple-400">Inner ring:</span> Month ranges (Jan-Mar, Apr-Jun, Jul-Sep, Oct-Dec)</li>
-          <li>• <span className="text-blue-400">Second ring:</span> Days within each month range</li>
-          <li>• <span className="text-green-400">Third ring:</span> Birth years</li>
-          <li>• <span className="text-orange-400">Outer ring:</span> Individual players</li>
-          <li>• Click on any segment to explore deeper levels</li>
-        </ul>
-      </div>
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 backdrop-blur-md border border-purple-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Users className="w-8 h-8 text-purple-400" />
+              <div>
+                <p className="text-slate-400 text-sm">Total Players</p>
+                <p className="text-2xl font-bold text-white">{stats.totalPlayers}</p>
+              </div>
+            </div>
+          </div>
 
-      {/* Sunburst Chart */}
-      <div className="flex justify-center">
-        <svg ref={svgRef} className="drop-shadow-2xl"></svg>
+          <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-md border border-blue-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-8 h-8 text-blue-400" />
+              <div>
+                <p className="text-slate-400 text-sm">Most Common Birthday</p>
+                <p className="text-2xl font-bold text-white">
+                  {stats.mostCommonDate && (() => {
+                    const [m, d] = stats.mostCommonDate.split('-').map(Number);
+                    return `${months[m - 1].short} ${d}`;
+                  })()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-md border border-green-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 text-green-400" />
+              <div>
+                <p className="text-slate-400 text-sm">Players on That Date</p>
+                <p className="text-2xl font-bold text-white">{stats.maxCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Month Distribution Bar Chart */}
+      {stats && (
+        <div className="bg-slate-800/40 backdrop-blur-md border border-slate-600/50 rounded-lg p-6 mb-6">
+          <h3 className="text-white font-semibold mb-4">Birthdays by Month</h3>
+          <div className="grid grid-cols-12 gap-2">
+            {months.map((month, idx) => {
+              const count = stats.monthCounts[idx];
+              const maxMonthCount = Math.max(...stats.monthCounts);
+              const heightPercent = (count / maxMonthCount) * 100;
+
+              return (
+                <div key={idx} className="flex flex-col items-center gap-2">
+                  <div className="relative h-32 w-full bg-slate-700/30 rounded-t flex items-end">
+                    <div
+                      className={`w-full bg-gradient-to-t ${month.color} rounded-t transition-all duration-300 hover:opacity-80 cursor-pointer`}
+                      style={{ height: `${heightPercent}%` }}
+                      onClick={() => handleMonthClick(idx + 1)}
+                    >
+                      <div className="text-white text-xs font-bold text-center pt-1">
+                        {count}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-xs font-medium">{month.short}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Calendar Grid */}
+      <div className="space-y-6">
+        {months.map((month, monthIdx) => {
+          const monthNum = monthIdx + 1;
+          const isExpanded = selectedMonth === null || selectedMonth === monthNum;
+
+          if (!isExpanded) return null;
+
+          return (
+            <div
+              key={monthIdx}
+              className="bg-slate-800/40 backdrop-blur-md border border-slate-600/50 rounded-lg p-4 md:p-6 transition-all duration-300"
+            >
+              <div
+                className="flex items-center justify-between mb-4 cursor-pointer"
+                onClick={() => handleMonthClick(monthNum)}
+              >
+                <h3 className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${month.color} bg-clip-text text-transparent`}>
+                  {month.name}
+                </h3>
+                <div className="text-slate-400 text-sm">
+                  {stats?.monthCounts[monthIdx] || 0} players
+                </div>
+              </div>
+
+              <div className="grid grid-cols-7 md:grid-cols-10 lg:grid-cols-15 xl:grid-cols-20 gap-2">
+                {Array.from({ length: month.days }, (_, i) => {
+                  const day = i + 1;
+                  const count = getPlayerCountForDate(monthNum, day);
+                  const intensityClass = getIntensityClass(count);
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => handleDateClick(monthNum, day)}
+                      disabled={count === 0}
+                      className={`
+                        relative aspect-square rounded-lg transition-all duration-200
+                        ${intensityClass}
+                        ${count > 0 ? 'hover:scale-110 hover:shadow-lg cursor-pointer border-2 border-transparent hover:border-white/50' : 'cursor-not-allowed opacity-50'}
+                        flex items-center justify-center
+                      `}
+                      title={count > 0 ? `${count} player${count > 1 ? 's' : ''} born on ${month.name} ${day}` : 'No birthdays'}
+                    >
+                      <span className="text-white text-xs md:text-sm font-semibold">{day}</span>
+                      {count > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center font-bold">
+                          {count}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Player List Modal */}
       {showPlayerModal && playerList && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-600 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-slate-800 border border-slate-600 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-700 flex justify-between items-start">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">
-                  Players Born on {playerList.displayName}, {playerList.year}
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-1 flex items-center gap-2">
+                  <Cake className="w-7 h-7 text-purple-400" />
+                  Born on {playerList.month} {playerList.day}
                 </h2>
                 <p className="text-slate-400">
-                  {playerList.players.length} player{playerList.players.length !== 1 ? 's' : ''}
+                  {playerList.players.length} player{playerList.players.length !== 1 ? 's' : ''} celebrate{playerList.players.length === 1 ? 's' : ''} their birthday on this date
                 </p>
               </div>
               <button
-                onClick={() => setShowPlayerModal(false)}
+                onClick={() => {
+                  setShowPlayerModal(false);
+                  setSelectedDate(null);
+                }}
                 className="text-slate-400 hover:text-white transition-colors"
               >
                 <X className="w-6 h-6" />
@@ -346,23 +341,62 @@ function BirthdaySunburst() {
 
             {/* Player List */}
             <div className="p-6 overflow-y-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {playerList.players.map((player, index) => (
-                  <div
-                    key={index}
-                    className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4 hover:border-purple-500/50 transition-colors"
-                  >
-                    <p className="text-white font-medium">{player}</p>
-                    <p className="text-slate-400 text-sm mt-1">
-                      {playerList.displayName}, {playerList.year}
-                    </p>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {playerList.players.map((player, index) => {
+                  const age = new Date().getFullYear() - player.year;
+                  return (
+                    <div
+                      key={index}
+                      className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4 hover:border-purple-500/50 transition-all hover:scale-105"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-white font-bold text-lg">{player.name}</p>
+                        <span className="text-purple-400 text-xs bg-purple-500/20 px-2 py-1 rounded">
+                          {age} yrs
+                        </span>
+                      </div>
+                      <p className="text-slate-400 text-sm">
+                        Born: {playerList.month} {playerList.day}, {player.year}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Legend */}
+      <div className="mt-6 bg-slate-800/40 backdrop-blur-md border border-slate-600/50 rounded-lg p-4">
+        <h3 className="text-white font-semibold mb-3 text-sm">Legend</h3>
+        <div className="flex flex-wrap gap-4 text-xs md:text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-slate-800/30 rounded border border-slate-600"></div>
+            <span className="text-slate-300">No birthdays</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-green-500/30 rounded"></div>
+            <span className="text-slate-300">1 player</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-green-500/50 rounded"></div>
+            <span className="text-slate-300">2 players</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-green-500/70 rounded"></div>
+            <span className="text-slate-300">3 players</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-yellow-500/70 rounded"></div>
+            <span className="text-slate-300">4-5 players</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-red-500/70 rounded"></div>
+            <span className="text-slate-300">6+ players</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
