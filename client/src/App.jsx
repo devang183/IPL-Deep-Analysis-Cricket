@@ -19,6 +19,7 @@ import ExampleQueries from './components/ExampleQueries';
 import HelpGuide from './components/HelpGuide';
 import AuthPage from './components/AuthPage';
 import SpaceBackground from './components/SpaceBackground';
+import MatrixLoader from './components/MatrixLoader';
 import { useAuth } from './context/AuthContext';
 import axios from 'axios';
 
@@ -107,11 +108,8 @@ function App() {
   if (authLoading) {
     console.log('Showing loading screen');
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-white">
-        <div className="text-center">
-          <Activity className="w-16 h-16 text-primary-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-slate-600">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-black">
+        <MatrixLoader text="Authenticating..." />
       </div>
     );
   }
