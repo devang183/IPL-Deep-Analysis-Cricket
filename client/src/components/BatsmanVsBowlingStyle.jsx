@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Target, Loader2, AlertCircle, TrendingUp, Activity, Zap, BarChart3, Award, Shield, X } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, PieChart, Pie, Cell } from 'recharts';
+import MatrixLoader from './MatrixLoader';
 
 // Hover card component to display bowlers list
 const BowlersHoverCard = ({ bowlers, styleName, onClose }) => {
@@ -126,8 +127,7 @@ function BatsmanVsBowlingStyle({ player }) {
   if (loading) {
     return (
       <div className="text-center py-16">
-        <Loader2 className="w-12 h-12 text-primary-600 mx-auto mb-4 animate-spin" />
-        <p className="text-slate-600">Loading bowling style statistics...</p>
+        <MatrixLoader text="Loading bowling style statistics..." />
       </div>
     );
   }

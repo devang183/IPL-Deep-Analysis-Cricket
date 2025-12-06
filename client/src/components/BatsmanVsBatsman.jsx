@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Users, TrendingUp, Target, Zap, Award, BarChart3, Shield, Activity, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import MatrixLoader from './MatrixLoader';
 
 function BatsmanVsBatsman({ player }) {
   const [batsmen, setBatsmen] = useState([]);
@@ -341,8 +342,7 @@ function BatsmanVsBatsman({ player }) {
 
       {loading && (
         <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
-          <p className="text-slate-600">Comparing batsmen...</p>
+          <MatrixLoader text="Comparing batsmen..." />
         </div>
       )}
 

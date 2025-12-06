@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Target, Loader2, AlertCircle, TrendingUp, Shield, Activity, Zap, BarChart3 } from 'lucide-react';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
+import MatrixLoader from './MatrixLoader';
 
 function BatsmanVsTeam({ player }) {
   const [teams, setTeams] = useState([]);
@@ -256,8 +257,7 @@ function BatsmanVsTeam({ player }) {
       {/* Loading State */}
       {loading && (
         <div className="text-center py-16">
-          <Loader2 className="w-12 h-12 text-primary-600 mx-auto mb-4 animate-spin" />
-          <p className="text-slate-600">Loading matchup statistics...</p>
+          <MatrixLoader text="Loading matchup statistics..." />
         </div>
       )}
 
