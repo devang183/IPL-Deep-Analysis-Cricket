@@ -1,4 +1,3 @@
-import { User, Activity, MapPin, Globe } from 'lucide-react';
 import './PlayerGalaxyCard.css';
 
 function PlayerGalaxyCard({ player, metadata, onSelect }) {
@@ -34,17 +33,6 @@ function PlayerGalaxyCard({ player, metadata, onSelect }) {
             </div>
           </div>
           <div className="player-card-bottom">
-            <div className="social-buttons-container">
-              <button className="social-button" aria-label="User">
-                <User className="svg" />
-              </button>
-              <button className="social-button" aria-label="Activity">
-                <Activity className="svg" />
-              </button>
-              <button className="social-button" aria-label="Globe">
-                <Globe className="svg" />
-              </button>
-            </div>
             <div className="view-more">
               <button className="view-more-button">View Stats</button>
               <svg className="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
