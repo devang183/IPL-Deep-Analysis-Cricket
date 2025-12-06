@@ -1,57 +1,42 @@
 import { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import axios from 'axios';
+import PlayerGalaxyCard from './PlayerGalaxyCard';
+import MatrixLoader from '../MatrixLoader';
 
 function PlayerGalaxy({ players, onPlayerSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [playerImages, setPlayerImages] = useState({});
+  const [playerMetadata, setPlayerMetadata] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // Load player images
+  // Load player metadata
   useEffect(() => {
-    if (!players || players.length === 0) return;
-
-    // Load images for first 100 players initially
-    const playersToLoad = players.slice(0, 100);
-
-    playersToLoad.forEach(async (player) => {
+    const fetchMetadata = async () => {
       try {
-        const response = await axios.get(`/api/player/${player}/image`);
-        if (response.data.image_path) {
-          setPlayerImages(prev => ({
-            ...prev,
-            [player]: response.data.image_path
-          }));
-        }
+        setLoading(true);
+        const response = await axios.get('/api/players/metadata');
+        setPlayerMetadata(response.data.metadata || {});
+        setLoading(false);
       } catch (error) {
-        // Silently fail - will show initials
+        console.error('Error fetching player metadata:', error);
+        setLoading(false);
       }
-    });
-  }, [players]);
+    };
+
+    fetchMetadata();
+  }, []);
 
   const filteredPlayers = searchQuery
     ? players.filter(player => player.toLowerCase().includes(searchQuery.toLowerCase()))
     : players;
 
-  const getInitials = (name) => {
-    const parts = name.split(' ');
-    if (parts.length > 1) {
-      return parts[0][0] + parts[parts.length - 1][0];
-    }
-    return name.substring(0, 2);
-  };
-
-  const teamColors = [
-    'from-blue-500 to-blue-700',       // Mumbai Indians
-    'from-yellow-400 to-yellow-600',   // Chennai Super Kings
-    'from-red-500 to-red-700',         // Royal Challengers
-    'from-purple-500 to-purple-700',   // Kolkata Knight Riders
-    'from-blue-600 to-blue-800',       // Delhi Capitals
-    'from-orange-500 to-orange-700',   // Sunrisers Hyderabad
-    'from-pink-500 to-pink-700',       // Rajasthan Royals
-    'from-red-600 to-red-800',         // Punjab Kings
-    'from-teal-500 to-teal-700',       // Gujarat Titans
-    'from-cyan-500 to-cyan-700',       // Lucknow Super Giants
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <MatrixLoader text="Loading player galaxy..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6">
@@ -89,66 +74,15 @@ function PlayerGalaxy({ players, onPlayerSelect }) {
 
       {/* Player Grid */}
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-          {filteredPlayers.map((player, index) => {
-            const colorClass = teamColors[index % teamColors.length];
-            const hasImage = playerImages[player];
-
-            return (
-              <button
-                key={player}
-                onClick={() => {
-                  if (onPlayerSelect) {
-                    onPlayerSelect(player);
-                  }
-                }}
-                className="group relative overflow-hidden rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50 bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 hover:border-purple-500/50"
-              >
-                <div className="relative h-64">
-                  {/* Player Image or Initials */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {hasImage ? (
-                      <img
-                        src={playerImages[player]}
-                        alt={player}
-                        className="w-full h-full object-contain"
-                        style={{
-                          imageRendering: '-webkit-optimize-contrast',
-                          backfaceVisibility: 'hidden',
-                          transform: 'translateZ(0)'
-                        }}
-                        onError={() => {
-                          // Remove from playerImages if failed to load
-                          setPlayerImages(prev => {
-                            const newImages = { ...prev };
-                            delete newImages[player];
-                            return newImages;
-                          });
-                        }}
-                      />
-                    ) : (
-                      <div className={`text-6xl font-bold bg-gradient-to-br ${colorClass} bg-clip-text text-transparent`}>
-                        {getInitials(player).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Gradient Overlay - Only on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-                  {/* Player Name */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="text-white text-sm font-semibold text-center leading-tight drop-shadow-lg">
-                      {player.split(' ').length > 2
-                        ? `${player.split(' ')[0]} ${player.split(' ')[player.split(' ').length - 1]}`
-                        : player
-                      }
-                    </p>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          {filteredPlayers.map((player) => (
+            <PlayerGalaxyCard
+              key={player}
+              player={player}
+              metadata={playerMetadata}
+              onSelect={onPlayerSelect}
+            />
+          ))}
         </div>
 
         {filteredPlayers.length === 0 && (

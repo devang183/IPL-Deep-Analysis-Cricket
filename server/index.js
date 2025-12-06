@@ -580,6 +580,34 @@ app.get('/api/players/birthdays', async (req, res) => {
   }
 });
 
+// Get player metadata from All-Players collection
+app.get('/api/players/metadata', async (req, res) => {
+  try {
+    const playersCollection = db.collection('All-Players');
+
+    // Get all players with their metadata
+    const players = await playersCollection.find({}).toArray();
+
+    const metadata = {};
+    players.forEach(p => {
+      const name = p.fullname || p.name || p._id;
+      if (name) {
+        metadata[name] = {
+          battingstyle: p.battingstyle || 'N/A',
+          bowlingstyle: p.bowlingstyle || 'N/A',
+          position: p.position || p.playing_role || 'N/A',
+          country_name: p.country_name || p.country || 'N/A'
+        };
+      }
+    });
+
+    res.json({ metadata, count: Object.keys(metadata).length });
+  } catch (error) {
+    console.error('Error fetching player metadata:', error);
+    res.status(500).json({ error: 'Failed to fetch player metadata' });
+  }
+});
+
 // Debug endpoint to check raw counts
 app.get('/api/debug/:player', async (req, res) => {
   try {
