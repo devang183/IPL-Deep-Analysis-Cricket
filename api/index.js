@@ -510,6 +510,23 @@ app.get('/api/auction', async (req, res) => {
   }
 });
 
+// Get IPL auction player stats data
+app.get('/api/auction/player-stats', async (req, res) => {
+  try {
+    const { db } = await connectToDatabase();
+    const statsCollection = db.collection('IPLAuctionFiguresPlayerStats');
+    const playerStats = await statsCollection.find({}).toArray();
+
+    res.json({
+      players: playerStats,
+      count: playerStats.length
+    });
+  } catch (error) {
+    console.error('Error fetching player stats:', error);
+    res.status(500).json({ error: 'Failed to fetch player stats' });
+  }
+});
+
 // Get player overall stats (supporting both routes for compatibility)
 app.get('/api/stats/:name', async (req, res) => {
   try {

@@ -699,6 +699,22 @@ app.get('/api/auction', async (req, res) => {
   }
 });
 
+// Get IPL auction player stats data
+app.get('/api/auction/player-stats', async (req, res) => {
+  try {
+    const statsCollection = db.collection('IPLAuctionFiguresPlayerStats');
+    const playerStats = await statsCollection.find({}).toArray();
+
+    res.json({
+      players: playerStats,
+      count: playerStats.length
+    });
+  } catch (error) {
+    console.error('Error fetching player stats:', error);
+    res.status(500).json({ error: 'Failed to fetch player stats' });
+  }
+});
+
 // Debug endpoint to check raw counts
 app.get('/api/debug/:player', async (req, res) => {
   try {
