@@ -214,14 +214,18 @@ function AuctionAnalysis() {
               <LineChart data={yearData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="year" stroke="#94a3b8" fontSize={12} />
-                <YAxis stroke="#94a3b8" fontSize={12} />
+                <YAxis yAxisId="left" stroke="#3b82f6" fontSize={12} />
+                <YAxis yAxisId="right" orientation="right" stroke="#22c55e" fontSize={12} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                  formatter={(value) => `₹${value.toFixed(2)} Cr`}
+                  formatter={(value, name) => {
+                    if (name === "Total Spent (Cr)") return `₹${value.toFixed(2)} Cr`;
+                    return `${value} players`;
+                  }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="totalSpent" stroke="#3b82f6" strokeWidth={2} name="Total Spent (Cr)" />
-                <Line type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} name="Players Bought" />
+                <Line yAxisId="left" type="monotone" dataKey="totalSpent" stroke="#3b82f6" strokeWidth={2} name="Total Spent (Cr)" />
+                <Line yAxisId="right" type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} name="Players Bought" />
               </LineChart>
             </ResponsiveContainer>
           </div>
