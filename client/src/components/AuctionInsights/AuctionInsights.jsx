@@ -277,7 +277,7 @@ function AuctionInsights({ onPlayerSelect }) {
               className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary-500 transition-colors"
             />
             {searchSuggestions.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+              <div className="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                 {searchSuggestions.map((name, idx) => (
                   <div
                     key={idx}
