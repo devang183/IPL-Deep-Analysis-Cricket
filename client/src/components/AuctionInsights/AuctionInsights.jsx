@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Users, Award, BarChart3, Activity, Zap } from 'lucide-react';
+import { TrendingUp, Users, Award, BarChart3, Activity, Zap, Search } from 'lucide-react';
 import { ScatterChart, Scatter, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import axios from 'axios';
 import MatrixLoader from '../MatrixLoader';
@@ -8,6 +8,9 @@ function AuctionInsights({ onPlayerSelect }) {
   const [playerStats, setPlayerStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState('ipl_sr');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchedPlayer, setSearchedPlayer] = useState(null);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -24,6 +27,25 @@ function AuctionInsights({ onPlayerSelect }) {
 
     fetchPlayerStats();
   }, []);
+
+  // Handle search query changes
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      const uniquePlayers = [...new Set(playerStats.map(p => p.name))];
+      const matches = uniquePlayers
+        .filter(name => name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .slice(0, 10);
+      setSearchSuggestions(matches);
+    } else {
+      setSearchSuggestions([]);
+    }
+  }, [searchQuery, playerStats]);
+
+  const handlePlayerSearch = (playerName) => {
+    setSearchedPlayer(playerName);
+    setSearchQuery(playerName);
+    setSearchSuggestions([]);
+  };
 
   if (loading) {
     return (
@@ -50,6 +72,17 @@ function AuctionInsights({ onPlayerSelect }) {
     return `₹${lakhs.toFixed(2)} L`;
   };
 
+  // Premium players (age 24-35, price > 14 cr)
+  const premiumPlayers = playerStats
+    .filter(p => p.age && p.price && p.age >= 24 && p.age <= 35 && p.price / 10000000 > 14)
+    .map(p => ({
+      name: p.name,
+      age: p.age,
+      price: p.price / 10000000,
+      year: p.year,
+      team: p.team
+    }));
+
   // Age vs Price analysis
   const ageVsPrice = playerStats
     .filter(p => p.age && p.price)
@@ -57,8 +90,51 @@ function AuctionInsights({ onPlayerSelect }) {
       age: p.age,
       price: p.price / 10000000,
       name: p.name,
-      year: p.year
+      year: p.year,
+      isPremium: p.age >= 24 && p.age <= 35 && p.price / 10000000 > 14
     }));
+
+  // Player-specific data
+  const playerSpecificData = searchedPlayer ? playerStats.filter(p => p.name === searchedPlayer) : [];
+
+  // Player age progression (price over years)
+  const playerAgeProgression = searchedPlayer
+    ? playerSpecificData
+        .filter(p => p.age && p.price && p.year)
+        .sort((a, b) => a.year - b.year)
+        .map(p => ({
+          year: p.year,
+          age: p.age,
+          price: p.price / 10000000,
+          team: p.team
+        }))
+    : [];
+
+  // T20 stats for searched player
+  const playerT20Stats = searchedPlayer && playerSpecificData.length > 0
+    ? {
+        runs: playerSpecificData[0].t20_runs || 0,
+        avg: playerSpecificData[0].t20_avg || 0,
+        sr: playerSpecificData[0].t20_sr || 0,
+        fifties: playerSpecificData[0].t20_50 || 0,
+        wickets: playerSpecificData[0].t20_wkts || 0,
+        bowlEcon: playerSpecificData[0].t20_bowl_econ || 0,
+        bowlAvg: playerSpecificData[0].t20_bowl_avg || 0
+      }
+    : null;
+
+  // IPL stats for searched player
+  const playerIPLStats = searchedPlayer && playerSpecificData.length > 0
+    ? {
+        runs: playerSpecificData[0].ipl_runs || 0,
+        avg: playerSpecificData[0].ipl_avg || 0,
+        sr: playerSpecificData[0].ipl_sr || 0,
+        fifties: playerSpecificData[0].ipl_50 || 0,
+        wickets: playerSpecificData[0].ipl_wkts || 0,
+        bowlEcon: playerSpecificData[0].ipl_bowl_econ || 0,
+        bowlAvg: playerSpecificData[0].ipl_bowl_avg || 0
+      }
+    : null;
 
   // Performance vs Price scatter plots
   const performanceMetrics = [
@@ -158,6 +234,43 @@ function AuctionInsights({ onPlayerSelect }) {
       price: (p.price / 10000000).toFixed(2)
     }));
 
+  // Custom tooltip for age vs price showing premium players
+  const CustomAgeTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      if (data.isPremium) {
+        return (
+          <div className="bg-slate-900 border border-primary-500 rounded-lg p-3 max-w-xs">
+            <div className="font-bold text-white mb-2">{data.name} ({data.year})</div>
+            <div className="text-sm text-slate-300 mb-3">
+              Age: {data.age} | Price: ₹{data.price.toFixed(2)} Cr
+            </div>
+            <div className="border-t border-slate-700 pt-2">
+              <div className="text-xs font-semibold text-primary-400 mb-2">Premium Players (Age 24-35, ₹14+ Cr):</div>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {premiumPlayers.slice(0, 8).map((p, idx) => (
+                  <div key={idx} className="text-xs text-slate-300">
+                    <span className="text-primary-300">{p.name}</span> - {p.age}y, ₹{p.price.toFixed(1)}Cr ({p.year})
+                  </div>
+                ))}
+                {premiumPlayers.length > 8 && (
+                  <div className="text-xs text-slate-500 italic">+{premiumPlayers.length - 8} more...</div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-2">
+          <div className="font-bold text-white text-sm">{data.name} ({data.year})</div>
+          <div className="text-xs text-slate-300">Age: {data.age} | Price: ₹{data.price.toFixed(2)} Cr</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen p-3 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -172,13 +285,205 @@ function AuctionInsights({ onPlayerSelect }) {
           </p>
         </div>
 
+        {/* Player Search */}
+        <div className="card p-4 md:p-6 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Search className="w-5 h-5 text-primary-500" />
+            <h2 className="text-lg md:text-xl font-bold text-white">Player Analysis</h2>
+          </div>
+          <p className="text-slate-400 text-sm mb-4">Search for a player to view their T20 vs IPL performance and price progression</p>
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Type player name (e.g., Virat Kohli, Rohit Sharma)..."
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary-500 transition-colors"
+            />
+            {searchSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                {searchSuggestions.map((name, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handlePlayerSearch(name)}
+                    className="px-4 py-2 hover:bg-slate-700 cursor-pointer text-white text-sm border-b border-slate-700 last:border-b-0"
+                  >
+                    {name}
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchedPlayer && (
+              <button
+                onClick={() => {
+                  setSearchedPlayer(null);
+                  setSearchQuery('');
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Player-Specific Visualizations */}
+        {searchedPlayer && playerSpecificData.length > 0 && (
+          <>
+            {/* Player Price Progression */}
+            {playerAgeProgression.length > 0 && (
+              <div className="card p-4 md:p-6 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  <h2 className="text-lg md:text-xl font-bold text-white">{searchedPlayer} - Price Progression</h2>
+                </div>
+                <p className="text-slate-400 text-sm mb-4">How {searchedPlayer.split(' ')[0]}'s auction price evolved over the years</p>
+                <ResponsiveContainer width="100%" height={350}>
+                  <LineChart data={playerAgeProgression}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis dataKey="year" stroke="#94a3b8" fontSize={12} />
+                    <YAxis stroke="#94a3b8" fontSize={12} label={{ value: 'Price (Cr)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+                      formatter={(value, name) => {
+                        if (name === 'price') return [`₹${value.toFixed(2)} Cr`, 'Price'];
+                        return [value, name];
+                      }}
+                      labelFormatter={(label, payload) => {
+                        if (payload && payload[0]) {
+                          return `${payload[0].payload.year} - Age ${payload[0].payload.age} (${payload[0].payload.team})`;
+                        }
+                        return label;
+                      }}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="price" stroke="#22c55e" strokeWidth={3} dot={{ r: 6, fill: '#22c55e' }} name="Price" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* T20 vs IPL Stats Comparison */}
+            {playerT20Stats && playerIPLStats && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* T20 International Stats */}
+                <div className="card p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Activity className="w-5 h-5 text-blue-500" />
+                    <h2 className="text-lg md:text-xl font-bold text-white">T20 International Stats</h2>
+                  </div>
+                  <div className="space-y-4">
+                    {playerT20Stats.runs > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-400 mb-3">Batting</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Runs</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.runs}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Average</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.avg.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Strike Rate</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.sr.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Fifties</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.fifties}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {playerT20Stats.wickets > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-400 mb-3">Bowling</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Wickets</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.wickets}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Economy</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.bowlEcon.toFixed(2)}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Average</div>
+                            <div className="text-xl font-bold text-white">{playerT20Stats.bowlAvg.toFixed(1)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* IPL Stats */}
+                <div className="card p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Zap className="w-5 h-5 text-yellow-500" />
+                    <h2 className="text-lg md:text-xl font-bold text-white">IPL Stats</h2>
+                  </div>
+                  <div className="space-y-4">
+                    {playerIPLStats.runs > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-400 mb-3">Batting</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Runs</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.runs}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Average</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.avg.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Strike Rate</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.sr.toFixed(1)}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Fifties</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.fifties}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {playerIPLStats.wickets > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-400 mb-3">Bowling</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Wickets</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.wickets}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Economy</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.bowlEcon.toFixed(2)}</div>
+                          </div>
+                          <div className="bg-slate-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-slate-400">Average</div>
+                            <div className="text-xl font-bold text-white">{playerIPLStats.bowlAvg.toFixed(1)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {/* Age vs Price Scatter */}
         <div className="card p-4 md:p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-primary-500" />
             <h2 className="text-lg md:text-xl font-bold text-white">Age vs Auction Price</h2>
           </div>
-          <p className="text-slate-400 text-sm mb-4">How player age influences auction valuations</p>
+          <p className="text-slate-400 text-sm mb-4">
+            How player age influences auction valuations.
+            <span className="text-primary-400 font-semibold ml-2">Hover over premium players (age 24-35, ₹14+ Cr) to see the list!</span>
+          </p>
           <ResponsiveContainer width="100%" height={400}>
             <ScatterChart>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -195,23 +500,21 @@ function AuctionInsights({ onPlayerSelect }) {
                 fontSize={12}
                 label={{ value: 'Price (Cr)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
               />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                formatter={(value, name) => {
-                  if (name === 'price') return [`₹${value.toFixed(2)} Cr`, 'Price'];
-                  if (name === 'age') return [value, 'Age'];
-                  return [value, name];
-                }}
-                labelFormatter={(label, payload) => {
-                  if (payload && payload[0]) {
-                    return `${payload[0].payload.name} (${payload[0].payload.year})`;
-                  }
-                  return '';
-                }}
-              />
-              <Scatter name="Players" data={ageVsPrice} fill="#3b82f6" />
+              <Tooltip content={<CustomAgeTooltip />} />
+              <Scatter name="Players" data={ageVsPrice.filter(p => !p.isPremium)} fill="#3b82f6" />
+              <Scatter name="Premium" data={ageVsPrice.filter(p => p.isPremium)} fill="#22c55e" />
             </ScatterChart>
           </ResponsiveContainer>
+          <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span>Regular Players</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span>Premium Players (24-35y, ₹14+ Cr)</span>
+            </div>
+          </div>
         </div>
 
         {/* Performance vs Price */}
