@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, Users, Award, BarChart3, Activity, Zap, Search } from 'lucide-react';
 import { ScatterChart, Scatter, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import axios from 'axios';
@@ -28,18 +28,45 @@ function AuctionInsights({ onPlayerSelect }) {
     fetchPlayerStats();
   }, []);
 
+  // Memoize unique players list with lowercase names for efficient searching
+  const uniquePlayersMap = useMemo(() => {
+    const playerMap = new Map();
+    playerStats.forEach(p => {
+      if (p.name && !playerMap.has(p.name.toLowerCase())) {
+        playerMap.set(p.name.toLowerCase(), p.name);
+      }
+    });
+    return playerMap;
+  }, [playerStats]);
+
   // Handle search query changes
   useEffect(() => {
     if (searchQuery.trim().length >= 2) {
-      const uniquePlayers = [...new Set(playerStats.map(p => p.name))];
-      const matches = uniquePlayers
-        .filter(name => name.toLowerCase().includes(searchQuery.toLowerCase()))
-        .slice(0, 10);
-      setSearchSuggestions(matches);
+      const queryLower = searchQuery.toLowerCase();
+      const matches = [];
+
+      // Prioritize exact matches and starts-with matches
+      const startsWithMatches = [];
+      const containsMatches = [];
+
+      for (const [lowerName, originalName] of uniquePlayersMap) {
+        if (lowerName.startsWith(queryLower)) {
+          startsWithMatches.push(originalName);
+        } else if (lowerName.includes(queryLower)) {
+          containsMatches.push(originalName);
+        }
+
+        // Stop early if we have enough matches
+        if (startsWithMatches.length + containsMatches.length >= 15) break;
+      }
+
+      // Combine results: starts-with first, then contains
+      const allMatches = [...startsWithMatches, ...containsMatches].slice(0, 10);
+      setSearchSuggestions(allMatches);
     } else {
       setSearchSuggestions([]);
     }
-  }, [searchQuery, playerStats]);
+  }, [searchQuery, uniquePlayersMap]);
 
   const handlePlayerSearch = (playerName) => {
     setSearchedPlayer(playerName);
