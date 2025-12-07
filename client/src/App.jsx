@@ -308,7 +308,12 @@ function App() {
           )}
 
           {activeTab === 'auction' && (
-            <AuctionAnalysis />
+            <AuctionAnalysis
+              onPlayerSelect={(playerName) => {
+                setSelectedPlayer(playerName);
+                setActiveTab('stats');
+              }}
+            />
           )}
 
           {activeTab !== 'smart' && activeTab !== 'galaxy' && activeTab !== 'birthdays' && activeTab !== 'auction' && activeTab !== 'stats' && activeTab !== 'bowler' && activeTab !== 'admin' && activeTab !== 'community' && !selectedPlayer && (

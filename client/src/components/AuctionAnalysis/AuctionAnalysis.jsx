@@ -4,10 +4,9 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import axios from 'axios';
 import MatrixLoader from '../MatrixLoader';
 
-function AuctionAnalysis() {
+function AuctionAnalysis({ onPlayerSelect }) {
   const [auctionData, setAuctionData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedTeam, setSelectedTeam] = useState(null);
 
   useEffect(() => {
     const fetchAuctionData = async () => {
@@ -244,7 +243,7 @@ function AuctionAnalysis() {
                 <div
                   key={team}
                   className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-primary-500/50 transition-all cursor-pointer"
-                  onClick={() => setSelectedTeam(team)}
+                  onClick={() => topPlayer && onPlayerSelect && onPlayerSelect(topPlayer.name)}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-bold text-white text-sm truncate">{team}</div>
