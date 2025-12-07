@@ -418,6 +418,98 @@ app.get('/api/players/metadata', async (req, res) => {
   }
 });
 
+// Get IPL auction data
+app.get('/api/auction', async (req, res) => {
+  try {
+    const { db } = await connectToDatabase();
+    const auctionCollection = db.collection('IPLAuctionFigures');
+
+    // Get all auction data
+    const auctionData = await auctionCollection.find({}).toArray();
+
+    // Calculate statistics
+    const stats = {
+      totalPlayers: auctionData.length,
+      totalSpent: auctionData.reduce((sum, player) => sum + (player.price || 0), 0),
+      averagePrice: 0,
+      maxPrice: 0,
+      minPrice: 0,
+      maxPricePlayer: null,
+      byTeam: {},
+      byYear: {},
+      priceRanges: {
+        '0-1cr': 0,
+        '1-5cr': 0,
+        '5-10cr': 0,
+        '10-15cr': 0,
+        '15cr+': 0
+      }
+    };
+
+    if (auctionData.length > 0) {
+      stats.averagePrice = stats.totalSpent / auctionData.length;
+
+      // Find max and min prices
+      const prices = auctionData.filter(p => p.price).map(p => p.price);
+      if (prices.length > 0) {
+        stats.maxPrice = Math.max(...prices);
+        stats.minPrice = Math.min(...prices.filter(p => p > 0));
+        stats.maxPricePlayer = auctionData.find(p => p.price === stats.maxPrice);
+      }
+
+      // Group by team and year
+      auctionData.forEach(player => {
+        // By team
+        if (player.team) {
+          if (!stats.byTeam[player.team]) {
+            stats.byTeam[player.team] = {
+              count: 0,
+              totalSpent: 0,
+              players: []
+            };
+          }
+          stats.byTeam[player.team].count++;
+          stats.byTeam[player.team].totalSpent += player.price || 0;
+          stats.byTeam[player.team].players.push({
+            name: player.player || player.name,
+            price: player.price || 0,
+            year: player.year
+          });
+        }
+
+        // By year
+        if (player.year) {
+          if (!stats.byYear[player.year]) {
+            stats.byYear[player.year] = {
+              count: 0,
+              totalSpent: 0
+            };
+          }
+          stats.byYear[player.year].count++;
+          stats.byYear[player.year].totalSpent += player.price || 0;
+        }
+
+        // Price ranges (in crores)
+        const priceCr = (player.price || 0) / 10000000; // Convert to crores
+        if (priceCr <= 1) stats.priceRanges['0-1cr']++;
+        else if (priceCr <= 5) stats.priceRanges['1-5cr']++;
+        else if (priceCr <= 10) stats.priceRanges['5-10cr']++;
+        else if (priceCr <= 15) stats.priceRanges['10-15cr']++;
+        else stats.priceRanges['15cr+']++;
+      });
+    }
+
+    res.json({
+      players: auctionData,
+      stats,
+      count: auctionData.length
+    });
+  } catch (error) {
+    console.error('Error fetching auction data:', error);
+    res.status(500).json({ error: 'Failed to fetch auction data' });
+  }
+});
+
 // Get player overall stats (supporting both routes for compatibility)
 app.get('/api/stats/:name', async (req, res) => {
   try {
