@@ -185,12 +185,12 @@ function AuctionInsights({ onPlayerSelect }) {
         : (performance >= currentMetric.threshold && price > 10);
 
       return {
+        ...p, // Include all player stats for tooltip first
         performance,
-        price,
+        price, // Override with converted price value
         name: p.name,
         year: p.year,
-        isElite,
-        ...p // Include all player stats for tooltip
+        isElite
       };
     });
 
