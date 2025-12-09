@@ -165,21 +165,39 @@ function AuctionInsights({ onPlayerSelect }) {
 
   // Performance vs Price scatter plots
   const performanceMetrics = [
-    { key: 'ipl_sr', label: 'IPL Strike Rate', color: '#3b82f6' },
-    { key: 'ipl_avg', label: 'IPL Average', color: '#22c55e' },
-    { key: 'ipl_runs', label: 'IPL Runs', color: '#f59e0b' },
-    { key: 'ipl_wkts', label: 'IPL Wickets', color: '#ef4444' },
-    { key: 'ipl_bowl_econ', label: 'IPL Economy', color: '#8b5cf6' }
+    { key: 'ipl_sr', label: 'IPL Strike Rate', color: '#3b82f6', threshold: 140 },
+    { key: 'ipl_avg', label: 'IPL Average', color: '#22c55e', threshold: 40 },
+    { key: 'ipl_runs', label: 'IPL Runs', color: '#f59e0b', threshold: 4000 },
+    { key: 'ipl_wkts', label: 'IPL Wickets', color: '#ef4444', threshold: 100 },
+    { key: 'ipl_bowl_econ', label: 'IPL Economy', color: '#8b5cf6', threshold: 7.5, inverse: true }
   ];
 
   const performanceVsPrice = playerStats
     .filter(p => p[selectedMetric] && p.price && p[selectedMetric] > 0)
-    .map(p => ({
-      performance: parseFloat(p[selectedMetric]),
-      price: p.price / 10000000,
-      name: p.name,
-      year: p.year
-    }));
+    .map(p => {
+      const currentMetric = performanceMetrics.find(m => m.key === selectedMetric);
+      const performance = parseFloat(p[selectedMetric]);
+      const price = p.price / 10000000;
+
+      // Determine if player is "elite" based on current metric
+      const isElite = currentMetric.inverse
+        ? (performance <= currentMetric.threshold && price > 10) // For economy, lower is better
+        : (performance >= currentMetric.threshold && price > 10);
+
+      return {
+        performance,
+        price,
+        name: p.name,
+        year: p.year,
+        isElite,
+        ...p // Include all player stats for tooltip
+      };
+    });
+
+  // Elite players for current metric
+  const elitePlayers = performanceVsPrice
+    .filter(p => p.isElite)
+    .sort((a, b) => b.price - a.price);
 
   // Role-wise price distribution
   const roleData = playerStats
@@ -268,6 +286,46 @@ function AuctionInsights({ onPlayerSelect }) {
         <div className="bg-slate-900 border border-slate-700 rounded-lg p-2">
           <div className="font-bold text-white text-sm">{data.name} ({data.year})</div>
           <div className="text-xs text-slate-300">Age: {data.age} | Price: ₹{data.price.toFixed(2)} Cr</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for performance vs price showing elite players
+  const CustomPerformanceTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const currentMetric = performanceMetrics.find(m => m.key === selectedMetric);
+
+      if (data.isElite && elitePlayers.length > 0) {
+        return (
+          <div className="bg-slate-900 border border-green-500 rounded-lg p-3 max-w-xs">
+            <div className="font-bold text-white mb-2">{data.name} ({data.year})</div>
+            <div className="text-sm text-slate-300 mb-3">
+              {currentMetric.label}: {data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
+            </div>
+            <div className="border-t border-slate-700 pt-2">
+              <div className="text-xs font-semibold text-green-400 mb-2">
+                Elite Players ({currentMetric.label} {currentMetric.inverse ? '≤' : '≥'} {currentMetric.threshold}, ₹10+ Cr):
+              </div>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {elitePlayers.map((p, idx) => (
+                  <div key={idx} className="text-xs text-slate-300">
+                    <span className="text-green-300">{p.name}</span> - {p.performance.toFixed(1)}, ₹{p.price.toFixed(1)}Cr ({p.year})
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-2">
+          <div className="font-bold text-white text-sm">{data.name} ({data.year})</div>
+          <div className="text-xs text-slate-300">
+            {currentMetric.label}: {data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
+          </div>
         </div>
       );
     }
@@ -526,6 +584,10 @@ function AuctionInsights({ onPlayerSelect }) {
             <Activity className="w-5 h-5 text-primary-500" />
             <h2 className="text-lg md:text-xl font-bold text-white">Performance vs Price</h2>
           </div>
+          <p className="text-slate-400 text-sm mb-4">
+            How player performance correlates with auction prices.
+            <span className="text-green-400 font-semibold ml-2">Hover over elite players (₹10+ Cr, high performance) to see the full list!</span>
+          </p>
           <div className="flex flex-wrap gap-2 mb-4">
             {performanceMetrics.map(metric => (
               <button
@@ -562,27 +624,21 @@ function AuctionInsights({ onPlayerSelect }) {
                 fontSize={12}
                 label={{ value: 'Price (Cr)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
               />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                formatter={(value, name) => {
-                  if (name === 'price') return [`₹${value.toFixed(2)} Cr`, 'Price'];
-                  if (name === 'performance') return [value.toFixed(2), performanceMetrics.find(m => m.key === selectedMetric)?.label];
-                  return [value, name];
-                }}
-                labelFormatter={(label, payload) => {
-                  if (payload && payload[0]) {
-                    return `${payload[0].payload.name} (${payload[0].payload.year})`;
-                  }
-                  return '';
-                }}
-              />
-              <Scatter
-                name="Players"
-                data={performanceVsPrice}
-                fill={performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6'}
-              />
+              <Tooltip content={<CustomPerformanceTooltip />} />
+              <Scatter name="Regular" data={performanceVsPrice.filter(p => !p.isElite)} fill={performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6'} />
+              <Scatter name="Elite" data={performanceVsPrice.filter(p => p.isElite)} fill="#22c55e" />
             </ScatterChart>
           </ResponsiveContainer>
+          <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6' }}></div>
+              <span>Regular Players</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span>Elite Players (₹10+ Cr, High Performance)</span>
+            </div>
+          </div>
         </div>
 
         {/* Role-wise and Country-wise Analysis Grid */}
