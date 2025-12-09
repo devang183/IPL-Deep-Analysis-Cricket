@@ -289,13 +289,13 @@ function AuctionInsights({ onPlayerSelect }) {
         </div>
 
         {/* Player Search */}
-        <div className="card p-4 md:p-6 mb-6">
+        <div className="card p-4 md:p-6 mb-6 relative z-30 overflow-visible">
           <div className="flex items-center gap-2 mb-3">
             <Search className="w-5 h-5 text-primary-500" />
             <h2 className="text-lg md:text-xl font-bold text-white">Player Analysis</h2>
           </div>
           <p className="text-slate-400 text-sm mb-4">Search for a player to view their T20 vs IPL performance and price progression</p>
-          <div className="relative">
+          <div className="relative z-40">
             <input
               type="text"
               value={searchQuery}
@@ -304,7 +304,7 @@ function AuctionInsights({ onPlayerSelect }) {
               className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-primary-500 transition-colors"
             />
             {searchSuggestions.length > 0 && (
-              <div className="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+              <div className="absolute z-[9999] w-full mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                 {searchSuggestions.map((name, idx) => (
                   <div
                     key={idx}
