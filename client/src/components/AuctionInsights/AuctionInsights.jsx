@@ -302,9 +302,12 @@ function AuctionInsights({ onPlayerSelect }) {
         return (
           <div className="bg-slate-900 border border-green-500 rounded-lg p-3 max-w-xs">
             <div className="font-bold text-white mb-2">{data.name} ({data.year})</div>
-            <div className="text-sm text-slate-300 mb-3">
+            <div className="text-sm text-slate-300 mb-1">
               {currentMetric.label}: {data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
             </div>
+            {data.team && (
+              <div className="text-xs text-slate-400 mb-2">Team: {data.team}</div>
+            )}
             <div className="border-t border-slate-700 pt-2">
               <div className="text-xs font-semibold text-green-400 mb-2">
                 Elite Players ({currentMetric.label} {currentMetric.inverse ? '≤' : '≥'} {currentMetric.threshold}, ₹10+ Cr):
@@ -312,7 +315,9 @@ function AuctionInsights({ onPlayerSelect }) {
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {elitePlayers.map((p, idx) => (
                   <div key={idx} className="text-xs text-slate-300">
-                    <span className="text-green-300">{p.name}</span> - {p.performance.toFixed(1)}, ₹{p.price.toFixed(1)}Cr ({p.year})
+                    <span className="text-green-300">{p.name}</span> - {currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? p.performance.toFixed(0) : p.performance.toFixed(1)}, ₹{p.price.toFixed(1)} Cr
+                    {p.team && <span className="text-slate-500"> ({p.team}, {p.year})</span>}
+                    {!p.team && <span className="text-slate-500"> ({p.year})</span>}
                   </div>
                 ))}
               </div>
@@ -324,8 +329,11 @@ function AuctionInsights({ onPlayerSelect }) {
         <div className="bg-slate-900 border border-slate-700 rounded-lg p-2">
           <div className="font-bold text-white text-sm">{data.name} ({data.year})</div>
           <div className="text-xs text-slate-300">
-            {currentMetric.label}: {data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
+            {currentMetric.label}: {currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? data.performance.toFixed(0) : data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
           </div>
+          {data.team && (
+            <div className="text-xs text-slate-400 mt-1">Team: {data.team}</div>
+          )}
         </div>
       );
     }
