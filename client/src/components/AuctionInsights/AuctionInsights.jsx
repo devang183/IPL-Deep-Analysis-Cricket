@@ -11,6 +11,8 @@ function AuctionInsights({ onPlayerSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchedPlayer, setSearchedPlayer] = useState(null);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [hiddenCategories, setHiddenCategories] = useState([]);
+  const [hiddenAgeCategories, setHiddenAgeCategories] = useState([]);
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -311,6 +313,28 @@ function AuctionInsights({ onPlayerSelect }) {
       .join(' ');
   };
 
+  // Handle legend click to toggle category visibility
+  const handleLegendClick = (category) => {
+    setHiddenCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+
+  // Handle legend click for Age vs Price chart
+  const handleAgeLegendClick = (category) => {
+    setHiddenAgeCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+
   // Custom tooltip for performance vs price showing elite players
   const CustomPerformanceTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -592,19 +616,43 @@ function AuctionInsights({ onPlayerSelect }) {
                 label={{ value: 'Price (Cr)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
               />
               <Tooltip content={<CustomAgeTooltip />} />
-              <Scatter name="Players" data={ageVsPrice.filter(p => !p.isPremium)} fill="#3b82f6" />
-              <Scatter name="Premium" data={ageVsPrice.filter(p => p.isPremium)} fill="#22c55e" />
+              {!hiddenAgeCategories.includes('Regular') && (
+                <Scatter name="Players" data={ageVsPrice.filter(p => !p.isPremium)} fill="#3b82f6" />
+              )}
+              {!hiddenAgeCategories.includes('Premium') && (
+                <Scatter name="Premium" data={ageVsPrice.filter(p => p.isPremium)} fill="#22c55e" />
+              )}
             </ScatterChart>
           </ResponsiveContainer>
-          <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
-            <div className="flex items-center gap-2">
+
+          {/* Custom Legend with Toggle */}
+          <div className="mt-4 flex justify-center gap-6">
+            <button
+              onClick={() => handleAgeLegendClick('Regular')}
+              className={`flex items-center gap-2 cursor-pointer transition-opacity ${
+                hiddenAgeCategories.includes('Regular') ? 'opacity-50' : 'opacity-100'
+              }`}
+            >
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span>Regular Players</span>
-            </div>
-            <div className="flex items-center gap-2">
+              <span className={`text-sm font-medium ${
+                hiddenAgeCategories.includes('Regular') ? 'line-through text-slate-500' : 'text-slate-300'
+              }`}>
+                Regular Players
+              </span>
+            </button>
+            <button
+              onClick={() => handleAgeLegendClick('Premium')}
+              className={`flex items-center gap-2 cursor-pointer transition-opacity ${
+                hiddenAgeCategories.includes('Premium') ? 'opacity-50' : 'opacity-100'
+              }`}
+            >
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Premium Players (24-35y, ₹14+ Cr)</span>
-            </div>
+              <span className={`text-sm font-medium ${
+                hiddenAgeCategories.includes('Premium') ? 'line-through text-slate-500' : 'text-slate-300'
+              }`}>
+                Premium Players (24-35y, ₹14+ Cr)
+              </span>
+            </button>
           </div>
         </div>
 
@@ -655,19 +703,46 @@ function AuctionInsights({ onPlayerSelect }) {
                 label={{ value: 'Price (Cr)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
               />
               <Tooltip content={<CustomPerformanceTooltip />} />
-              <Scatter name="Regular" data={performanceVsPrice.filter(p => !p.isElite)} fill={performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6'} />
-              <Scatter name="Elite" data={performanceVsPrice.filter(p => p.isElite)} fill="#22c55e" />
+              {!hiddenCategories.includes('Regular') && (
+                <Scatter name="Regular" data={performanceVsPrice.filter(p => !p.isElite)} fill={performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6'} />
+              )}
+              {!hiddenCategories.includes('Elite') && (
+                <Scatter name="Elite" data={performanceVsPrice.filter(p => p.isElite)} fill="#22c55e" />
+              )}
             </ScatterChart>
           </ResponsiveContainer>
-          <div className="mt-4 flex items-center gap-4 text-xs text-slate-400">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6' }}></div>
-              <span>Regular Players</span>
-            </div>
-            <div className="flex items-center gap-2">
+
+          {/* Custom Legend with Toggle */}
+          <div className="mt-4 flex justify-center gap-6">
+            <button
+              onClick={() => handleLegendClick('Regular')}
+              className={`flex items-center gap-2 cursor-pointer transition-opacity ${
+                hiddenCategories.includes('Regular') ? 'opacity-50' : 'opacity-100'
+              }`}
+            >
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: performanceMetrics.find(m => m.key === selectedMetric)?.color || '#3b82f6' }}
+              ></div>
+              <span className={`text-sm font-medium ${
+                hiddenCategories.includes('Regular') ? 'line-through text-slate-500' : 'text-slate-300'
+              }`}>
+                Regular Players
+              </span>
+            </button>
+            <button
+              onClick={() => handleLegendClick('Elite')}
+              className={`flex items-center gap-2 cursor-pointer transition-opacity ${
+                hiddenCategories.includes('Elite') ? 'opacity-50' : 'opacity-100'
+              }`}
+            >
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Elite Players (₹10+ Cr, High Performance)</span>
-            </div>
+              <span className={`text-sm font-medium ${
+                hiddenCategories.includes('Elite') ? 'line-through text-slate-500' : 'text-slate-300'
+              }`}>
+                Elite Players (₹10+ Cr, High Performance)
+              </span>
+            </button>
           </div>
         </div>
 
