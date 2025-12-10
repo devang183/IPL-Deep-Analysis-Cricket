@@ -171,7 +171,8 @@ function AuctionInsights({ onPlayerSelect }) {
     { key: 'ipl_avg', label: 'IPL Average', color: '#22c55e', threshold: 40 },
     { key: 'ipl_runs', label: 'IPL Runs', color: '#f59e0b', threshold: 4000 },
     { key: 'ipl_wkts', label: 'IPL Wickets', color: '#ef4444', threshold: 100 },
-    { key: 'ipl_bowl_econ', label: 'IPL Economy', color: '#8b5cf6', threshold: 7.5, inverse: true }
+    { key: 'ipl_bowl_econ', label: 'IPL Economy', color: '#8b5cf6', threshold: 7.5, inverse: true },
+    { key: 'age', label: 'Age vs Price', color: '#ec4899', threshold: 24, thresholdMax: 35, isPremiumAge: true }
   ];
 
   const performanceVsPrice = playerStats
@@ -182,9 +183,17 @@ function AuctionInsights({ onPlayerSelect }) {
       const price = p.price / 10000000;
 
       // Determine if player is "elite" based on current metric
-      const isElite = currentMetric.inverse
-        ? (performance <= currentMetric.threshold && price > 10) // For economy, lower is better
-        : (performance >= currentMetric.threshold && price > 10);
+      let isElite;
+      if (currentMetric.isPremiumAge) {
+        // For age, elite players are in the 24-35 range with price > 14 Cr
+        isElite = (performance >= currentMetric.threshold && performance <= currentMetric.thresholdMax && price > 14);
+      } else if (currentMetric.inverse) {
+        // For economy, lower is better
+        isElite = (performance <= currentMetric.threshold && price > 10);
+      } else {
+        // For other metrics, higher is better
+        isElite = (performance >= currentMetric.threshold && price > 10);
+      }
 
       return {
         ...p, // Include all player stats for tooltip first
@@ -346,14 +355,18 @@ function AuctionInsights({ onPlayerSelect }) {
           <div className="bg-slate-900 border border-green-500 rounded-lg p-3 max-w-xs shadow-2xl" style={{ pointerEvents: 'auto' }}>
             <div className="font-bold text-white mb-2">{toTitleCase(data.name)} ({data.year})</div>
             <div className="text-sm text-slate-300 mb-1">
-              {currentMetric.label}: {data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
+              {currentMetric.isPremiumAge ? 'Age' : currentMetric.label}: {currentMetric.isPremiumAge || currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? data.performance.toFixed(0) : data.performance.toFixed(2)} {currentMetric.isPremiumAge ? 'years' : ''} | Price: ₹{data.price.toFixed(2)} Cr
             </div>
             {data.team && (
               <div className="text-xs text-slate-400 mb-2">Team: {formatTeamName(data.team)}</div>
             )}
             <div className="border-t border-slate-700 pt-2 mt-2">
               <div className="text-xs font-semibold text-green-400 mb-2">
-                Elite Players ({currentMetric.label} {currentMetric.inverse ? '≤' : '≥'} {currentMetric.threshold}, ₹10+ Cr):
+                {currentMetric.isPremiumAge ? (
+                  <>Elite Players (Age {currentMetric.threshold}-{currentMetric.thresholdMax}, ₹14+ Cr):</>
+                ) : (
+                  <>Elite Players ({currentMetric.label} {currentMetric.inverse ? '≤' : '≥'} {currentMetric.threshold}, ₹10+ Cr):</>
+                )}
               </div>
               <div className="tooltip-scroll max-h-40 overflow-y-scroll space-y-1 pr-2" style={{
                 scrollbarWidth: 'thin',
@@ -361,7 +374,7 @@ function AuctionInsights({ onPlayerSelect }) {
               }}>
                 {elitePlayers.map((p, idx) => (
                   <div key={idx} className="text-xs text-slate-300 leading-relaxed">
-                    <span className="text-green-300">{toTitleCase(p.name)}</span> - {currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? p.performance.toFixed(0) : p.performance.toFixed(1)}, ₹{p.price.toFixed(1)} Cr
+                    <span className="text-green-300">{toTitleCase(p.name)}</span> - {currentMetric.isPremiumAge || currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? p.performance.toFixed(0) : p.performance.toFixed(1)}{currentMetric.isPremiumAge ? 'y' : ''}, ₹{p.price.toFixed(1)} Cr
                     {p.team && <span className="text-slate-500"> ({formatTeamName(p.team)}, {p.year})</span>}
                     {!p.team && <span className="text-slate-500"> ({p.year})</span>}
                   </div>
@@ -375,7 +388,7 @@ function AuctionInsights({ onPlayerSelect }) {
         <div className="bg-slate-900 border border-slate-700 rounded-lg p-2 shadow-xl" style={{ pointerEvents: 'auto' }}>
           <div className="font-bold text-white text-sm">{toTitleCase(data.name)} ({data.year})</div>
           <div className="text-xs text-slate-300">
-            {currentMetric.label}: {currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? data.performance.toFixed(0) : data.performance.toFixed(2)} | Price: ₹{data.price.toFixed(2)} Cr
+            {currentMetric.isPremiumAge ? 'Age' : currentMetric.label}: {currentMetric.isPremiumAge || currentMetric.label.includes('Runs') || currentMetric.label.includes('Wickets') ? data.performance.toFixed(0) : data.performance.toFixed(2)} {currentMetric.isPremiumAge ? 'years' : ''} | Price: ₹{data.price.toFixed(2)} Cr
           </div>
           {data.team && (
             <div className="text-xs text-slate-400 mt-1">Team: {formatTeamName(data.team)}</div>
@@ -690,7 +703,9 @@ function AuctionInsights({ onPlayerSelect }) {
                 stroke="#94a3b8"
                 fontSize={12}
                 label={{
-                  value: performanceMetrics.find(m => m.key === selectedMetric)?.label,
+                  value: performanceMetrics.find(m => m.key === selectedMetric)?.isPremiumAge
+                    ? 'Age (years)'
+                    : performanceMetrics.find(m => m.key === selectedMetric)?.label,
                   position: 'insideBottom',
                   offset: -5,
                   fill: '#94a3b8'
