@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { TrendingUp, Users, Award, BarChart3, Activity, Zap, Search } from 'lucide-react';
 import { ScatterChart, Scatter, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import axios from 'axios';
+import Fuse from 'fuse.js';
 import MatrixLoader from '../MatrixLoader';
 
 function AuctionInsights({ onPlayerSelect }) {
@@ -12,7 +13,6 @@ function AuctionInsights({ onPlayerSelect }) {
   const [searchedPlayer, setSearchedPlayer] = useState(null);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [hiddenCategories, setHiddenCategories] = useState([]);
-  const [hiddenAgeCategories, setHiddenAgeCategories] = useState([]);
 
   useEffect(() => {
     const fetchPlayerStats = async () => {
@@ -30,45 +30,38 @@ function AuctionInsights({ onPlayerSelect }) {
     fetchPlayerStats();
   }, []);
 
-  // Memoize unique players list with lowercase names for efficient searching
-  const uniquePlayersMap = useMemo(() => {
-    const playerMap = new Map();
+  // Memoize unique players list for fuzzy search
+  const uniquePlayersList = useMemo(() => {
+    const playerSet = new Set();
     playerStats.forEach(p => {
-      if (p.name && !playerMap.has(p.name.toLowerCase())) {
-        playerMap.set(p.name.toLowerCase(), p.name);
+      if (p.name) {
+        playerSet.add(p.name);
       }
     });
-    return playerMap;
+    return Array.from(playerSet);
   }, [playerStats]);
 
-  // Handle search query changes
+  // Initialize Fuse.js for fuzzy search
+  const fuse = useMemo(() => {
+    return new Fuse(uniquePlayersList, {
+      threshold: 0.3, // Lower = more strict matching
+      distance: 100,
+      minMatchCharLength: 2,
+      ignoreLocation: true,
+      keys: [''] // Search the string directly
+    });
+  }, [uniquePlayersList]);
+
+  // Handle search query changes with fuzzy search
   useEffect(() => {
     if (searchQuery.trim().length >= 2) {
-      const queryLower = searchQuery.toLowerCase();
-      const matches = [];
-
-      // Prioritize exact matches and starts-with matches
-      const startsWithMatches = [];
-      const containsMatches = [];
-
-      for (const [lowerName, originalName] of uniquePlayersMap) {
-        if (lowerName.startsWith(queryLower)) {
-          startsWithMatches.push(originalName);
-        } else if (lowerName.includes(queryLower)) {
-          containsMatches.push(originalName);
-        }
-
-        // Stop early if we have enough matches
-        if (startsWithMatches.length + containsMatches.length >= 15) break;
-      }
-
-      // Combine results: starts-with first, then contains
-      const allMatches = [...startsWithMatches, ...containsMatches].slice(0, 10);
-      setSearchSuggestions(allMatches);
+      const results = fuse.search(searchQuery);
+      const matches = results.slice(0, 10).map(result => result.item);
+      setSearchSuggestions(matches);
     } else {
       setSearchSuggestions([]);
     }
-  }, [searchQuery, uniquePlayersMap]);
+  }, [searchQuery, fuse]);
 
   const handlePlayerSearch = (playerName) => {
     setSearchedPlayer(playerName);
@@ -101,27 +94,6 @@ function AuctionInsights({ onPlayerSelect }) {
     return `₹${lakhs.toFixed(2)} L`;
   };
 
-  // Premium players (age 24-35, price > 14 cr)
-  const premiumPlayers = playerStats
-    .filter(p => p.age && p.price && p.age >= 24 && p.age <= 35 && p.price / 10000000 > 14)
-    .map(p => ({
-      name: p.name,
-      age: p.age,
-      price: p.price / 10000000,
-      year: p.year,
-      team: p.team
-    }));
-
-  // Age vs Price analysis
-  const ageVsPrice = playerStats
-    .filter(p => p.age && p.price)
-    .map(p => ({
-      age: p.age,
-      price: p.price / 10000000,
-      name: p.name,
-      year: p.year,
-      isPremium: p.age >= 24 && p.age <= 35 && p.price / 10000000 > 14
-    }));
 
   // Player-specific data
   const playerSpecificData = searchedPlayer ? playerStats.filter(p => p.name === searchedPlayer) : [];
@@ -266,43 +238,6 @@ function AuctionInsights({ onPlayerSelect }) {
       price: (p.price / 10000000).toFixed(2)
     }));
 
-  // Custom tooltip for age vs price showing premium players
-  const CustomAgeTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      if (data.isPremium) {
-        return (
-          <div className="bg-slate-900 border border-primary-500 rounded-lg p-3 max-w-xs">
-            <div className="font-bold text-white mb-2">{data.name} ({data.year})</div>
-            <div className="text-sm text-slate-300 mb-3">
-              Age: {data.age} | Price: ₹{data.price.toFixed(2)} Cr
-            </div>
-            <div className="border-t border-slate-700 pt-2">
-              <div className="text-xs font-semibold text-primary-400 mb-2">Premium Players (Age 24-35, ₹14+ Cr):</div>
-              <div className="max-h-40 overflow-y-auto space-y-1">
-                {premiumPlayers.slice(0, 8).map((p, idx) => (
-                  <div key={idx} className="text-xs text-slate-300">
-                    <span className="text-primary-300">{p.name}</span> - {p.age}y, ₹{p.price.toFixed(1)}Cr ({p.year})
-                  </div>
-                ))}
-                {premiumPlayers.length > 8 && (
-                  <div className="text-xs text-slate-500 italic">+{premiumPlayers.length - 8} more...</div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      }
-      return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-2">
-          <div className="font-bold text-white text-sm">{data.name} ({data.year})</div>
-          <div className="text-xs text-slate-300">Age: {data.age} | Price: ₹{data.price.toFixed(2)} Cr</div>
-        </div>
-      );
-    }
-    return null;
-  };
-
   // Helper function to convert name to title case
   const toTitleCase = (str) => {
     if (!str) return str;
@@ -325,17 +260,6 @@ function AuctionInsights({ onPlayerSelect }) {
   // Handle legend click to toggle category visibility
   const handleLegendClick = (category) => {
     setHiddenCategories((prev) => {
-      if (prev.includes(category)) {
-        return prev.filter((c) => c !== category);
-      } else {
-        return [...prev, category];
-      }
-    });
-  };
-
-  // Handle legend click for Age vs Price chart
-  const handleAgeLegendClick = (category) => {
-    setHiddenAgeCategories((prev) => {
       if (prev.includes(category)) {
         return prev.filter((c) => c !== category);
       } else {
@@ -601,73 +525,6 @@ function AuctionInsights({ onPlayerSelect }) {
             )}
           </>
         )}
-
-        {/* Age vs Price Scatter */}
-        <div className="card p-4 md:p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-primary-500" />
-            <h2 className="text-lg md:text-xl font-bold text-white">Age vs Auction Price</h2>
-          </div>
-          <p className="text-slate-400 text-sm mb-4">
-            How player age influences auction valuations.
-            <span className="text-primary-400 font-semibold ml-2">Hover over premium players (age 24-35, ₹14+ Cr) to see the list!</span>
-          </p>
-          <ResponsiveContainer width="100%" height={400}>
-            <ScatterChart>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis
-                dataKey="age"
-                type="number"
-                stroke="#94a3b8"
-                fontSize={12}
-                label={{ value: 'Age (years)', position: 'insideBottom', offset: -5, fill: '#94a3b8' }}
-              />
-              <YAxis
-                dataKey="price"
-                stroke="#94a3b8"
-                fontSize={12}
-                label={{ value: 'Price (Cr)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
-              />
-              <Tooltip content={<CustomAgeTooltip />} />
-              {!hiddenAgeCategories.includes('Regular') && (
-                <Scatter name="Players" data={ageVsPrice.filter(p => !p.isPremium)} fill="#3b82f6" />
-              )}
-              {!hiddenAgeCategories.includes('Premium') && (
-                <Scatter name="Premium" data={ageVsPrice.filter(p => p.isPremium)} fill="#22c55e" />
-              )}
-            </ScatterChart>
-          </ResponsiveContainer>
-
-          {/* Custom Legend with Toggle */}
-          <div className="mt-4 flex justify-center gap-6">
-            <button
-              onClick={() => handleAgeLegendClick('Regular')}
-              className={`flex items-center gap-2 cursor-pointer transition-opacity ${
-                hiddenAgeCategories.includes('Regular') ? 'opacity-50' : 'opacity-100'
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className={`text-sm font-medium ${
-                hiddenAgeCategories.includes('Regular') ? 'line-through text-slate-500' : 'text-slate-300'
-              }`}>
-                Regular Players
-              </span>
-            </button>
-            <button
-              onClick={() => handleAgeLegendClick('Premium')}
-              className={`flex items-center gap-2 cursor-pointer transition-opacity ${
-                hiddenAgeCategories.includes('Premium') ? 'opacity-50' : 'opacity-100'
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className={`text-sm font-medium ${
-                hiddenAgeCategories.includes('Premium') ? 'line-through text-slate-500' : 'text-slate-300'
-              }`}>
-                Premium Players (24-35y, ₹14+ Cr)
-              </span>
-            </button>
-          </div>
-        </div>
 
         {/* Performance vs Price */}
         <div className="card p-4 md:p-6 mb-6">
