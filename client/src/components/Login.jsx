@@ -3,7 +3,7 @@ import { Activity, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, Trophy } from 
 import { useAuth } from '../context/AuthContext';
 import CricketBackground from './CricketBackground';
 
-function Login({ onSwitchToRegister }) {
+function Login({ onSwitchToRegister, onForgotPassword }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -109,6 +109,17 @@ function Login({ onSwitchToRegister }) {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+
+              {/* Forgot Password Link */}
+              <div className="text-right mt-2">
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-sm text-blue-200 hover:text-white hover:underline transition-all font-medium"
+                >
+                  Forgot your password?
                 </button>
               </div>
             </div>

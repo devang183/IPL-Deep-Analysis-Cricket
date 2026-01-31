@@ -4,8 +4,19 @@ const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
+
+// Email transporter configuration
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -304,6 +315,177 @@ app.post('/api/auth/refresh', async (req, res) => {
       return res.status(401).json({ error: 'Refresh token expired. Please login again.' });
     }
     res.status(403).json({ error: 'Invalid refresh token' });
+  }
+});
+
+// Forgot Password - Send reset link to email
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+    const { email } = req.body;
+
+    // Validation
+    if (!email) {
+      return res.status(400).json({ error: 'Please provide your email address' });
+    }
+
+    // Find user by email
+    const user = await usersCollection.findOne({ email: email.toLowerCase() });
+
+    // Always return success message to prevent email enumeration attacks
+    if (!user) {
+      return res.json({
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Generate secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Store hashed token and expiry in user document
+    await usersCollection.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          resetPasswordToken: resetTokenHash,
+          resetPasswordExpiry: resetTokenExpiry
+        }
+      }
+    );
+
+    // Create reset URL (production URL)
+    const resetUrl = `https://ipl-deep-analysis-cricket.vercel.app/reset-password?token=${resetToken}&email=${encodeURIComponent(email.toLowerCase())}`;
+
+    // Generate email HTML
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reset Your Password</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px;">IPL Analytics</h1>
+              <p style="color: #a8c7e8; margin: 10px 0 0 0; font-size: 14px;">Password Reset Request</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="color: #1e3a5f; margin: 0 0 20px 0; font-size: 22px;">Hello ${user.name || 'User'},</h2>
+              <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                We received a request to reset the password for your IPL Analytics account associated with <strong>${email}</strong>.
+              </p>
+              <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                Click the button below to reset your password. This link will expire in <strong>1 hour</strong>.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #e63946 0%, #d62839 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);">
+                      Reset My Password
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color: #888888; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
+                If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+              </p>
+              <hr style="border: none; border-top: 1px solid #eeeeee; margin: 30px 0;">
+              <p style="color: #888888; font-size: 12px; line-height: 1.6; margin: 0;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="${resetUrl}" style="color: #2d5a87; word-break: break-all;">${resetUrl}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 20px 30px; text-align: center;">
+              <p style="color: #888888; font-size: 12px; margin: 0;">
+                &copy; ${new Date().getFullYear()} IPL Analytics. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    // Send email
+    await emailTransporter.sendMail({
+      from: `"IPL Analytics" <${process.env.EMAIL_USER}>`,
+      to: email.toLowerCase(),
+      subject: 'Reset Your Password - IPL Analytics',
+      html: emailHtml
+    });
+
+    console.log(`Password reset email sent to: ${email}`);
+
+    res.json({
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Failed to process password reset request' });
+  }
+});
+
+// Reset Password - Verify token and update password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { usersCollection } = await connectToDatabase();
+    const { email, token, newPassword } = req.body;
+
+    // Validation
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ error: 'Please provide email, token, and new password' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Hash the provided token to compare with stored hash
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with matching email, token, and valid expiry
+    const user = await usersCollection.findOne({
+      email: email.toLowerCase(),
+      resetPasswordToken: tokenHash,
+      resetPasswordExpiry: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        error: 'Invalid or expired password reset link. Please request a new one.'
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user's password and clear reset token fields
+    await usersCollection.updateOne(
+      { _id: user._id },
+      {
+        $set: { password: hashedPassword },
+        $unset: { resetPasswordToken: '', resetPasswordExpiry: '' }
+      }
+    );
+
+    console.log(`Password reset successful for: ${email}`);
+
+    res.json({ message: 'Password has been reset successfully. You can now login with your new password.' });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 });
 
