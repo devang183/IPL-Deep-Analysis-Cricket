@@ -1246,6 +1246,740 @@ app.get('/api/t20data/search', async (req, res) => {
   }
 });
 
+// Debug endpoint to see T20 data structure
+app.get('/api/t20data/sample', async (req, res) => {
+  try {
+    const sample = await t20Collection.findOne({});
+    res.json(sample);
+  } catch (error) {
+    console.error('Error fetching T20 sample:', error);
+    res.status(500).json({ error: 'Failed to fetch T20 sample' });
+  }
+});
+
+// ========== T20 International Analytics Endpoints ==========
+
+// Get all unique T20I players (batsmen)
+app.get('/api/t20i/players', async (req, res) => {
+  try {
+    const players = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $group: { _id: '$innings.overs.deliveries.batter' } },
+      { $sort: { _id: 1 } }
+    ]).toArray();
+
+    const playerList = players.map(p => p._id).filter(p => p);
+    res.json({ players: playerList, count: playerList.length });
+  } catch (error) {
+    console.error('Error fetching T20I players:', error);
+    res.status(500).json({ error: 'Failed to fetch T20I players' });
+  }
+});
+
+// Get all unique T20I bowlers
+app.get('/api/t20i/bowlers', async (req, res) => {
+  try {
+    const bowlers = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $group: { _id: '$innings.overs.deliveries.bowler' } },
+      { $sort: { _id: 1 } }
+    ]).toArray();
+
+    const bowlerList = bowlers.map(b => b._id).filter(b => b);
+    res.json({ bowlers: bowlerList, count: bowlerList.length });
+  } catch (error) {
+    console.error('Error fetching T20I bowlers:', error);
+    res.status(500).json({ error: 'Failed to fetch T20I bowlers' });
+  }
+});
+
+// Get T20I batting stats for a player
+app.get('/api/t20i/stats/:name', async (req, res) => {
+  try {
+    const player = req.params.name;
+
+    // Get all deliveries for this batsman
+    const stats = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.batter': player } },
+      {
+        $project: {
+          match_id: 1,
+          innings_team: '$innings.team',
+          over: '$innings.overs.over',
+          delivery: '$innings.overs.deliveries',
+          runs_batter: '$innings.overs.deliveries.runs.batter',
+          runs_extras: '$innings.overs.deliveries.runs.extras',
+          runs_total: '$innings.overs.deliveries.runs.total',
+          has_extras: { $gt: [{ $size: { $objectToArray: { $ifNull: ['$innings.overs.deliveries.extras', {}] } } }, 0] },
+          is_wide: { $ifNull: ['$innings.overs.deliveries.extras.wides', 0] },
+          is_noball: { $ifNull: ['$innings.overs.deliveries.extras.noballs', 0] },
+          wickets: '$innings.overs.deliveries.wickets'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRuns: { $sum: '$runs_batter' },
+          totalBalls: {
+            $sum: {
+              $cond: [
+                { $or: [{ $gt: ['$is_wide', 0] }, { $gt: ['$is_noball', 0] }] },
+                0,
+                1
+              ]
+            }
+          },
+          fours: {
+            $sum: { $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0] }
+          },
+          sixes: {
+            $sum: { $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0] }
+          },
+          dots: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $eq: ['$runs_batter', 0] },
+                  { $eq: ['$runs_extras', 0] },
+                  { $not: { $gt: ['$is_wide', 0] } },
+                  { $not: { $gt: ['$is_noball', 0] } }
+                ]},
+                1,
+                0
+              ]
+            }
+          },
+          dismissals: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $isArray: '$wickets' },
+                  { $gt: [{ $size: '$wickets' }, 0] }
+                ]},
+                1,
+                0
+              ]
+            }
+          },
+          matches: { $addToSet: '$match_id' }
+        }
+      }
+    ]).toArray();
+
+    if (stats.length === 0) {
+      return res.status(404).json({ error: 'Player not found in T20I data' });
+    }
+
+    const result = stats[0];
+    const strikeRate = result.totalBalls > 0
+      ? parseFloat(((result.totalRuns / result.totalBalls) * 100).toFixed(2))
+      : 0;
+    const average = result.dismissals > 0
+      ? parseFloat((result.totalRuns / result.dismissals).toFixed(2))
+      : result.totalRuns;
+
+    // Get innings-wise scores for 50s and 100s
+    const inningsScores = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.batter': player } },
+      {
+        $group: {
+          _id: { match_id: '$match_id', innings: '$innings.team' },
+          runs: { $sum: '$innings.overs.deliveries.runs.batter' }
+        }
+      }
+    ]).toArray();
+
+    const fifties = inningsScores.filter(inn => inn.runs >= 50 && inn.runs < 100).length;
+    const hundreds = inningsScores.filter(inn => inn.runs >= 100).length;
+
+    res.json({
+      player,
+      stats: {
+        totalRuns: result.totalRuns,
+        totalBalls: result.totalBalls,
+        strikeRate,
+        average,
+        fours: result.fours,
+        sixes: result.sixes,
+        dots: result.dots,
+        boundaries: result.fours + result.sixes,
+        dismissals: result.dismissals,
+        fifties,
+        hundreds,
+        matches: result.matches?.length || 0,
+        dotPercentage: result.totalBalls > 0
+          ? parseFloat(((result.dots / result.totalBalls) * 100).toFixed(2))
+          : 0,
+        ballDistribution: [
+          { name: 'Dot Balls', value: result.dots },
+          { name: 'Singles/Doubles', value: result.totalBalls - result.dots - result.fours - result.sixes },
+          { name: 'Fours', value: result.fours },
+          { name: 'Sixes', value: result.sixes }
+        ]
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching T20I player stats:', error);
+    res.status(500).json({ error: 'Failed to fetch T20I player stats' });
+  }
+});
+
+// Get T20I bowling stats for a player
+app.get('/api/t20i/bowler-stats/:name', async (req, res) => {
+  try {
+    const bowler = req.params.name;
+
+    // Dismissal types that count as bowler wickets (excludes run out, retired, obstructing the field)
+    const bowlerWicketTypes = ['bowled', 'caught', 'lbw', 'stumped', 'hit wicket', 'caught and bowled'];
+
+    const stats = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.bowler': bowler } },
+      {
+        $project: {
+          match_id: 1,
+          innings_team: '$innings.team',
+          over: '$innings.overs.over',
+          runs_total: '$innings.overs.deliveries.runs.total',
+          runs_batter: '$innings.overs.deliveries.runs.batter',
+          is_wide: { $ifNull: ['$innings.overs.deliveries.extras.wides', 0] },
+          is_noball: { $ifNull: ['$innings.overs.deliveries.extras.noballs', 0] },
+          wickets: '$innings.overs.deliveries.wickets',
+          // Count only bowler wickets (excluding run outs, retired, etc.)
+          bowlerWickets: {
+            $cond: [
+              { $isArray: '$innings.overs.deliveries.wickets' },
+              {
+                $size: {
+                  $filter: {
+                    input: '$innings.overs.deliveries.wickets',
+                    as: 'w',
+                    cond: { $in: ['$$w.kind', bowlerWicketTypes] }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRuns: { $sum: '$runs_total' },
+          totalBalls: {
+            $sum: {
+              $cond: [
+                { $or: [{ $gt: ['$is_wide', 0] }, { $gt: ['$is_noball', 0] }] },
+                0,
+                1
+              ]
+            }
+          },
+          wickets: { $sum: '$bowlerWickets' },
+          dotBalls: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $eq: ['$runs_total', 0] },
+                  { $not: { $gt: ['$is_wide', 0] } },
+                  { $not: { $gt: ['$is_noball', 0] } }
+                ]},
+                1,
+                0
+              ]
+            }
+          },
+          matches: { $addToSet: '$match_id' }
+        }
+      }
+    ]).toArray();
+
+    if (stats.length === 0) {
+      return res.status(404).json({ error: 'Bowler not found in T20I data' });
+    }
+
+    const result = stats[0];
+    const completedOvers = Math.floor(result.totalBalls / 6);
+    const remainingBalls = result.totalBalls % 6;
+    const oversFormatted = remainingBalls > 0 ? `${completedOvers}.${remainingBalls}` : `${completedOvers}.0`;
+    const totalOversDecimal = completedOvers + (remainingBalls / 10);
+
+    const economyRate = totalOversDecimal > 0
+      ? parseFloat((result.totalRuns / totalOversDecimal).toFixed(2))
+      : 0;
+    const bowlingAverage = result.wickets > 0
+      ? parseFloat((result.totalRuns / result.wickets).toFixed(2))
+      : 0;
+    const bowlingStrikeRate = result.wickets > 0
+      ? parseFloat((result.totalBalls / result.wickets).toFixed(2))
+      : 0;
+
+    // Get innings-wise wickets for 3W, 4W, 5W (excluding run outs)
+    const inningsWickets = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.bowler': bowler } },
+      {
+        $project: {
+          match_id: 1,
+          innings_team: '$innings.team',
+          wicketCount: {
+            $cond: [
+              { $isArray: '$innings.overs.deliveries.wickets' },
+              {
+                $size: {
+                  $filter: {
+                    input: '$innings.overs.deliveries.wickets',
+                    as: 'w',
+                    cond: { $in: ['$$w.kind', bowlerWicketTypes] }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { match_id: '$match_id', innings: '$innings_team' },
+          wickets: { $sum: '$wicketCount' }
+        }
+      }
+    ]).toArray();
+
+    const threeWickets = inningsWickets.filter(inn => inn.wickets === 3).length;
+    const fourWickets = inningsWickets.filter(inn => inn.wickets === 4).length;
+    const fiveWickets = inningsWickets.filter(inn => inn.wickets >= 5).length;
+
+    res.json({
+      bowler,
+      stats: {
+        overs: oversFormatted,
+        balls: result.totalBalls,
+        totalRuns: result.totalRuns,
+        wickets: result.wickets,
+        economyRate,
+        bowlingAverage,
+        bowlingStrikeRate,
+        dotBalls: result.dotBalls,
+        threeWickets,
+        fourWickets,
+        fiveWickets,
+        matches: result.matches?.length || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching T20I bowler stats:', error);
+    res.status(500).json({ error: 'Failed to fetch T20I bowler stats' });
+  }
+});
+
+// Get T20I batsman vs bowler matchup
+app.post('/api/t20i/batsman-vs-bowler', async (req, res) => {
+  try {
+    const { batsman, bowler } = req.body;
+
+    if (!batsman || !bowler) {
+      return res.status(400).json({ error: 'Both batsman and bowler are required' });
+    }
+
+    const stats = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      {
+        $match: {
+          'innings.overs.deliveries.batter': batsman,
+          'innings.overs.deliveries.bowler': bowler
+        }
+      },
+      {
+        $project: {
+          match_id: 1,
+          season: '$info.season',
+          venue: '$info.venue',
+          date: { $arrayElemAt: ['$info.dates', 0] },
+          batting_team: '$innings.team',
+          runs_batter: '$innings.overs.deliveries.runs.batter',
+          runs_extras: '$innings.overs.deliveries.runs.extras',
+          runs_total: '$innings.overs.deliveries.runs.total',
+          is_wide: { $ifNull: ['$innings.overs.deliveries.extras.wides', 0] },
+          is_noball: { $ifNull: ['$innings.overs.deliveries.extras.noballs', 0] },
+          wickets: '$innings.overs.deliveries.wickets',
+          over: '$innings.overs.over'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRuns: { $sum: '$runs_batter' },
+          totalBalls: {
+            $sum: {
+              $cond: [
+                { $or: [{ $gt: ['$is_wide', 0] }, { $gt: ['$is_noball', 0] }] },
+                0,
+                1
+              ]
+            }
+          },
+          fours: {
+            $sum: { $cond: [{ $eq: ['$runs_batter', 4] }, 1, 0] }
+          },
+          sixes: {
+            $sum: { $cond: [{ $eq: ['$runs_batter', 6] }, 1, 0] }
+          },
+          dots: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $eq: ['$runs_batter', 0] },
+                  { $eq: ['$runs_extras', 0] },
+                  { $not: { $gt: ['$is_wide', 0] } },
+                  { $not: { $gt: ['$is_noball', 0] } }
+                ]},
+                1,
+                0
+              ]
+            }
+          },
+          dismissals: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $isArray: '$wickets' },
+                  { $gt: [{ $size: '$wickets' }, 0] }
+                ]},
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]).toArray();
+
+    if (stats.length === 0 || stats[0].totalBalls === 0) {
+      return res.json({
+        batsman,
+        bowler,
+        totalBalls: 0,
+        totalRuns: 0,
+        strikeRate: 0,
+        average: 0,
+        dismissals: 0,
+        message: 'No data available for this matchup in T20I'
+      });
+    }
+
+    const result = stats[0];
+    const strikeRate = result.totalBalls > 0
+      ? parseFloat(((result.totalRuns / result.totalBalls) * 100).toFixed(2))
+      : 0;
+    const average = result.dismissals > 0
+      ? parseFloat((result.totalRuns / result.dismissals).toFixed(2))
+      : result.totalRuns;
+
+    // Get dismissal details
+    const dismissalDetails = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      {
+        $match: {
+          'innings.overs.deliveries.batter': batsman,
+          'innings.overs.deliveries.bowler': bowler,
+          'innings.overs.deliveries.wickets': { $exists: true, $ne: [] }
+        }
+      },
+      {
+        $project: {
+          season: '$info.season',
+          venue: '$info.venue',
+          date: { $arrayElemAt: ['$info.dates', 0] },
+          over: '$innings.overs.over',
+          wicketKind: { $arrayElemAt: ['$innings.overs.deliveries.wickets.kind', 0] },
+          fielders: { $arrayElemAt: ['$innings.overs.deliveries.wickets.fielders', 0] }
+        }
+      },
+      { $limit: 20 }
+    ]).toArray();
+
+    res.json({
+      batsman,
+      bowler,
+      totalRuns: result.totalRuns,
+      totalBalls: result.totalBalls,
+      strikeRate,
+      average,
+      dismissals: result.dismissals,
+      fours: result.fours,
+      sixes: result.sixes,
+      dots: result.dots,
+      dismissalDetails,
+      runsDistribution: [
+        { name: 'Dots', value: result.dots },
+        { name: 'Singles/Doubles', value: result.totalBalls - result.dots - result.fours - result.sixes },
+        { name: 'Fours', value: result.fours },
+        { name: 'Sixes', value: result.sixes }
+      ]
+    });
+  } catch (error) {
+    console.error('Error analyzing T20I batsman vs bowler:', error);
+    res.status(500).json({ error: 'Failed to analyze T20I batsman vs bowler matchup' });
+  }
+});
+
+// Debug T20I batting stats for a player
+app.get('/api/t20i/debug/:name', async (req, res) => {
+  try {
+    const player = req.params.name;
+
+    // Count ALL deliveries where this player is the batter
+    const allDeliveries = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.batter': player } },
+      {
+        $project: {
+          match_id: 1,
+          date: { $arrayElemAt: ['$info.dates', 0] },
+          teams: '$info.teams',
+          runs_batter: '$innings.overs.deliveries.runs.batter',
+          runs_total: '$innings.overs.deliveries.runs.total',
+          extras: '$innings.overs.deliveries.extras',
+          is_wide: { $ifNull: ['$innings.overs.deliveries.extras.wides', 0] },
+          is_noball: { $ifNull: ['$innings.overs.deliveries.extras.noballs', 0] },
+          wickets: '$innings.overs.deliveries.wickets'
+        }
+      }
+    ]).toArray();
+
+    // Calculate different counts
+    let totalDeliveries = allDeliveries.length;
+    let totalRuns = 0;
+    let ballsFacedExcludingWides = 0;
+    let ballsFacedExcludingWidesAndNoballs = 0;
+    let widesCount = 0;
+    let noballsCount = 0;
+    let deliveriesWithExtras = 0;
+
+    // Track unique matches and dates
+    const matchSet = new Set();
+    let earliestDate = null;
+    let latestDate = null;
+
+    for (const d of allDeliveries) {
+      totalRuns += d.runs_batter || 0;
+
+      if (d.is_wide > 0) {
+        widesCount++;
+      }
+      if (d.is_noball > 0) {
+        noballsCount++;
+      }
+
+      // Standard cricket: wides don't count, noballs don't count
+      if (d.is_wide === 0 && d.is_noball === 0) {
+        ballsFacedExcludingWidesAndNoballs++;
+      }
+
+      // Only exclude wides (some systems count noballs as balls faced)
+      if (d.is_wide === 0) {
+        ballsFacedExcludingWides++;
+      }
+
+      if (d.extras && Object.keys(d.extras).length > 0) {
+        deliveriesWithExtras++;
+      }
+
+      matchSet.add(d.match_id);
+
+      if (d.date) {
+        if (!earliestDate || d.date < earliestDate) earliestDate = d.date;
+        if (!latestDate || d.date > latestDate) latestDate = d.date;
+      }
+    }
+
+    res.json({
+      player,
+      totalDeliveries,
+      totalRuns,
+      ballsFacedExcludingWides,
+      ballsFacedExcludingWidesAndNoballs,
+      widesCount,
+      noballsCount,
+      deliveriesWithExtras,
+      matchCount: matchSet.size,
+      earliestMatch: earliestDate,
+      latestMatch: latestDate,
+      note: 'Compare these numbers to verify computation logic'
+    });
+  } catch (error) {
+    console.error('Error debugging T20I stats:', error);
+    res.status(500).json({ error: 'Failed to debug T20I stats' });
+  }
+});
+
+// Debug: Get match details for a player in a specific match
+app.get('/api/t20i/debug/match/:matchId/:player', async (req, res) => {
+  try {
+    const { matchId, player } = req.params;
+
+    const deliveries = await t20Collection.aggregate([
+      { $match: { match_id: matchId } },
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.batter': player } },
+      {
+        $project: {
+          over: '$innings.overs.over',
+          runs_batter: '$innings.overs.deliveries.runs.batter',
+          runs_total: '$innings.overs.deliveries.runs.total',
+          extras: '$innings.overs.deliveries.extras',
+          wickets: '$innings.overs.deliveries.wickets'
+        }
+      }
+    ]).toArray();
+
+    const runs = deliveries.reduce((sum, d) => sum + (d.runs_batter || 0), 0);
+    const balls = deliveries.filter(d => !d.extras?.wides && !d.extras?.noballs).length;
+
+    res.json({
+      matchId,
+      player,
+      deliveriesCount: deliveries.length,
+      runs,
+      balls,
+      deliveries: deliveries.slice(0, 30) // Sample for debugging
+    });
+  } catch (error) {
+    console.error('Error debugging match:', error);
+    res.status(500).json({ error: 'Failed to debug match' });
+  }
+});
+
+// Debug: Get per-match breakdown for a player
+app.get('/api/t20i/debug/all-matches/:name', async (req, res) => {
+  try {
+    const player = req.params.name;
+
+    const matchStats = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.batter': player } },
+      {
+        $group: {
+          _id: '$match_id',
+          date: { $first: { $arrayElemAt: ['$info.dates', 0] } },
+          teams: { $first: '$info.teams' },
+          runs: { $sum: '$innings.overs.deliveries.runs.batter' },
+          deliveries: { $sum: 1 },
+          wides: {
+            $sum: {
+              $cond: [{ $gt: [{ $ifNull: ['$innings.overs.deliveries.extras.wides', 0] }, 0] }, 1, 0]
+            }
+          },
+          noballs: {
+            $sum: {
+              $cond: [{ $gt: [{ $ifNull: ['$innings.overs.deliveries.extras.noballs', 0] }, 0] }, 1, 0]
+            }
+          }
+        }
+      },
+      { $sort: { date: -1 } }
+    ]).toArray();
+
+    // Calculate totals
+    let totalRuns = 0;
+    let totalDeliveries = 0;
+    let totalBalls = 0;
+
+    for (const m of matchStats) {
+      totalRuns += m.runs;
+      totalDeliveries += m.deliveries;
+      totalBalls += m.deliveries - m.wides - m.noballs;
+    }
+
+    res.json({
+      player,
+      matchCount: matchStats.length,
+      totalRuns,
+      totalDeliveries,
+      totalBalls,
+      recentMatches: matchStats.slice(0, 10)
+    });
+  } catch (error) {
+    console.error('Error debugging all matches:', error);
+    res.status(500).json({ error: 'Failed to debug all matches' });
+  }
+});
+
+// Debug: Get wicket types for a bowler
+app.get('/api/t20i/debug/wicket-types/:bowler', async (req, res) => {
+  try {
+    const bowler = req.params.bowler;
+
+    const wicketTypes = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.bowler': bowler } },
+      { $unwind: { path: '$innings.overs.deliveries.wickets', preserveNullAndEmptyArrays: false } },
+      { $group: {
+        _id: '$innings.overs.deliveries.wickets.kind',
+        count: { $sum: 1 }
+      }},
+      { $sort: { count: -1 } }
+    ]).toArray();
+
+    const total = wicketTypes.reduce((sum, wt) => sum + wt.count, 0);
+
+    res.json({
+      bowler,
+      wicketTypes: wicketTypes.map(wt => ({ kind: wt._id, count: wt.count })),
+      total
+    });
+  } catch (error) {
+    console.error('Error fetching wicket types:', error);
+    res.status(500).json({ error: 'Failed to fetch wicket types' });
+  }
+});
+
+// Get all T20I teams
+app.get('/api/t20i/teams', async (req, res) => {
+  try {
+    const teams = await t20Collection.aggregate([
+      { $unwind: '$info.teams' },
+      { $group: { _id: '$info.teams' } },
+      { $sort: { _id: 1 } }
+    ]).toArray();
+
+    const teamList = teams.map(t => t._id).filter(t => t);
+    res.json({ teams: teamList, count: teamList.length });
+  } catch (error) {
+    console.error('Error fetching T20I teams:', error);
+    res.status(500).json({ error: 'Failed to fetch T20I teams' });
+  }
+});
+
 // ========== Password Reset Functions ==========
 
 // Forgot Password - Send reset link to email
