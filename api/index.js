@@ -3040,6 +3040,270 @@ app.post('/api/t20i/batsman-vs-bowler', async (req, res) => {
   }
 });
 
+// ========== Birthday Email Cron Functions ==========
+
+// Get today's birthdays from IPLPlayersDOB collection
+const getTodaysBirthdays = async (db) => {
+  try {
+    const dobCollection = db.collection('IPLPlayersDOB');
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth() + 1; // JavaScript months are 0-indexed
+
+    const players = await dobCollection.find({
+      date_of_birth: { $exists: true, $ne: '' }
+    }).toArray();
+
+    const todaysBirthdays = players.filter(player => {
+      if (!player.date_of_birth || typeof player.date_of_birth !== 'string') {
+        return false;
+      }
+
+      let day, month;
+
+      if (player.date_of_birth.includes('/')) {
+        const parts = player.date_of_birth.split('/');
+        if (parts.length === 3) {
+          day = parseInt(parts[0]);
+          month = parseInt(parts[1]);
+        }
+      } else if (player.date_of_birth.includes('-')) {
+        const parts = player.date_of_birth.split('-');
+        if (parts.length === 3) {
+          month = parseInt(parts[1]);
+          day = parseInt(parts[2]);
+        }
+      }
+
+      return day === currentDay && month === currentMonth;
+    });
+
+    return todaysBirthdays.map(p => ({
+      name: p.name || p.player_name || p._id,
+      date_of_birth: p.date_of_birth
+    }));
+  } catch (error) {
+    console.error('Error fetching today\'s birthdays:', error);
+    return [];
+  }
+};
+
+// Calculate age from date of birth
+const calculateAge = (dob) => {
+  let year;
+  if (dob.includes('/')) {
+    year = parseInt(dob.split('/')[2]);
+  } else if (dob.includes('-')) {
+    year = parseInt(dob.split('-')[0]);
+  }
+
+  if (year < 100) {
+    year = year <= 30 ? 2000 + year : 1900 + year;
+  }
+
+  return new Date().getFullYear() - year;
+};
+
+// Generate personalized email HTML for birthday alerts
+const generateBirthdayEmailHTML = (userName, players) => {
+  const playersList = players.map(player => {
+    const age = calculateAge(player.date_of_birth);
+    return `
+      <tr>
+        <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0;">
+          <strong style="color: #1a237e;">${player.name}</strong>
+        </td>
+        <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; text-align: center;">
+          <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+            ${age} years
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎂 IPL Birthday Alert!</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your daily cricket birthday digest</p>
+        </div>
+        <div style="padding: 25px 20px 15px 20px;">
+          <p style="font-size: 18px; color: #333; margin: 0;">
+            Hey <strong style="color: #667eea;">${userName || 'Cricket Fan'}</strong>! 👋
+          </p>
+          <p style="font-size: 16px; color: #555; margin: 15px 0 0 0; line-height: 1.6;">
+            ${players.length === 1
+              ? `There's <strong>1 IPL player</strong> celebrating their birthday today!`
+              : `There are <strong>${players.length} IPL players</strong> celebrating their birthdays today!`}
+          </p>
+        </div>
+        <div style="padding: 0 20px 25px 20px;">
+          <table style="width: 100%; border-collapse: collapse; background-color: #fafafa; border-radius: 8px; overflow: hidden;">
+            <thead>
+              <tr style="background: linear-gradient(135deg, #1a237e 0%, #283593 100%);">
+                <th style="padding: 15px; text-align: left; color: white; font-weight: 600;">Player Name</th>
+                <th style="padding: 15px; text-align: center; color: white; font-weight: 600;">Turns</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${playersList}
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 0 20px 25px 20px; text-align: center;">
+          <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">
+            Wish them on social media or check out their stats on our platform!
+          </p>
+          <a href="https://ipl-deep-analysis-cricket.vercel.app" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            View Birthday Calendar 🗓️
+          </a>
+        </div>
+        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
+          <p style="font-size: 12px; color: #888; margin: 0;">
+            🏏 IPL Cricket Analytics Tool
+          </p>
+          <p style="font-size: 11px; color: #aaa; margin: 8px 0 0 0;">
+            You're receiving this because you subscribed to birthday alerts.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Send birthday email to a single user
+const sendBirthdayEmailToUser = async (user, todaysBirthdays) => {
+  try {
+    const recipientEmail = user.email;
+    const userName = user?.name || user?.fullName || user?.firstName || 'Cricket Fan';
+
+    const emailHTML = generateBirthdayEmailHTML(userName, todaysBirthdays);
+
+    const mailOptions = {
+      from: `"IPL Birthday Bot 🏏" <${process.env.EMAIL_USER}>`,
+      to: recipientEmail,
+      subject: `🎂 ${todaysBirthdays.length} IPL Player${todaysBirthdays.length > 1 ? 's' : ''} Birthday Today! - ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`,
+      html: emailHTML
+    };
+
+    const info = await emailTransporter.sendMail(mailOptions);
+    console.log(`   ✅ Email sent to ${recipientEmail} (${userName})`);
+
+    return { success: true, email: recipientEmail, messageId: info.messageId };
+  } catch (error) {
+    console.error(`   ❌ Failed to send to ${user.email}:`, error.message);
+    return { success: false, email: user.email, error: error.message };
+  }
+};
+
+// Send birthday emails to ALL users in the users collection
+const sendBirthdayEmailsToAllUsers = async () => {
+  try {
+    const { db, usersCollection } = await connectToDatabase();
+
+    // Get today's birthdays first
+    const todaysBirthdays = await getTodaysBirthdays(db);
+
+    if (todaysBirthdays.length === 0) {
+      console.log('📭 No birthdays today. No emails sent.');
+      return { success: true, message: 'No birthdays today', sent: false, count: 0 };
+    }
+
+    // Get all users from the users collection
+    const allUsers = await usersCollection.find({ email: { $exists: true, $ne: '' } }).toArray();
+
+    if (allUsers.length === 0) {
+      console.log('📭 No users found in the database.');
+      return { success: true, message: 'No users found', sent: false, count: 0 };
+    }
+
+    console.log(`\n🎂 Sending birthday emails to ${allUsers.length} user(s)...`);
+    console.log(`   📧 ${todaysBirthdays.length} player(s) have birthdays today: ${todaysBirthdays.map(p => p.name).join(', ')}`);
+
+    const results = [];
+    for (const user of allUsers) {
+      const result = await sendBirthdayEmailToUser(user, todaysBirthdays);
+      results.push(result);
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failedCount = results.filter(r => !r.success).length;
+
+    console.log(`\n📊 Email Summary: ${successCount} sent, ${failedCount} failed`);
+
+    return {
+      success: true,
+      message: `Emails sent to ${successCount}/${allUsers.length} users`,
+      sent: true,
+      totalUsers: allUsers.length,
+      successCount,
+      failedCount,
+      players: todaysBirthdays.map(p => p.name),
+      results
+    };
+  } catch (error) {
+    console.error('❌ Error sending birthday emails:', error);
+    return { success: false, error: error.message, sent: false };
+  }
+};
+
+// Vercel Cron endpoint for birthday emails (runs daily at 7:45 PM IST / 2:15 PM UTC)
+app.get('/api/cron/birthday-emails', async (req, res) => {
+  // Verify the request is from Vercel Cron (optional security check)
+  const authHeader = req.headers['authorization'];
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.log('⚠️ Unauthorized cron request attempt');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  console.log('⏰ Vercel Cron: Running scheduled birthday email job...');
+
+  try {
+    const result = await sendBirthdayEmailsToAllUsers();
+    res.json(result);
+  } catch (error) {
+    console.error('Error in birthday email cron:', error);
+    res.status(500).json({ error: 'Failed to send birthday emails' });
+  }
+});
+
+// Manual trigger endpoint for birthday emails (for testing)
+app.post('/api/birthday-email/send', async (req, res) => {
+  try {
+    const result = await sendBirthdayEmailsToAllUsers();
+    res.json(result);
+  } catch (error) {
+    console.error('Error sending birthday emails:', error);
+    res.status(500).json({ error: 'Failed to send birthday emails' });
+  }
+});
+
+// Preview today's birthdays endpoint
+app.get('/api/birthday-email/preview', async (req, res) => {
+  try {
+    const { db } = await connectToDatabase();
+    const todaysBirthdays = await getTodaysBirthdays(db);
+
+    res.json({
+      todaysBirthdays,
+      count: todaysBirthdays.length,
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    });
+  } catch (error) {
+    console.error('Error previewing birthday email:', error);
+    res.status(500).json({ error: 'Failed to preview birthday email' });
+  }
+});
+
 // For local development
 if (require.main === module) {
   const PORT = process.env.PORT || 3001;
