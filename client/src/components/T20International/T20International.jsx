@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Globe, BarChart3, Target, Users, Search, AlertCircle, TrendingUp, Activity, User, Info, Trophy } from 'lucide-react';
+import { Globe, BarChart3, Target, Users, Search, AlertCircle, TrendingUp, Activity, User, Info, Trophy, LineChart as LineChartIcon } from 'lucide-react';
 import axios from 'axios';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import PersonalizedLoading from '../PersonalizedLoading';
 import { useAuth } from '../../context/AuthContext';
 
@@ -21,6 +21,8 @@ function T20International() {
   const [error, setError] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showBowlerDropdown, setShowBowlerDropdown] = useState(false);
+  const [progressionData, setProgressionData] = useState(null);
+  const [selectedInnings, setSelectedInnings] = useState(null);
 
   const COLORS = ['#0ea5e9', '#06b6d4', '#8b5cf6', '#ec4899'];
 
@@ -28,6 +30,7 @@ function T20International() {
     { id: 'batting', name: 'Batting Stats', icon: BarChart3 },
     { id: 'bowling', name: 'Bowling Stats', icon: Target },
     { id: 'matchup', name: 'Batsman vs Bowler', icon: Users },
+    { id: 'progression', name: 'Run Progression', icon: LineChartIcon },
   ];
 
   // Fetch T20I players and bowlers on mount
@@ -73,9 +76,38 @@ function T20International() {
       }
     };
 
-    if (activeSubTab !== 'matchup') {
+    if (activeSubTab !== 'matchup' && activeSubTab !== 'progression') {
       fetchStats();
     }
+  }, [selectedPlayer, activeSubTab]);
+
+  // Fetch progression data when progression tab is active
+  useEffect(() => {
+    if (activeSubTab !== 'progression' || !selectedPlayer) {
+      setProgressionData(null);
+      setSelectedInnings(null);
+      return;
+    }
+
+    const fetchProgression = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(`/api/t20i/innings-progression/${encodeURIComponent(selectedPlayer)}`);
+        setProgressionData(response.data);
+        // Auto-select the first innings if available
+        if (response.data.innings && response.data.innings.length > 0) {
+          setSelectedInnings(response.data.innings[0]);
+        }
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to fetch progression data');
+        setProgressionData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgression();
   }, [selectedPlayer, activeSubTab]);
 
   // Fetch matchup stats when both batsman and bowler are selected
@@ -130,6 +162,8 @@ function T20International() {
     setActiveSubTab(tabId);
     setStats(null);
     setMatchupStats(null);
+    setProgressionData(null);
+    setSelectedInnings(null);
     setError(null);
   };
 
@@ -546,6 +580,281 @@ function T20International() {
     );
   };
 
+  const renderRunProgression = () => {
+    if (!progressionData || !progressionData.innings || progressionData.innings.length === 0) {
+      return (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+          <Info className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+          <h4 className="text-lg font-semibold text-amber-800 mb-2">No Innings Data</h4>
+          <p className="text-amber-700">
+            No innings progression data available for {selectedPlayer} in T20 Internationals.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center border-4 border-purple-400 shadow-lg">
+            <LineChartIcon className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">{selectedPlayer}</h2>
+            <p className="text-purple-200 text-sm">T20 International Run Progression ({progressionData.count} innings)</p>
+          </div>
+        </div>
+
+        {/* Quick Stats Summary */}
+        <div className="mb-6 p-4 rounded-xl border-2 border-purple-400/40" style={{background: 'rgba(147, 51, 234, 0.1)', backdropFilter: 'blur(10px)'}}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-sm text-purple-200 mb-1">Total Innings</p>
+              <p className="text-2xl font-bold text-white">{progressionData.count}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-purple-200 mb-1">Avg Score</p>
+              <p className="text-2xl font-bold text-white">
+                {(progressionData.innings.reduce((sum, inn) => sum + inn.totalRuns, 0) / progressionData.innings.length).toFixed(1)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-purple-200 mb-1">Highest Score</p>
+              <p className="text-2xl font-bold text-green-400">
+                {Math.max(...progressionData.innings.map(inn => inn.totalRuns))}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-purple-200 mb-1">Avg Strike Rate</p>
+              <p className="text-2xl font-bold text-white">
+                {(progressionData.innings.reduce((sum, inn) => sum + inn.strikeRate, 0) / progressionData.innings.length).toFixed(1)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="mb-4 p-3 bg-blue-500/10 rounded-lg border border-blue-400/30">
+          <p className="text-sm text-blue-200">
+            <strong>How to use:</strong> Click on any innings card to view its ball-by-ball run progression chart. Scroll horizontally to see all innings.
+          </p>
+        </div>
+
+        {/* Horizontal Scrollable Innings Cards */}
+        <div className="mb-6">
+          <h4 className="text-md font-semibold text-white mb-3 flex items-center gap-2">
+            <span>Select an Innings</span>
+            <span className="text-xs text-slate-400 font-normal">(Sorted by date - newest first)</span>
+          </h4>
+          <div
+            className="flex gap-3 overflow-x-auto pb-4"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollSnapType: 'x proximity'
+            }}
+          >
+            {progressionData.innings.map((innings, index) => {
+              const date = new Date(innings.date);
+              const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              const isSelected = selectedInnings?.matchId === innings.matchId;
+
+              // Performance tier colors
+              const srColor = innings.strikeRate >= 150 ? 'border-green-400 bg-green-500/20' :
+                             innings.strikeRate >= 120 ? 'border-yellow-400 bg-yellow-500/20' :
+                             'border-slate-400 bg-slate-500/20';
+
+              return (
+                <button
+                  key={innings.matchId}
+                  onClick={() => setSelectedInnings(innings)}
+                  className={`flex-shrink-0 w-44 p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                    isSelected
+                      ? 'bg-purple-600 border-purple-400 shadow-xl ring-2 ring-purple-300'
+                      : `${srColor} hover:border-purple-400`
+                  }`}
+                  style={{ scrollSnapAlign: 'start' }}
+                >
+                  {/* Date Badge */}
+                  <div className={`text-xs mb-2 font-medium ${isSelected ? 'text-purple-200' : 'text-slate-300'}`}>
+                    {formattedDate}
+                  </div>
+
+                  {/* Score */}
+                  <div className="text-center mb-3">
+                    <div className={`text-3xl font-bold ${isSelected ? 'text-white' : 'text-white'}`}>
+                      {innings.totalRuns}
+                    </div>
+                    <div className={`text-xs ${isSelected ? 'text-purple-200' : 'text-slate-400'}`}>
+                      ({innings.ballsFaced} balls)
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="space-y-2 text-left">
+                    <div className="flex justify-between items-center">
+                      <span className={`text-xs ${isSelected ? 'text-purple-200' : 'text-slate-400'}`}>
+                        SR
+                      </span>
+                      <span className={`text-sm font-bold ${
+                        isSelected ? 'text-white' :
+                        innings.strikeRate >= 150 ? 'text-green-400' :
+                        innings.strikeRate >= 120 ? 'text-yellow-400' :
+                        'text-slate-300'
+                      }`}>
+                        {innings.strikeRate}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className={`text-xs ${isSelected ? 'text-purple-200' : 'text-slate-400'}`}>
+                        4s / 6s
+                      </span>
+                      <span className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-300'}`}>
+                        {innings.fours} / {innings.sixes}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Opponent */}
+                  <div className={`mt-3 pt-3 ${isSelected ? 'border-purple-400' : 'border-slate-600'} border-t`}>
+                    <p className={`text-xs truncate ${isSelected ? 'text-purple-100' : 'text-slate-400'}`}>
+                      vs {innings.opponent}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Line Chart */}
+        {selectedInnings && (
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <h4 className="text-lg font-semibold text-slate-800 mb-2">
+              Run Progression - {selectedInnings.totalRuns} off {selectedInnings.ballsFaced} balls
+            </h4>
+            <div className="mb-4 text-sm text-slate-600">
+              <strong>Match:</strong> {selectedInnings.matchInfo} <br />
+              <strong>Date:</strong> {new Date(selectedInnings.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} |
+              <strong className="ml-2">Strike Rate:</strong> {selectedInnings.strikeRate} |
+              <strong className="ml-2">4s:</strong> {selectedInnings.fours} |
+              <strong className="ml-2">6s:</strong> {selectedInnings.sixes}
+            </div>
+
+            {/* Legend */}
+            <div className="mb-4 flex items-center gap-4 flex-wrap text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-0.5 bg-purple-600"></div>
+                <span className="text-slate-600">Regular (0-3 runs)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span className="text-slate-600 font-semibold">Four</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-slate-600 font-semibold">Six</span>
+              </div>
+            </div>
+
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={selectedInnings.progression}>
+                <defs>
+                  <linearGradient id="boundaryGradientT20" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={1} />
+                  </linearGradient>
+                  <linearGradient id="sixGradientT20" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#4ade80" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="ballNumber"
+                  label={{ value: 'Ball Number', position: 'insideBottom', offset: -5 }}
+                />
+                <YAxis
+                  label={{ value: 'Cumulative Runs', angle: -90, position: 'insideLeft' }}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const isBoundary = data.runsScored === 4;
+                      const isSix = data.runsScored === 6;
+                      return (
+                        <div className={`p-3 border-2 rounded-lg shadow-lg ${
+                          isSix ? 'bg-green-50 border-green-400' :
+                          isBoundary ? 'bg-yellow-50 border-yellow-400' :
+                          'bg-white border-slate-200'
+                        }`}>
+                          <p className="font-semibold">Ball {data.ballNumber}</p>
+                          <p className="text-sm text-slate-600">Cumulative: {data.cumulativeRuns} runs</p>
+                          <p className={`text-sm font-bold ${
+                            isSix ? 'text-green-600' :
+                            isBoundary ? 'text-yellow-600' :
+                            'text-slate-600'
+                          }`}>
+                            This ball: {data.runsScored} runs
+                            {isSix && ' 🚀'}
+                            {isBoundary && ' 🔥'}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cumulativeRuns"
+                  stroke="#9333ea"
+                  strokeWidth={3}
+                  dot={(props) => {
+                    const { cx, cy, payload } = props;
+                    const isBoundary = payload.runsScored === 4;
+                    const isSix = payload.runsScored === 6;
+
+                    if (isSix) {
+                      return (
+                        <circle
+                          key={`dot-${payload.ballNumber}`}
+                          cx={cx}
+                          cy={cy}
+                          r={8}
+                          fill="#22c55e"
+                          stroke="#16a34a"
+                          strokeWidth={2}
+                        />
+                      );
+                    } else if (isBoundary) {
+                      return (
+                        <circle
+                          key={`dot-${payload.ballNumber}`}
+                          cx={cx}
+                          cy={cy}
+                          r={7}
+                          fill="#f59e0b"
+                          stroke="#d97706"
+                          strokeWidth={2}
+                        />
+                      );
+                    }
+                    return <circle key={`dot-${payload.ballNumber}`} cx={cx} cy={cy} r={4} fill="#9333ea" />;
+                  }}
+                  activeDot={{ r: 6 }}
+                  isAnimationActive={true}
+                  animationDuration={800}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -680,7 +989,11 @@ function T20International() {
             <Search className="w-16 h-16 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-300 mb-2">Search for a Player</h3>
             <p className="text-slate-400">
-              Use the search above to find T20 International {activeSubTab === 'bowling' ? 'bowling' : 'batting'} statistics
+              Use the search above to find T20 International {
+                activeSubTab === 'bowling' ? 'bowling statistics' :
+                activeSubTab === 'progression' ? 'run progression data' :
+                'batting statistics'
+              }
             </p>
           </div>
         ) : (
@@ -688,6 +1001,7 @@ function T20International() {
             {activeSubTab === 'batting' && renderBattingStats()}
             {activeSubTab === 'bowling' && renderBowlingStats()}
             {activeSubTab === 'matchup' && renderMatchupStats()}
+            {activeSubTab === 'progression' && renderRunProgression()}
           </>
         )}
       </div>

@@ -2020,6 +2020,118 @@ app.get('/api/t20i/teams', async (req, res) => {
   }
 });
 
+// Get T20I innings run progression for a player
+app.get('/api/t20i/innings-progression/:name', async (req, res) => {
+  try {
+    const player = req.params.name;
+
+    // Get all innings for this player with ball-by-ball data
+    const inningsData = await t20Collection.aggregate([
+      { $unwind: '$innings' },
+      { $unwind: '$innings.overs' },
+      { $unwind: '$innings.overs.deliveries' },
+      { $match: { 'innings.overs.deliveries.batter': player } },
+      {
+        $project: {
+          match_id: 1,
+          date: { $arrayElemAt: ['$info.dates', 0] },
+          venue: '$info.venue',
+          teams: '$info.teams',
+          batting_team: '$innings.team',
+          over: '$innings.overs.over',
+          runs_batter: '$innings.overs.deliveries.runs.batter',
+          is_wide: { $ifNull: ['$innings.overs.deliveries.extras.wides', 0] },
+          is_noball: { $ifNull: ['$innings.overs.deliveries.extras.noballs', 0] },
+          wickets: '$innings.overs.deliveries.wickets'
+        }
+      },
+      // Sort by match, then over, then within over (implicit from $unwind order)
+      { $sort: { match_id: 1, date: 1, over: 1 } },
+      {
+        $group: {
+          _id: '$match_id',
+          date: { $first: '$date' },
+          venue: { $first: '$venue' },
+          teams: { $first: '$teams' },
+          batting_team: { $first: '$batting_team' },
+          deliveries: {
+            $push: {
+              over: '$over',
+              runs: '$runs_batter',
+              is_wide: '$is_wide',
+              is_noball: '$is_noball',
+              wickets: '$wickets'
+            }
+          }
+        }
+      },
+      { $sort: { date: -1 } } // Most recent first
+    ]).toArray();
+
+    if (inningsData.length === 0) {
+      return res.json({
+        player,
+        innings: [],
+        count: 0,
+        message: 'No innings found for this player'
+      });
+    }
+
+    // Process each innings to build progression data
+    const processedInnings = inningsData.map((innings, index) => {
+      // Filter out wides (they don't count as balls faced)
+      const legalDeliveries = innings.deliveries.filter(d => d.is_wide === 0);
+
+      // Build ball-by-ball progression
+      let cumulativeRuns = 0;
+      const progression = legalDeliveries.map((delivery, ballIndex) => {
+        cumulativeRuns += delivery.runs;
+        return {
+          ballNumber: ballIndex + 1,
+          runsScored: delivery.runs,
+          cumulativeRuns: cumulativeRuns,
+          over: delivery.over
+        };
+      });
+
+      // Calculate stats
+      const totalRuns = cumulativeRuns;
+      const ballsFaced = legalDeliveries.length;
+      const strikeRate = ballsFaced > 0 ? ((totalRuns / ballsFaced) * 100).toFixed(2) : 0;
+      const fours = legalDeliveries.filter(d => d.runs === 4).length;
+      const sixes = legalDeliveries.filter(d => d.runs === 6).length;
+
+      // Determine opponent team
+      const opponent = innings.teams.find(t => t !== innings.batting_team) || 'Unknown';
+
+      return {
+        inningsNumber: index + 1,
+        matchId: innings._id,
+        date: innings.date,
+        venue: innings.venue,
+        opponent: opponent,
+        battingTeam: innings.batting_team,
+        matchInfo: `${innings.batting_team} vs ${opponent}, ${innings.venue}`,
+        totalRuns,
+        ballsFaced,
+        strikeRate: parseFloat(strikeRate),
+        fours,
+        sixes,
+        progression
+      };
+    });
+
+    res.json({
+      player,
+      innings: processedInnings,
+      count: processedInnings.length
+    });
+  } catch (error) {
+    console.error('Error fetching T20I innings progression:', error);
+    res.status(500).json({ error: 'Failed to fetch T20I innings progression data' });
+  }
+});
+
 // ========== Password Reset Functions ==========
 
 // Forgot Password - Send reset link to email
