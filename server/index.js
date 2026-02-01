@@ -1402,6 +1402,24 @@ app.get('/api/t20i/stats/:name', async (req, res) => {
     const fifties = inningsScores.filter(inn => inn.runs >= 50 && inn.runs < 100).length;
     const hundreds = inningsScores.filter(inn => inn.runs >= 100).length;
 
+    // Get Player of the Match (POTM) stats
+    const potmData = await t20Collection.aggregate([
+      { $match: { 'info.player_of_match': player } },
+      {
+        $group: {
+          _id: '$info.venue',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]).toArray();
+
+    const potmCount = potmData.reduce((sum, venue) => sum + venue.count, 0);
+    const potmByVenue = potmData.map(v => ({
+      venue: v._id,
+      count: v.count
+    }));
+
     res.json({
       player,
       stats: {
@@ -1425,7 +1443,9 @@ app.get('/api/t20i/stats/:name', async (req, res) => {
           { name: 'Singles/Doubles', value: result.totalBalls - result.dots - result.fours - result.sixes },
           { name: 'Fours', value: result.fours },
           { name: 'Sixes', value: result.sixes }
-        ]
+        ],
+        potmCount,
+        potmByVenue
       }
     });
   } catch (error) {
@@ -1566,6 +1586,24 @@ app.get('/api/t20i/bowler-stats/:name', async (req, res) => {
     const fourWickets = inningsWickets.filter(inn => inn.wickets === 4).length;
     const fiveWickets = inningsWickets.filter(inn => inn.wickets >= 5).length;
 
+    // Get Player of the Match (POTM) stats
+    const potmData = await t20Collection.aggregate([
+      { $match: { 'info.player_of_match': bowler } },
+      {
+        $group: {
+          _id: '$info.venue',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]).toArray();
+
+    const potmCount = potmData.reduce((sum, venue) => sum + venue.count, 0);
+    const potmByVenue = potmData.map(v => ({
+      venue: v._id,
+      count: v.count
+    }));
+
     res.json({
       bowler,
       stats: {
@@ -1580,7 +1618,9 @@ app.get('/api/t20i/bowler-stats/:name', async (req, res) => {
         threeWickets,
         fourWickets,
         fiveWickets,
-        matches: result.matches?.length || 0
+        matches: result.matches?.length || 0,
+        potmCount,
+        potmByVenue
       }
     });
   } catch (error) {

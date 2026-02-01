@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Globe, BarChart3, Target, Users, Search, AlertCircle, TrendingUp, Activity, User, Info } from 'lucide-react';
+import { Globe, BarChart3, Target, Users, Search, AlertCircle, TrendingUp, Activity, User, Info, Trophy } from 'lucide-react';
 import axios from 'axios';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import PersonalizedLoading from '../PersonalizedLoading';
 import { useAuth } from '../../context/AuthContext';
 
@@ -235,9 +235,9 @@ function T20International() {
         </div>
 
         {/* Additional Stats */}
-        <div className="bg-white rounded-lg p-6 border border-slate-200">
+        <div className="bg-white rounded-lg p-6 border border-slate-200 mb-8">
           <h4 className="text-lg font-semibold text-slate-800 mb-4">Additional Metrics</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
             <div className="text-center p-4 bg-slate-50 rounded-lg">
               <div className="text-2xl font-bold text-slate-800">{stats.matches || 0}</div>
               <div className="text-sm text-slate-600 mt-1">Matches</div>
@@ -262,8 +262,47 @@ function T20International() {
               <div className="text-2xl font-bold text-emerald-700">{stats.hundreds || 0}</div>
               <div className="text-sm text-emerald-600 mt-1 font-semibold">Hundreds</div>
             </div>
+            <div className="text-center p-4 bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg border-2 border-yellow-400">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Trophy className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div className="text-2xl font-bold text-yellow-700">{stats.potmCount || 0}</div>
+              <div className="text-sm text-yellow-600 mt-1 font-semibold">POTM</div>
+            </div>
           </div>
         </div>
+
+        {/* POTM Venue Chart */}
+        {stats.potmByVenue && stats.potmByVenue.length > 0 && (
+          <div className="bg-white rounded-lg p-6 border border-slate-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5 text-yellow-600" />
+              <h4 className="text-lg font-semibold text-slate-800">Player of the Match by Venue</h4>
+            </div>
+            <ResponsiveContainer width="100%" height={Math.max(200, stats.potmByVenue.length * 40)}>
+              <BarChart
+                data={stats.potmByVenue.slice(0, 10)}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" allowDecimals={false} />
+                <YAxis
+                  dataKey="venue"
+                  type="category"
+                  width={200}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.length > 30 ? value.substring(0, 30) + '...' : value}
+                />
+                <Tooltip
+                  formatter={(value) => [value, 'POTM Awards']}
+                  labelFormatter={(label) => label}
+                />
+                <Bar dataKey="count" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     );
   };
@@ -319,9 +358,9 @@ function T20International() {
         </div>
 
         {/* Additional Stats */}
-        <div className="bg-white rounded-lg p-6 border border-slate-200">
+        <div className="bg-white rounded-lg p-6 border border-slate-200 mb-8">
           <h4 className="text-lg font-semibold text-slate-800 mb-4">Bowling Metrics</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
             <div className="text-center p-4 bg-slate-50 rounded-lg">
               <div className="text-2xl font-bold text-slate-800">{stats.matches || 0}</div>
               <div className="text-sm text-slate-600 mt-1">Matches</div>
@@ -346,8 +385,47 @@ function T20International() {
               <div className="text-2xl font-bold text-amber-700">{stats.fiveWickets || 0}</div>
               <div className="text-sm text-amber-600 mt-1 font-semibold">5W Hauls</div>
             </div>
+            <div className="text-center p-4 bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg border-2 border-yellow-400">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Trophy className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div className="text-2xl font-bold text-yellow-700">{stats.potmCount || 0}</div>
+              <div className="text-sm text-yellow-600 mt-1 font-semibold">POTM</div>
+            </div>
           </div>
         </div>
+
+        {/* POTM Venue Chart */}
+        {stats.potmByVenue && stats.potmByVenue.length > 0 && (
+          <div className="bg-white rounded-lg p-6 border border-slate-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-5 h-5 text-yellow-600" />
+              <h4 className="text-lg font-semibold text-slate-800">Player of the Match by Venue</h4>
+            </div>
+            <ResponsiveContainer width="100%" height={Math.max(200, stats.potmByVenue.length * 40)}>
+              <BarChart
+                data={stats.potmByVenue.slice(0, 10)}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" allowDecimals={false} />
+                <YAxis
+                  dataKey="venue"
+                  type="category"
+                  width={200}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.length > 30 ? value.substring(0, 30) + '...' : value}
+                />
+                <Tooltip
+                  formatter={(value) => [value, 'POTM Awards']}
+                  labelFormatter={(label) => label}
+                />
+                <Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     );
   };
