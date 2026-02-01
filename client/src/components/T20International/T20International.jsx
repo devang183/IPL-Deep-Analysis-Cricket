@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Globe, BarChart3, Target, Users, Search, AlertCircle, TrendingUp, Activity, User, Info, Trophy, LineChart as LineChartIcon } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Globe, BarChart3, Target, Users, Search, AlertCircle, TrendingUp, Activity, User, Info, Trophy, LineChart as LineChartIcon, Calendar, X } from 'lucide-react';
 import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import PersonalizedLoading from '../PersonalizedLoading';
@@ -23,8 +23,29 @@ function T20International() {
   const [showBowlerDropdown, setShowBowlerDropdown] = useState(false);
   const [progressionData, setProgressionData] = useState(null);
   const [selectedInnings, setSelectedInnings] = useState(null);
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   const COLORS = ['#0ea5e9', '#06b6d4', '#8b5cf6', '#ec4899'];
+
+  // Filter innings based on date range
+  const filteredInnings = useMemo(() => {
+    if (!progressionData?.innings) return [];
+
+    let innings = progressionData.innings;
+
+    if (dateRange.start) {
+      const startDate = new Date(dateRange.start);
+      innings = innings.filter(inn => new Date(inn.date) >= startDate);
+    }
+
+    if (dateRange.end) {
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999); // Include the entire end date
+      innings = innings.filter(inn => new Date(inn.date) <= endDate);
+    }
+
+    return innings;
+  }, [progressionData, dateRange]);
 
   const subTabs = [
     { id: 'batting', name: 'Batting Stats', icon: BarChart3 },
@@ -164,6 +185,7 @@ function T20International() {
     setMatchupStats(null);
     setProgressionData(null);
     setSelectedInnings(null);
+    setDateRange({ start: '', end: '' });
     setError(null);
   };
 
@@ -593,6 +615,11 @@ function T20International() {
       );
     }
 
+    // Get date range from data for placeholder hints
+    const allDates = progressionData.innings.map(inn => new Date(inn.date));
+    const minDate = new Date(Math.min(...allDates)).toISOString().split('T')[0];
+    const maxDate = new Date(Math.max(...allDates)).toISOString().split('T')[0];
+
     return (
       <div>
         {/* Header */}
@@ -606,29 +633,91 @@ function T20International() {
           </div>
         </div>
 
-        {/* Quick Stats Summary */}
+        {/* Date Range Filter */}
+        <div className="mb-6 p-4 rounded-xl border-2 border-blue-400/40" style={{background: 'rgba(59, 130, 246, 0.1)', backdropFilter: 'blur(10px)'}}>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="w-5 h-5 text-blue-400" />
+            <h4 className="text-sm font-semibold text-white">Filter by Date Range</h4>
+            {(dateRange.start || dateRange.end) && (
+              <button
+                onClick={() => {
+                  setDateRange({ start: '', end: '' });
+                  setSelectedInnings(filteredInnings[0] || null);
+                }}
+                className="ml-auto flex items-center gap-1 px-2 py-1 text-xs bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-blue-200 mb-1">From Date</label>
+              <input
+                type="date"
+                value={dateRange.start}
+                min={minDate}
+                max={dateRange.end || maxDate}
+                onChange={(e) => {
+                  setDateRange(prev => ({ ...prev, start: e.target.value }));
+                  setSelectedInnings(null);
+                }}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-blue-200 mb-1">To Date</label>
+              <input
+                type="date"
+                value={dateRange.end}
+                min={dateRange.start || minDate}
+                max={maxDate}
+                onChange={(e) => {
+                  setDateRange(prev => ({ ...prev, end: e.target.value }));
+                  setSelectedInnings(null);
+                }}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <p className="mt-2 text-xs text-blue-300">
+              Showing {filteredInnings.length} of {progressionData.count} innings
+              {dateRange.start && dateRange.end && ` (${dateRange.start} to ${dateRange.end})`}
+            </p>
+          )}
+        </div>
+
+        {/* Quick Stats Summary - Using filtered data */}
         <div className="mb-6 p-4 rounded-xl border-2 border-purple-400/40" style={{background: 'rgba(147, 51, 234, 0.1)', backdropFilter: 'blur(10px)'}}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-sm text-purple-200 mb-1">Total Innings</p>
-              <p className="text-2xl font-bold text-white">{progressionData.count}</p>
+              <p className="text-2xl font-bold text-white">{filteredInnings.length}</p>
             </div>
             <div className="text-center">
               <p className="text-sm text-purple-200 mb-1">Avg Score</p>
               <p className="text-2xl font-bold text-white">
-                {(progressionData.innings.reduce((sum, inn) => sum + inn.totalRuns, 0) / progressionData.innings.length).toFixed(1)}
+                {filteredInnings.length > 0
+                  ? (filteredInnings.reduce((sum, inn) => sum + inn.totalRuns, 0) / filteredInnings.length).toFixed(1)
+                  : '-'}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-purple-200 mb-1">Highest Score</p>
               <p className="text-2xl font-bold text-green-400">
-                {Math.max(...progressionData.innings.map(inn => inn.totalRuns))}
+                {filteredInnings.length > 0
+                  ? Math.max(...filteredInnings.map(inn => inn.totalRuns))
+                  : '-'}
               </p>
             </div>
             <div className="text-center">
               <p className="text-sm text-purple-200 mb-1">Avg Strike Rate</p>
               <p className="text-2xl font-bold text-white">
-                {(progressionData.innings.reduce((sum, inn) => sum + inn.strikeRate, 0) / progressionData.innings.length).toFixed(1)}
+                {filteredInnings.length > 0
+                  ? (filteredInnings.reduce((sum, inn) => sum + inn.strikeRate, 0) / filteredInnings.length).toFixed(1)
+                  : '-'}
               </p>
             </div>
           </div>
@@ -638,10 +727,26 @@ function T20International() {
         <div className="mb-4 p-3 bg-blue-500/10 rounded-lg border border-blue-400/30">
           <p className="text-sm text-blue-200">
             <strong>How to use:</strong> Click on any innings card to view its ball-by-ball run progression chart. Scroll horizontally to see all innings.
+            {(dateRange.start || dateRange.end) && ' Use the date filter above to narrow down the time period.'}
           </p>
         </div>
 
+        {/* No innings in filtered range message */}
+        {filteredInnings.length === 0 && (
+          <div className="mb-6 p-6 bg-amber-500/10 border border-amber-400/30 rounded-xl text-center">
+            <Info className="w-10 h-10 text-amber-400 mx-auto mb-2" />
+            <p className="text-amber-200">No innings found in the selected date range.</p>
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className="mt-3 px-4 py-2 bg-amber-500/20 text-amber-200 rounded-lg hover:bg-amber-500/30 transition-colors text-sm"
+            >
+              Clear Date Filter
+            </button>
+          </div>
+        )}
+
         {/* Horizontal Scrollable Innings Cards */}
+        {filteredInnings.length > 0 && (
         <div className="mb-6">
           <h4 className="text-md font-semibold text-white mb-3 flex items-center gap-2">
             <span>Select an Innings</span>
@@ -654,7 +759,7 @@ function T20International() {
               scrollSnapType: 'x proximity'
             }}
           >
-            {progressionData.innings.map((innings, index) => {
+            {filteredInnings.map((innings, index) => {
               const date = new Date(innings.date);
               const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               const isSelected = selectedInnings?.matchId === innings.matchId;
@@ -726,6 +831,7 @@ function T20International() {
             })}
           </div>
         </div>
+        )}
 
         {/* Line Chart */}
         {selectedInnings && (
